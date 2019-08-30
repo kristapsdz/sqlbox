@@ -2,9 +2,10 @@
 #define EXTERN_H
 
 enum	sqlbox_op {
-	SQLBOX_OP_ROLE = 0,
+	SQLBOX_OP_CLOSE,
 	SQLBOX_OP_OPEN,
 	SQLBOX_OP_PING,
+	SQLBOX_OP_ROLE,
 };
 
 /*
@@ -27,6 +28,7 @@ struct	sqlbox_db {
 	sqlite3			*db; /* database or NULL */
 	struct sqlbox_stmtq	 stmtq; /* used list */
 	size_t			 idx; /* source index */
+	size_t			 id; /* identifier */
 	TAILQ_ENTRY(sqlbox_db)	 entries;
 };
 
@@ -38,6 +40,7 @@ struct	sqlbox {
 	struct sqlbox_stmtq	 stmtq; /* free list */
 	struct sqlbox_dbq	 dbq /* all databases */;
 	int		  	 fd; /* comm channel or -1 */
+	size_t			 lastid; /* last db id */
 	pid_t		  	 pid; /* child or (pid_t)-1 */
 };
 

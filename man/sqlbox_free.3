@@ -32,7 +32,7 @@
 .Sh DESCRIPTION
 Frees the resources in
 .Fa box :
-shuts down the child process, which finalising any open statements and
+shuts down the child process, which finalises any open statements and
 closes any open databases.
 This does not free any of the
 .Vt sqlbox_cfg
@@ -43,6 +43,7 @@ If
 is
 .Dv NULL ,
 does nothing.
+The context should not be used subsequent this function.
 .\" .Sh RETURN VALUES
 .\" For sections 2, 3, and 9 function return values only.
 .\" .Sh ENVIRONMENT
@@ -50,7 +51,17 @@ does nothing.
 .\" .Sh FILES
 .\" .Sh EXIT STATUS
 .\" For sections 1, 6, and 8 only.
-.\" .Sh EXAMPLES
+.Sh EXAMPLES
+This trivial example allocates then frees a context.
+.Bd -literal
+struct sqlbox *p;
+struct sqlbox_cfg cfg;
+
+memset(&cfg, 0, sizeof(struct sqlbox_cfg));
+if ((p = sqlbox_alloc(&cfg)) == NULL)
+	errx(EXIT_FAILURE, "sqlbox_alloc");
+sqlbox_free(p);
+.Ed
 .\" .Sh DIAGNOSTICS
 .\" For sections 1, 4, 6, 7, 8, and 9 printf/stderr messages only.
 .\" .Sh ERRORS

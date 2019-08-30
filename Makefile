@@ -13,6 +13,8 @@ TESTS	 = test-alloc-bad-defrole \
 	    test-alloc-role \
 	    test-alloc-src \
 	    test-alloc-stmt \
+	    test-close-bad-id \
+	    test-close-bad-role \
 	    test-open-bad-not-exist \
 	    test-open-bad-role \
 	    test-open-bad-src \
@@ -20,6 +22,7 @@ TESTS	 = test-alloc-bad-defrole \
 	    test-open-memory \
 	    test-open-memory-role \
 	    test-open-not-found \
+	    test-open-twice \
 	    test-ping \
 	    test-ping-fail \
 	    test-role-bad-role \
@@ -42,7 +45,7 @@ compats.o $(OBJS) $(TESTS): config.h
 
 $(OBJS): sqlbox.h extern.h
 
-$(TESTS): libsqlbox.a
+$(TESTS): libsqlbox.a regress/regress.h
 	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ regress/$*.c compats.o $(LDFLAGS) libsqlbox.a -lsqlite3
 
 .for test in $(TESTS)

@@ -76,16 +76,19 @@ sqlbox_write(struct sqlbox *box, const char *buf, size_t sz)
 
 	for (;;) {
 		if (poll(&pfd, 1, INFTIM) == -1) {
-			sqlbox_warn(&box->cfg, "ppoll");
+			sqlbox_warn(&box->cfg, "ppoll (write)");
 			return 0;
 		} else if ((pfd.revents & (POLLNVAL|POLLERR)))  {
-			sqlbox_warnx(&box->cfg, "ppoll: nval (here)");
+			sqlbox_warnx(&box->cfg, 
+				"ppoll (write): nval");
 			return 0;
 		} else if ((pfd.revents & POLLHUP)) {
-			sqlbox_warnx(&box->cfg, "ppoll: hangup");
+			sqlbox_warnx(&box->cfg, 
+				"ppoll (write): hangup");
 			return 0;
 		} else if (!(POLLOUT & pfd.revents)) {
-			sqlbox_warnx(&box->cfg, "ppoll: bad revent");
+			sqlbox_warnx(&box->cfg, 
+				"ppoll (write): bad revent");
 			return 0;
 		}
 		if ((wsz = write(pfd.fd, buf + tsz, sz - tsz)) == -1) {
@@ -116,16 +119,19 @@ sqlbox_read(struct sqlbox *box, char *buf, size_t sz)
 
 	for (;;) {
 		if (poll(&pfd, 1, INFTIM) == -1) {
-			sqlbox_warn(&box->cfg, "ppoll");
+			sqlbox_warn(&box->cfg, "ppoll (read)");
 			return 0;
 		} else if ((pfd.revents & (POLLNVAL|POLLERR)))  {
-			sqlbox_warnx(&box->cfg, "ppoll: nval (no here)");
+			sqlbox_warnx(&box->cfg, 
+				"ppoll (read): nval");
 			return 0;
 		} else if ((pfd.revents & POLLHUP)) {
-			sqlbox_warnx(&box->cfg, "ppoll: hangup");
+			sqlbox_warnx(&box->cfg, 
+				"ppoll (read): hangup");
 			break;
 		} else if (!(POLLIN & pfd.revents)) {
-			sqlbox_warnx(&box->cfg, "ppoll: bad revent");
+			sqlbox_warnx(&box->cfg, 
+				"ppoll (read): bad revent");
 			return 0;
 		}
 
@@ -163,8 +169,8 @@ sqlbox_ping(struct sqlbox *box)
 	uint32_t	 syn, ack;
 
 	syn = arc4random();
-	if (!sqlbox_write_frame
-	    (box, SQLBOX_OP_PING, (char *)&syn, sizeof(uint32_t)))
+	if (!sqlbox_write_frame(box, 
+	    SQLBOX_OP_PING, (char *)&syn, sizeof(uint32_t)))
 		return 0;
 	if (!sqlbox_read(box, (char *)&ack, sizeof(uint32_t)))
 		return 0;
@@ -183,25 +189,108 @@ sqlbox_op_ping(struct sqlbox *box, const char *buf, size_t sz)
 	if (sz == sizeof(uint32_t))
 		return sqlbox_write(box, buf, sz);
 
-	sqlbox_warnx(&box->cfg, "%s: "
-		"bad frame size: %zu", __func__, sz);
+	sqlbox_warnx(&box->cfg, "cannot "
+		"ping: bad frame size: %zu", sz);
 	return 0;
 }
 
 int
-sqlbox_open(struct sqlbox *box, size_t src)
+sqlbox_close(struct sqlbox *box, size_t src)
 {
 	uint32_t	 v = htonl(src);
 
-	return sqlbox_write_frame(box, 
-		SQLBOX_OP_OPEN, (char *)&v, sizeof(uint32_t));
+	return sqlbox_write_frame(box,
+		SQLBOX_OP_CLOSE, (char *)&v, sizeof(uint32_t));
+}
+
+/*
+ * Close a database.
+ * First check if the identifier is valid, then whether our role permits
+ * closing databases.
+ */
+static int
+sqlbox_op_close(struct sqlbox *box, const char *buf, size_t sz)
+{
+	size_t		  i, id;
+	struct sqlbox_db *db;
+	int		  rc = 0;
+	const char	 *fn;
+
+	if (sz != sizeof(uint32_t)) {
+		sqlbox_warnx(&box->cfg, "cannot "
+			"close: bad frame size: %zu", sz);
+		return 0;
+	}
+
+	/* Check source exists. */
+
+	id = ntohl(*(uint32_t *)buf);
+	TAILQ_FOREACH(db, &box->dbq, entries)
+		if (db->id == id)
+			break;
+
+	if (db == NULL ){
+		sqlbox_warnx(&box->cfg, "cannot "
+			"close: invalid source %zu", id);
+		return 0;
+	}
+
+	assert(db->idx < box->cfg.srcs.srcsz);
+	fn = box->cfg.srcs.srcs[db->idx].fname;
+
+	/* Check open permissions for role. */
+
+	if (box->cfg.roles.rolesz) {
+		for (i = 0; i < box->cfg.roles.roles[box->role].srcsz; i++)
+			if (box->cfg.roles.roles[box->role].srcs[i] == db->idx)
+				break;
+		if (i == box->cfg.roles.roles[box->role].srcsz) {
+			sqlbox_warnx(&box->cfg, "%s: cannot close: "
+				"source %zu (id %zu) denied to role "
+				"%zu", fn, db->idx, id, box->role);
+			return 0;
+		}
+	}
+
+	/* Make sure we're ready to close. */
+
+	if (!TAILQ_EMPTY(&db->stmtq)) {
+		sqlbox_warnx(&box->cfg, "%s: cannot close: "
+			"source %zu (id %zu) has unfinalised "
+			"statements", fn, db->idx, id);
+		return 0;
+	}
+
+	TAILQ_REMOVE(&box->dbq, db, entries);
+
+	if (sqlite3_close(db->db) != SQLITE_OK) {
+		sqlbox_warnx(&box->cfg, "%s: cannot close: "
+			"%s", fn, sqlite3_errmsg(db->db));
+	} else
+		rc = 1;
+
+	free(db);
+	return rc;
+}
+
+size_t
+sqlbox_open(struct sqlbox *box, size_t src)
+{
+	uint32_t	 v = htonl(src), ack;
+
+	if (!sqlbox_write_frame
+	    (box, SQLBOX_OP_OPEN, (char *)&v, sizeof(uint32_t)))
+		return 0;
+	if (!sqlbox_read(box, (char *)&ack, sizeof(uint32_t)))
+		return 0;
+	return (size_t)ntohl(ack);
 }
 
 /*
  * Attempt to open a database.
  * First check if the index is valid, then whether our role permits
  * opening new databases.
- * Finally, 
+ * Writes back the unique identifier of the database.
  */
 static int
 sqlbox_op_open(struct sqlbox *box, const char *buf, size_t sz)
@@ -210,10 +299,11 @@ sqlbox_op_open(struct sqlbox *box, const char *buf, size_t sz)
 	int		  fl;
 	const char	 *fn;
 	struct sqlbox_db *db;
+	uint32_t	  ack;
 
 	if (sz != sizeof(uint32_t)) {
-		sqlbox_warnx(&box->cfg, "%s: "
-			"bad frame size: %zu", __func__, sz);
+		sqlbox_warnx(&box->cfg, "cannot "
+			"open: bad frame size: %zu", sz);
 		return 0;
 	}
 
@@ -221,11 +311,11 @@ sqlbox_op_open(struct sqlbox *box, const char *buf, size_t sz)
 
 	idx = ntohl(*(uint32_t *)buf);
 	if (idx >= box->cfg.srcs.srcsz) {
-		sqlbox_warnx(&box->cfg, "%s: invalid source "
-			"index %zu (have %zu)", __func__, idx, 
-			box->cfg.srcs.srcsz);
+		sqlbox_warnx(&box->cfg, "cannot open: invalid source "
+			"%zu (have %zu)", idx, box->cfg.srcs.srcsz);
 		return 0;
 	}
+	fn = box->cfg.srcs.srcs[idx].fname;
 
 	/* Check open permissions for role. */
 
@@ -234,9 +324,9 @@ sqlbox_op_open(struct sqlbox *box, const char *buf, size_t sz)
 			if (box->cfg.roles.roles[box->role].srcs[i] == idx)
 				break;
 		if (i == box->cfg.roles.roles[box->role].srcsz) {
-			sqlbox_warnx(&box->cfg, "%s: source index %zu "
-				"denied to current role %zu", __func__, 
-				idx, box->role);
+			sqlbox_warnx(&box->cfg, "%s: cannot open: "
+				"source %zu denied to role %zu", 
+				fn, idx, box->role);
 			return 0;
 		}
 	}
@@ -247,8 +337,8 @@ sqlbox_op_open(struct sqlbox *box, const char *buf, size_t sz)
 	}
 	TAILQ_INIT(&db->stmtq);
 	db->idx = idx;
+	db->id = ++box->lastid;
 
-	fn = box->cfg.srcs.srcs[idx].fname;
 	if (box->cfg.srcs.srcs[idx].mode == SQLBOX_SRC_RO)
 		fl = SQLITE_OPEN_READONLY;
 	else if (box->cfg.srcs.srcs[idx].mode == SQLBOX_SRC_RW)
@@ -268,17 +358,19 @@ again:
 		break;
 	default:
 		if (db->db != NULL) {
-			sqlbox_warnx(&box->cfg, "%s: %s", 
-				sqlite3_errmsg(db->db), fn);
+			sqlbox_warnx(&box->cfg, "%s: cannot open: "
+				"%s", fn, sqlite3_errmsg(db->db));
 			sqlite3_close(db->db);
 		} else
 			sqlbox_warnx(&box->cfg, 
-				"sqlite3_open_v2: %s", fn);
+				"%s: sqlite3_open_v2", fn);
 		free(db);
 		return 0;
 	}
 
-	return 1;
+	TAILQ_INSERT_TAIL(&box->dbq, db, entries);
+	ack = htonl(db->id);
+	return sqlbox_write(box, (char *)&ack, sizeof(uint32_t));
 }
 
 int
@@ -296,19 +388,20 @@ sqlbox_op_role(struct sqlbox *box, const char *buf, size_t sz)
 	size_t		i, role;
 
 	if (sz != sizeof(uint32_t)) {
-		sqlbox_warnx(&box->cfg, "%s: "
-			"bad frame size: %zu", __func__, sz);
+		sqlbox_warnx(&box->cfg, "cannot change "
+			"role: bad frame size: %zu", sz);
 		return 0;
 	} else if (box->cfg.roles.rolesz == 0) {
-		sqlbox_warnx(&box->cfg, "%s: no roles", __func__);
+		sqlbox_warnx(&box->cfg, "cannot change "
+			"role: no roles configured");
 		return 0;
 	}
 
 	role = ntohl(*(uint32_t *)buf);
 	
 	if (role > box->cfg.roles.rolesz) {
-		sqlbox_warnx(&box->cfg, "%s: invalid role "
-			"%zu (have %zu)", __func__, role, 
+		sqlbox_warnx(&box->cfg, "cannot change role: "
+			"invalid role %zu (have %zu)", role, 
 			box->cfg.roles.rolesz);
 		return 0;
 	}
@@ -316,9 +409,8 @@ sqlbox_op_role(struct sqlbox *box, const char *buf, size_t sz)
 	/* Transition into current role is a noop. */
 
 	if (role == box->role) {
-		sqlbox_warnx(&box->cfg, "%s: transition "
-			"into current role %zu (harmless)", 
-			__func__, role);
+		sqlbox_warnx(&box->cfg, "changing into "
+			"current role %zu (harmless)", role);
 		return 1;
 	}
 
@@ -329,9 +421,8 @@ sqlbox_op_role(struct sqlbox *box, const char *buf, size_t sz)
 			break;
 
 	if (i == box->cfg.roles.roles[box->role].rolesz) {
-		sqlbox_warnx(&box->cfg, "%s: role transition "
-			"from %zu into %zu not allowed", __func__, 
-			box->role, role);
+		sqlbox_warnx(&box->cfg, "cannot change role: role "
+			"%zu denied to role %zu", role, box->role);
 		return 0;
 	}
 
@@ -356,7 +447,7 @@ sqlbox_main_loop(struct sqlbox *p)
 
 	for (;;) {
 		if (poll(&pfd, 1, INFTIM) == -1) {
-			sqlbox_warn(&p->cfg, "ppoll");
+			sqlbox_warn(&p->cfg, "ppoll (main)");
 			return 0;
 		}
 
@@ -367,14 +458,17 @@ sqlbox_main_loop(struct sqlbox *p)
 		 */
 		
 		if ((pfd.revents & (POLLNVAL|POLLERR)))  {
-			sqlbox_warnx(&p->cfg, "ppoll: nval (last here)");
+			sqlbox_warnx(&p->cfg, 
+				"ppoll (main): nval");
 			return 0;
 		} else if ((pfd.revents & POLLHUP) && 
 		           !(pfd.revents & POLLIN)) {
-			sqlbox_warnx(&p->cfg, "ppoll: hangup");
+			sqlbox_warnx(&p->cfg, 
+				"ppoll (main): hangup");
 			break;
 		} else if (!(POLLIN & pfd.revents)) {
-			sqlbox_warnx(&p->cfg, "ppoll: unknown revent");
+			sqlbox_warnx(&p->cfg, 
+				"ppoll (main): bad event");
 			return 0;
 		}
 
@@ -410,6 +504,11 @@ sqlbox_main_loop(struct sqlbox *p)
 		assert(sz <= BUFSIZ - 8);
 
 		switch (op) {
+		case SQLBOX_OP_CLOSE:
+			if (sqlbox_op_close(p, buf + 8, sz))
+				break;
+			sqlbox_warnx(&p->cfg, "sqlbox_op_close");
+			return 0;
 		case SQLBOX_OP_OPEN:
 			if (sqlbox_op_open(p, buf + 8, sz))
 				break;
@@ -426,7 +525,8 @@ sqlbox_main_loop(struct sqlbox *p)
 			sqlbox_warnx(&p->cfg, "sqlbox_op_role");
 			return 0;
 		default:
-			sqlbox_warnx(&p->cfg, "unknown op: %d", op);
+			sqlbox_warnx(&p->cfg, 
+				"ppoll (main): unknown op: %d", op);
 			return 0;
 		}
 

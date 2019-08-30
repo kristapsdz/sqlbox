@@ -32,8 +32,8 @@
 .Sh DESCRIPTION
 Creates an sqlbox context: verifies
 .Fa cfg ,
-forks a child process, sanitises the environment, then waits for
-instructions over a socket pair.
+forks a child process, then the child waits for instructions over a
+socket pair while the parent returns.
 The
 .Fa cfg
 contents are inherited by the child process but never freed, so they may

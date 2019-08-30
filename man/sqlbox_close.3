@@ -15,62 +15,38 @@
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
 .Dd $Mdocdate$
-.Dt SQLBOX_OPEN 3
+.Dt SQLBOX_CLOSE 3
 .Os
 .Sh NAME
-.Nm sqlbox_open
-.Nd open a database
+.Nm sqlbox_close
+.Nd close a database
 .Sh LIBRARY
 .Lb sqlbox
 .Sh SYNOPSIS
 .In stddef.h
 .In sqlbox.h
-.Ft size_t
+.Ft int
 .Fo sqlbox_open
 .Fa "struct sqlbox *box"
-.Fa "size_t index"
+.Fa "size_t id"
 .Fc
 .Sh DESCRIPTION
-Open the database passed as a source to
-.Xr sqlbox_alloc 3
-at
-.Fa index .
+Close the database previously opened with
+.Xr sqlbox_open 3 .
+The caller must have a role capable of opening and closing the given
+database source.
 .Pp
-The source is connected to a filename
-.Va fname
-and an open mode
-.Va mode .
-See
-.Xr sqlite3_open16 3
-for a description of the filename, which may be (among other designations)
-.Qq :memory:\& ,
-an empty string, and so forth.
-Remote databases are not currently supported.
-.Pp
-The mode may be
-.Dv SQLBOX_SRC_RO
-for a readonly source,
-.Dv SQLBOX_SRC_RW
-for readable and writable, and
-.Dv SQLBOX_SRC_RWC
-to also be created.
-Note that in-memory databases need not provide the creation bit.
-.Pp
-If the source is not closed with
-.Xr sqlbox_close 3 ,
-it is automatically closed on
+If
+.Fn sqlbox_close
+is not called, the database will automatically be closed with
 .Xr sqlbox_free 3 .
 This is not considered an error, as a common usage pattern is a role
 with permission opening the database, shedding its role, then the close
 being relegated to the full destruction of the box.
-.Pp
-It's perfectly alright to open multiple databases of the same index,
-although it's probably not what you want.
 .Sh RETURN VALUES
-Returns an identifier >0 if communication with the box works, zero
-otherwise.
-Identifiers are always unique.
-If opening the source fails, subsequent access will fail.
+Returns non-zero if communication with the box works, zero otherwise.
+If closing the source fails (database not open or does not exist,
+statements not finalised), subsequent access will fail.
 Use
 .Xr sqlbox_ping 3
 to check synchronously.
@@ -80,15 +56,13 @@ to check synchronously.
 .\" .Sh FILES
 .\" .Sh EXIT STATUS
 .\" For sections 1, 6, and 8 only.
-.Sh EXAMPLES
-This opens an in-memory database then immediately exits.
+.\" .Sh EXAMPLES
 .\" .Sh DIAGNOSTICS
 .\" For sections 1, 4, 6, 7, 8, and 9 printf/stderr messages only.
 .\" .Sh ERRORS
 .\" For sections 2, 3, 4, and 9 errno settings only.
 .Sh SEE ALSO
-.Xr sqlbox_close 3 ,
-.Xr sqlbox_free 3 ,
+.Xr sqlbox_open 3 ,
 .Xr sqlbox_ping 3
 .\" .Sh STANDARDS
 .\" .Sh HISTORY

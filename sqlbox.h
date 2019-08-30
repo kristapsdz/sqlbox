@@ -77,7 +77,7 @@ struct	sqlbox_role {
 	size_t		 rolesz;  /* length of roles */
 	size_t		*stmts; /* statements we can call */
 	size_t		 stmtsz; /* length of stmts */
-	size_t		*srcs; /* databases we can open */
+	size_t		*srcs; /* databases we can open/close */
 	size_t		 srcsz; /* length of srcs */
 };
 
@@ -124,9 +124,11 @@ __BEGIN_DECLS
 
 struct sqlbox	*sqlbox_alloc(struct sqlbox_cfg *);
 void		 sqlbox_free(struct sqlbox *);
+
+int		 sqlbox_close(struct sqlbox *, size_t);
+size_t		 sqlbox_open(struct sqlbox *, size_t);
 int		 sqlbox_ping(struct sqlbox *);
 int	 	 sqlbox_role(struct sqlbox *, size_t);
-int		 sqlbox_open(struct sqlbox *, size_t);
 
 #if 0
 enum ksqlc	 ksql_bind_blob(struct ksqlstmt *, 
