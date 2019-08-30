@@ -1,5 +1,3 @@
-
-
 /*	$Id$ */
 /*
  * Copyright (c) 2019 Kristaps Dzonsons <kristaps@bsd.lv>
@@ -31,10 +29,7 @@
 #include <unistd.h>
 
 #include "../sqlbox.h"
-
-#ifndef nitems
-# define nitems(_a)	(sizeof((_a)) / sizeof((_a)[0]))
-#endif
+#include "regress.h"
 
 int
 main(int argc, char *argv[])

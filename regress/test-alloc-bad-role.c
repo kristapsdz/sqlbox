@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include "../sqlbox.h"
+#include "regress.h"
 
 int
 main(int argc, char *argv[])
