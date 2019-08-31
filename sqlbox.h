@@ -73,49 +73,87 @@
 	 (SQLBOX_VMAJOR+1)*10000)
 
 struct	sqlbox_role {
-	size_t		*roles; /* roles we can access */
-	size_t		 rolesz;  /* length of roles */
-	size_t		*stmts; /* statements we can call */
-	size_t		 stmtsz; /* length of stmts */
-	size_t		*srcs; /* databases we can open/close */
-	size_t		 srcsz; /* length of srcs */
+	size_t	*roles; /* roles we can access */
+	size_t	 rolesz;  /* length of roles */
+	size_t	*stmts; /* statements we can call */
+	size_t	 stmtsz; /* length of stmts */
+	size_t	*srcs; /* databases we can open/close */
+	size_t	 srcsz; /* length of srcs */
 };
 
 struct	sqlbox_roles {
-	struct sqlbox_role *roles; /* all roles or NULL */
-	size_t		    rolesz; /* no. roles or 0 */
-	size_t		    defrole; /* default role or 0 */
+	struct sqlbox_role	*roles; /* all roles or NULL */
+	size_t			 rolesz; /* no. roles or 0 */
+	size_t			 defrole; /* default role or 0 */
 };
 
+/*
+ * A prepared statement.
+ * Right now this is just the text, but will eventually include return
+ * and paramter types.
+ */
+struct	sqlbox_pstmt {
+	char	*stmt; /* prepared statement */
+};
+
+/*
+ * Set of all prepared statements.
+ */
 struct	sqlbox_pstmts {
-	char 		**stmts; /* all statements or NULL */
-	size_t		  stmtsz; /* no. statements or 0 */
+	struct sqlbox_pstmt 	*stmts; /* all statements */
+	size_t		 	 stmtsz; /* no. statements or 0 */
 };
 
+/*
+ * A database source.
+ */
 struct	sqlbox_src {
 	char		*fname; /* path to sqlite3 db */
 #define	SQLBOX_SRC_RO	 0 /* open read-only */
 #define	SQLBOX_SRC_RW	 1 /* open read-write */
 #define	SQLBOX_SRC_RWC	 2 /* read-write-create */
-	int		 mode;
+	int		 mode; /* open mode */
 };
 
+/*
+ * Set of all database sources.
+ */
 struct	sqlbox_srcs {
-	struct sqlbox_src *srcs; /* all sources or NULL */
-	size_t		   srcsz; /* no. sources or 0 */
+	struct sqlbox_src	*srcs; /* all sources or NULL */
+	size_t			 srcsz; /* no. sources or 0 */
 };
 
+/*
+ * How we pass messages to the frontend.
+ * We first check if func is non-NULL, then func_short.
+ * The reason for func_short is that it's used for things like warnx
+ * that don't take any additional parameters.
+ */
 struct	sqlbox_msg {
-	void		(*func)(const char *, void *);
-	void		(*func_short)(const char *, ...);
-	void		 *dat;
+	void	(*func)(const char *, void *);
+	void	(*func_short)(const char *, ...);
+	void	 *dat; /* passed to func */
 };
 
 struct	sqlbox_cfg {
-	struct sqlbox_pstmts stmts; /* statements */
-	struct sqlbox_roles  roles; /* RBAC roles */
-	struct sqlbox_srcs   srcs; /* databases */
-	struct sqlbox_msg    msg; /* message system */
+	struct sqlbox_pstmts	stmts; /* statements */
+	struct sqlbox_roles	roles; /* RBAC roles */
+	struct sqlbox_srcs	srcs; /* databases */
+	struct sqlbox_msg	msg; /* message system */
+};
+
+enum	sqlbox_boundt {
+	SQLBOX_BOUND_INT,
+	SQLBOX_BOUND_NULL,
+	SQLBOX_BOUND_STRING,
+};
+
+struct	sqlbox_bound {
+	union {
+		int64_t		 iparm;
+		char		*sparm;
+	};
+	enum sqlbox_boundt	 type;
 };
 
 struct	sqlbox;
@@ -129,6 +167,8 @@ int		 sqlbox_close(struct sqlbox *, size_t);
 size_t		 sqlbox_open(struct sqlbox *, size_t);
 int		 sqlbox_ping(struct sqlbox *);
 int	 	 sqlbox_role(struct sqlbox *, size_t);
+size_t		 sqlbox_prepare_bind(struct sqlbox *, size_t,
+			size_t, size_t, const struct sqlbox_bound *);
 
 #if 0
 enum ksqlc	 ksql_bind_blob(struct ksqlstmt *, 
@@ -138,12 +178,8 @@ enum ksqlc	 ksql_bind_int(struct ksqlstmt *, size_t, int64_t);
 enum ksqlc	 ksql_bind_null(struct ksqlstmt *, size_t);
 enum ksqlc	 ksql_bind_str(struct ksqlstmt *, size_t, const char *);
 enum ksqlc	 ksql_bind_zblob(struct ksqlstmt *, size_t, size_t);
-void		 ksql_cfg_defaults(struct ksqlcfg *);
-enum ksqlc	 ksql_close(struct ksql *);
 enum ksqlc	 ksql_exec(struct ksql *, const char *, size_t);
-enum ksqlc	 ksql_free(struct ksql *);
 enum ksqlc	 ksql_lastid(struct ksql *, int64_t *);
-enum ksqlc	 ksql_open(struct ksql *, const char *);
 enum ksqlc	 ksql_result_blob(struct ksqlstmt *, const void **, size_t *, size_t);
 enum ksqlc	 ksql_result_blob_alloc(struct ksqlstmt *, void **, size_t *, size_t);
 enum ksqlc	 ksql_result_bytes(struct ksqlstmt *, size_t *, size_t);

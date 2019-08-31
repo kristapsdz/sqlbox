@@ -43,6 +43,10 @@ is not called, the database will automatically be closed with
 This is not considered an error, as a common usage pattern is a role
 with permission opening the database, shedding its role, then the close
 being relegated to the full destruction of the box.
+.Pp
+Once a source identifier has been closed, subsequent calls to
+.Fn sqlbox_close
+with the same identifier will fail.
 .Sh RETURN VALUES
 Returns non-zero if communication with the box works, zero otherwise.
 If closing the source fails (database not open or does not exist,

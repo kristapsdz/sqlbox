@@ -13,8 +13,10 @@ TESTS	 = test-alloc-bad-defrole \
 	    test-alloc-role \
 	    test-alloc-src \
 	    test-alloc-stmt \
+	    test-close \
 	    test-close-bad-id \
 	    test-close-bad-role \
+	    test-close-twice \
 	    test-open-bad-not-exist \
 	    test-open-bad-role \
 	    test-open-bad-src \
@@ -25,6 +27,8 @@ TESTS	 = test-alloc-bad-defrole \
 	    test-open-twice \
 	    test-ping \
 	    test-ping-fail \
+	    test-prepare_bind-bad-src \
+	    test-prepare_bind-bad-stmt \
 	    test-role-bad-role \
 	    test-role-bad-transition \
 	    test-role-norole \

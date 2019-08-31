@@ -29,27 +29,29 @@ int
 main(int argc, char *argv[])
 {
 	struct sqlbox		*p;
-	struct sqlbox_cfg	 cfg;
 	struct sqlbox_src	 srcs[] = {
-		{ .fname = (char *)"hope-this-doesnt-exist.db" }
+		{ .fname = (char *)":memory:",
+		  .mode = SQLBOX_SRC_RWC },
 	};
+	struct sqlbox_cfg	 cfg;
+	size_t			 id;
 
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 	cfg.msg.func_short = warnx;
-
 	cfg.srcs.srcsz = nitems(srcs);
 	cfg.srcs.srcs = srcs;
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
 		return EXIT_FAILURE;
 
-	/* Fail: not an available index. */
-
-	if (!sqlbox_open(p, 1))
+	if (!(id = sqlbox_open(p, 0)))
+		return EXIT_FAILURE;
+	if (!sqlbox_close(p, id))
+		return EXIT_FAILURE;
+	if (!sqlbox_close(p, id))
 		return EXIT_FAILURE;
 	if (sqlbox_ping(p))
 		return EXIT_FAILURE;
-
 	sqlbox_free(p);
 	return EXIT_SUCCESS;
 }

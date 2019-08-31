@@ -41,6 +41,13 @@
 #include "sqlbox.h"
 #include "extern.h"
 
+/*
+ * Clear all allocated resources in an sqlbox.
+ * Of focus are the communication channels between client and server
+ * (both ways), the list of open databases and their statements (server
+ * only), and the transmission buffer (both).
+ * Does nothing if "p" is NULL.
+ */
 static void
 sqlbox_clear(struct sqlbox *p)
 {
@@ -53,12 +60,15 @@ sqlbox_clear(struct sqlbox *p)
 		close(p->fd);
 
 	TAILQ_FOREACH(db, &p->dbq, entries) {
-		sqlbox_warnx(&p->cfg, "source %zu "
-			"still open on exit", db->idx);
+		sqlbox_warnx(&p->cfg, "%s: source %zu "
+			"still open on exit", 
+			db->src->fname, db->idx);
 		while ((stmt = TAILQ_FIRST(&db->stmtq)) != NULL) {
-			sqlbox_warnx(&p->cfg, "stmt %zu "
+			sqlbox_warnx(&p->cfg, "%s: stmt %zu "
 				"source %zu not finalised on exit", 
-				stmt->idx, db->idx);
+				db->src->fname, stmt->idx, db->idx);
+			sqlbox_warnx(&p->cfg, "%s: statement: %s",
+				db->src->fname, stmt->pstmt->stmt);
 			sqlite3_finalize(stmt->stmt);
 			stmt->stmt = NULL;
 			TAILQ_REMOVE(&db->stmtq, stmt, entries);
@@ -71,6 +81,8 @@ sqlbox_clear(struct sqlbox *p)
 		TAILQ_REMOVE(&p->stmtq, stmt, entries);
 		free(stmt);
 	}
+
+	free(p->buf);
 }
 
 void
@@ -105,7 +117,7 @@ sqlbox_cfg_vrfy(const struct sqlbox_cfg *cfg)
 	/* We mustn't have a NULL statement. */
 
 	for (i = 0; i < cfg->stmts.stmtsz; i++)
-		if (cfg->stmts.stmts[i] == NULL) {
+		if (cfg->stmts.stmts[i].stmt == NULL) {
 			sqlbox_warnx(cfg, "statement %zu "
 				"has NULL statement", i);
 			return 0;

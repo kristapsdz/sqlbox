@@ -30,22 +30,20 @@ main(int argc, char *argv[])
 {
 	struct sqlbox		*p;
 	struct sqlbox_cfg	 cfg;
+	struct sqlbox_role	 roles[] = {
+		{ .rolesz = 0,
+		  .stmts = (size_t[]){ 1 },
+		  .stmtsz = 1,
+		  .srcsz = 0 }
+	};
 
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 	cfg.msg.func_short = warnx;
-
-	cfg.roles.rolesz = 1;
-	cfg.roles.roles = calloc(1, sizeof(struct sqlbox_role));
-	if (cfg.roles.roles == NULL)
-		err(EXIT_FAILURE, NULL);
-	cfg.roles.roles[0].stmtsz = 1;
-	cfg.roles.roles[0].stmts = calloc(1, sizeof(size_t));
-	if (cfg.roles.roles[0].stmts == NULL)
-		err(EXIT_FAILURE, NULL);
+	cfg.roles.rolesz = nitems(roles);
+	cfg.roles.roles = roles;
 
 	/* This should fail: we defined a bad statement. */
 
-	cfg.roles.roles[0].stmts[0] = 1;
 	p = sqlbox_alloc(&cfg);
 	return p == NULL ? EXIT_SUCCESS : EXIT_FAILURE;
 }

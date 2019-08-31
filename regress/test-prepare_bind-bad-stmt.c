@@ -28,10 +28,14 @@
 int
 main(int argc, char *argv[])
 {
+	size_t		 	 dbid;
 	struct sqlbox		*p;
 	struct sqlbox_cfg	 cfg;
 	struct sqlbox_src	 srcs[] = {
-		{ .fname = (char *)"hope-this-doesnt-exist.db" }
+		{ .fname = (char *)":memory:" }
+	};
+	struct sqlbox_pstmt	 pstmts[] = {
+		{ .stmt = (char *)"create table foo" }
 	};
 
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));
@@ -39,17 +43,21 @@ main(int argc, char *argv[])
 
 	cfg.srcs.srcsz = nitems(srcs);
 	cfg.srcs.srcs = srcs;
+	cfg.stmts.stmtsz = nitems(pstmts);
+	cfg.stmts.stmts = pstmts;
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
 		return EXIT_FAILURE;
 
-	/* Fail: not an available index. */
-
-	if (!sqlbox_open(p, 1))
+	if (!(dbid = sqlbox_open(p, 0)))
 		return EXIT_FAILURE;
-	if (sqlbox_ping(p))
+	if (!sqlbox_ping(p))
 		return EXIT_FAILURE;
 
+	/* Fail: not an available statement. */
+
+	if (sqlbox_prepare_bind(p, dbid, 1, 0, NULL))
+		return EXIT_FAILURE;
 	sqlbox_free(p);
 	return EXIT_SUCCESS;
 }

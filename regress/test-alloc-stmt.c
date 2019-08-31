@@ -30,30 +30,26 @@ main(int argc, char *argv[])
 {
 	struct sqlbox		*p;
 	struct sqlbox_cfg	 cfg;
+	struct sqlbox_pstmt	 stmts[] = {
+		{ .stmt = (char *)"..." } 
+	};
+	struct sqlbox_role	roles[] = {
+		{ .rolesz = 0,
+		  .stmtsz = 1,
+		  .stmts = (size_t[]){ 0 },
+		  .srcsz = 0 }
+	};
 
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 	cfg.msg.func_short = warnx;
 
-	cfg.stmts.stmtsz = 1;
-	cfg.stmts.stmts = calloc(1, sizeof(char *));
-	if (cfg.stmts.stmts == NULL)
-		err(EXIT_FAILURE, NULL);
-	cfg.stmts.stmts[0] = strdup("...");
-	if (cfg.stmts.stmts[0] == NULL)
-		err(EXIT_FAILURE, NULL);
+	cfg.stmts.stmtsz = nitems(stmts);
+	cfg.stmts.stmts = stmts;
 
-	cfg.roles.rolesz = 1;
-	cfg.roles.roles = calloc(1, sizeof(struct sqlbox_role));
-	if (cfg.roles.roles == NULL)
-		err(EXIT_FAILURE, NULL);
-	cfg.roles.roles[0].stmtsz = 1;
-	cfg.roles.roles[0].stmts = calloc(1, sizeof(size_t));
-	if (cfg.roles.roles[0].stmts == NULL)
-		err(EXIT_FAILURE, NULL);
+	cfg.roles.rolesz = nitems(roles);
+	cfg.roles.roles = roles;
 
 	/* This should succeed: we defined a good statement. */
-
-	cfg.roles.roles[0].stmts[0] = 0;
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
 		return EXIT_FAILURE;
