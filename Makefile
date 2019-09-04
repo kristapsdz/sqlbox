@@ -29,16 +29,24 @@ TESTS	 = test-alloc-bad-defrole \
 	    test-ping-fail \
 	    test-prepare_bind-bad-src \
 	    test-prepare_bind-bad-stmt \
+	    test-prepare_bind-noparms \
+	    test-prepare_bind-simple \
 	    test-role-bad-role \
 	    test-role-bad-transition \
 	    test-role-norole \
 	    test-role-transition \
 	    test-role-transition-self
 OBJS	  = alloc.o \
+	    bound.o \
+	    close.o \
+	    io.o \
 	    main.o \
+	    open.o \
+	    ping.o \
+	    prepare_bind.o \
 	    warn.o
 LDFLAGS	 += -L/usr/local/lib
-CPPFLAGS += -I/usr/local/include
+CPPFLAGS += -I/usr/local/include -DDEBUG
 
 all: libsqlbox.a
 

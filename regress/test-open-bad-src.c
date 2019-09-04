@@ -45,9 +45,7 @@ main(int argc, char *argv[])
 
 	/* Fail: not an available index. */
 
-	if (!sqlbox_open(p, 1))
-		return EXIT_FAILURE;
-	if (sqlbox_ping(p))
+	if (sqlbox_open(p, 1))
 		return EXIT_FAILURE;
 
 	sqlbox_free(p);

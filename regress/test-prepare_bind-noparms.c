@@ -16,17 +16,11 @@
  */
 #include "../config.h"
 
-#include <sys/param.h>
-#include <sys/stat.h>
-
 #if HAVE_ERR
 # include <err.h>
 #endif
-#include <fcntl.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
 #include "../sqlbox.h"
 #include "regress.h"
@@ -34,34 +28,35 @@
 int
 main(int argc, char *argv[])
 {
-	char			 db[MAXPATHLEN];
-	struct stat		 st;
+	size_t		 	 dbid;
 	struct sqlbox		*p;
 	struct sqlbox_cfg	 cfg;
 	struct sqlbox_src	 srcs[] = {
-		{ .fname = db,
-		  .mode = SQLBOX_SRC_RW }
+		{ .fname = (char *)":memory:" }
+	};
+	struct sqlbox_pstmt	 pstmts[] = {
+		{ .stmt = (char *)"create table foo (foo INTEGER)" }
 	};
 
-	strlcpy(db, tmpnam(NULL), sizeof(db));
-
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));
-	cfg.srcs.srcs = srcs;
-	cfg.srcs.srcsz = nitems(srcs);
 	cfg.msg.func_short = warnx;
 
-	if (stat(srcs[0].fname, &st) != -1)
-		errx(EXIT_FAILURE, "%s: exists", srcs[0].fname);
+	cfg.srcs.srcsz = nitems(srcs);
+	cfg.srcs.srcs = srcs;
+	cfg.stmts.stmtsz = nitems(pstmts);
+	cfg.stmts.stmts = pstmts;
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
 		return EXIT_FAILURE;
-	if (sqlbox_open(p, 0))
+
+	if (!(dbid = sqlbox_open(p, 0)))
 		return EXIT_FAILURE;
-
+	if (!sqlbox_ping(p))
+		return EXIT_FAILURE;
+	if (!sqlbox_prepare_bind(p, dbid, 0, 0, NULL))
+		return EXIT_FAILURE;
+	if (!sqlbox_ping(p))
+		return EXIT_FAILURE;
 	sqlbox_free(p);
-
-	if (stat(srcs[0].fname, &st) != -1)
-		errx(EXIT_FAILURE, "%s: exists", srcs[0].fname);
-
 	return EXIT_SUCCESS;
 }

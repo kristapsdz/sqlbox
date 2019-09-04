@@ -151,7 +151,7 @@ enum	sqlbox_boundt {
 struct	sqlbox_bound {
 	union {
 		int64_t		 iparm;
-		char		*sparm;
+		const char	*sparm;
 	};
 	enum sqlbox_boundt	 type;
 };
@@ -169,6 +169,7 @@ int		 sqlbox_ping(struct sqlbox *);
 int	 	 sqlbox_role(struct sqlbox *, size_t);
 size_t		 sqlbox_prepare_bind(struct sqlbox *, size_t,
 			size_t, size_t, const struct sqlbox_bound *);
+int		 sqlbox_step(struct sqlbox *, size_t);
 
 #if 0
 enum ksqlc	 ksql_bind_blob(struct ksqlstmt *, 

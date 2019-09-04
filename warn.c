@@ -33,6 +33,28 @@
 #include "extern.h"
 
 void
+sqlbox_debug(const struct sqlbox_cfg *cfg, const char *fmt, ...)
+{
+#ifdef DEBUG
+	va_list	 ap;
+	char	 buf[BUFSIZ]; /* FIXME */
+
+	if (cfg == NULL)
+		return;
+	if (cfg->msg.func == NULL &&
+	    cfg->msg.func_short == NULL)
+		return;
+	va_start(ap, fmt);
+	vsnprintf(buf, sizeof(buf), fmt, ap);
+	va_end(ap);
+	if (cfg->msg.func != NULL)
+		cfg->msg.func(buf, cfg->msg.dat);
+	else
+		cfg->msg.func_short(buf);
+#endif
+}
+
+void
 sqlbox_warnx(const struct sqlbox_cfg *cfg, const char *fmt, ...)
 {
 	va_list	 ap;

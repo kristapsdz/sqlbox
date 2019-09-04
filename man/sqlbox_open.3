@@ -68,12 +68,7 @@ It's perfectly alright to open multiple databases of the same index,
 although it's probably not what you want.
 .Sh RETURN VALUES
 Returns an identifier >0 if communication with the box works, zero
-otherwise.
-Identifiers are always unique.
-If opening the source fails, subsequent access will fail.
-Use
-.Xr sqlbox_ping 3
-to check synchronously.
+otherwise (opening the source files, etc.).
 .\" For sections 2, 3, and 9 function return values only.
 .\" .Sh ENVIRONMENT
 .\" For sections 1, 6, 7, and 8 only.
@@ -88,8 +83,7 @@ This opens an in-memory database then immediately exits.
 .\" For sections 2, 3, 4, and 9 errno settings only.
 .Sh SEE ALSO
 .Xr sqlbox_close 3 ,
-.Xr sqlbox_free 3 ,
-.Xr sqlbox_ping 3
+.Xr sqlbox_free 3
 .\" .Sh STANDARDS
 .\" .Sh HISTORY
 .\" .Sh AUTHORS

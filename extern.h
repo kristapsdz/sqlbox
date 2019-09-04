@@ -7,6 +7,7 @@ enum	sqlbox_op {
 	SQLBOX_OP_PING,
 	SQLBOX_OP_PREPARE_BIND,
 	SQLBOX_OP_ROLE,
+	SQLBOX_OP_STEP,
 };
 
 /*
@@ -51,8 +52,28 @@ struct	sqlbox {
 	size_t		  	 bufsz; /* send buffer size */
 };
 
-void	 sqlbox_warn(const struct sqlbox_cfg *, const char *, ...);
-void	 sqlbox_warnx(const struct sqlbox_cfg *, const char *, ...);
+void	 sqlbox_sleep(size_t);
+struct sqlbox_db *sqlbox_db_find(struct sqlbox *, size_t);
+void	 sqlbox_warn(const struct sqlbox_cfg *, const char *, ...)
+		__attribute__((format(printf, 2, 3)));
+void	 sqlbox_warnx(const struct sqlbox_cfg *, const char *, ...)
+		__attribute__((format(printf, 2, 3)));
+void	 sqlbox_debug(const struct sqlbox_cfg *, const char *, ...)
+		__attribute__((format(printf, 2, 3)));
 int	 sqlbox_main_loop(struct sqlbox *);
+
+int	 sqlbox_read(struct sqlbox *, char *, size_t);
+int	 sqlbox_read_frame(struct sqlbox *, const char **, size_t *);
+int	 sqlbox_write(struct sqlbox *, const char *, size_t);
+int	 sqlbox_write_frame(struct sqlbox *,
+		enum sqlbox_op, const char *, size_t);
+
+int	 sqlbox_bound_pack(struct sqlbox *, size_t, const struct sqlbox_bound *, char **, size_t *, size_t *);
+int	 sqlbox_bound_unpack(struct sqlbox *, size_t *, struct sqlbox_bound **, const char *, size_t);
+
+int	 sqlbox_op_close(struct sqlbox *, const char *, size_t);
+int	 sqlbox_op_open(struct sqlbox *, const char *, size_t);
+int	 sqlbox_op_ping(struct sqlbox *, const char *, size_t);
+int	 sqlbox_op_prepare_bind(struct sqlbox *, const char *, size_t);
 
 #endif /* !EXTERN_H */

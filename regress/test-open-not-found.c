@@ -48,9 +48,7 @@ main(int argc, char *argv[])
 
 	/* Fail: we didn't give it the "create" flag. */
 
-	if (!sqlbox_open(p, 0))
-		return EXIT_FAILURE;
-	if (sqlbox_ping(p))
+	if (sqlbox_open(p, 0))
 		return EXIT_FAILURE;
 
 	sqlbox_free(p);

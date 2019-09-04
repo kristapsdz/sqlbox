@@ -58,6 +58,7 @@ main(int argc, char *argv[])
 
 	if (sqlbox_prepare_bind(p, 0, 0, 0, NULL))
 		return EXIT_FAILURE;
+
 	sqlbox_free(p);
 	return EXIT_SUCCESS;
 }
