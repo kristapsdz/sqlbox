@@ -257,14 +257,17 @@ again:
 	st->db = db;
 	st->id = ++box->lastid;
 	TAILQ_INSERT_TAIL(&db->stmtq, st, entries);
+	TAILQ_INSERT_TAIL(&box->stmtq, st, gentries);
 
-	ack = htonl(db->id);
+	ack = htonl(st->id);
+
 	if (!sqlbox_write(box, (char *)&ack, sizeof(uint32_t))) {
 		sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
 			"sqlbox_write", db->src->fname);
 		sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
 			"statement: %s", db->src->fname, pst->stmt);
 		TAILQ_REMOVE(&db->stmtq, st, entries);
+		TAILQ_REMOVE(&box->stmtq, st, gentries);
 		sqlite3_finalize(stmt);
 		free(st);
 		return 0;

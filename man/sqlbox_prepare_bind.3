@@ -1,0 +1,88 @@
+.\"	$Id$
+.\"
+.\" Copyright (c) 2019 Kristaps Dzonsons <kristaps@bsd.lv>
+.\"
+.\" Permission to use, copy, modify, and distribute this software for any
+.\" purpose with or without fee is hereby granted, provided that the above
+.\" copyright notice and this permission notice appear in all copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\" WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\" ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\" WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+.\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+.\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd $Mdocdate$
+.Dt SQLBOX_PREPARE_BIND 3
+.Os
+.Sh NAME
+.Nm sqlbox_prepare_bind
+.Nd prepare a statement and bind parameters
+.Sh LIBRARY
+.Lb sqlbox
+.Sh SYNOPSIS
+.In stddef.h
+.In sqlbox.h
+.Ft size_t
+.Fo sqlbox_prepare_bind
+.Fa "struct sqlbox *box"
+.Fa "size_t srcid"
+.Fa "size_t stmtidx"
+.Fa "size_t psz"
+.Fa "const struct sqlbox_bound *ps"
+.Fc
+.Sh DESCRIPTION
+Prepares an SQL statement and binds parameters to it.
+The SQL statement is index
+.Fa stmtidx
+in the statements given to
+.Xr sqlbox_alloc 3 .
+The database source is identified as
+.Fa srcid ,
+the return value of
+.Xr sqlbox_open 3 .
+The number of parameters
+.Fa psz
+must match the prepared statement parameters given in the SQL or zero.
+The
+.Fa ps
+array consists of typed values bound to those parameters.
+.Pp
+If
+.Fn sqlbox_prepare_bind
+returns a non-zero value, it must later be finalised with
+.Xr sqlbox_finalise 3 .
+Statements are automatically finalised when the database is closed or
+the system exits.
+The former case of
+.Xr sqlbox_close 3
+without finalised statements will result in an error.
+.Sh RETURN VALUES
+Returns zero if memory allocation fails, communication with the box
+fails, the statement could not be prepared due to an illegal statement
+or database value, the current role cannot prepare the given statement,
+or the database itself raises an error.
+Otherwise it returns the >0 statement identifier.
+.\" For sections 2, 3, and 9 function return values only.
+.\" .Sh ENVIRONMENT
+.\" For sections 1, 6, 7, and 8 only.
+.\" .Sh FILES
+.\" .Sh EXIT STATUS
+.\" For sections 1, 6, and 8 only.
+.\" .Sh EXAMPLES
+.\" .Sh DIAGNOSTICS
+.\" For sections 1, 4, 6, 7, 8, and 9 printf/stderr messages only.
+.\" .Sh ERRORS
+.\" For sections 2, 3, 4, and 9 errno settings only.
+.Sh SEE ALSO
+.Xr sqlbox_finalise 3 ,
+.Xr sqlbox_open 3
+.\" .Sh STANDARDS
+.\" .Sh HISTORY
+.\" .Sh AUTHORS
+.\" .Sh CAVEATS
+.\" .Sh BUGS
+.\" .Sh SECURITY CONSIDERATIONS
+.\" Not used in OpenBSD.

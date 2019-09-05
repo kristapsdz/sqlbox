@@ -49,48 +49,43 @@
  * Does nothing if "p" is NULL.
  */
 static void
-sqlbox_clear(struct sqlbox *p)
+sqlbox_clear(struct sqlbox *box)
 {
 	struct sqlbox_db 	*db;
 	struct sqlbox_stmt	*stmt;
 
-	if (p == NULL)
+	if (box == NULL)
 		return;
-	if (p->fd != -1)
-		close(p->fd);
+	if (box->fd != -1)
+		close(box->fd);
 
-	TAILQ_FOREACH(db, &p->dbq, entries) {
-		sqlbox_warnx(&p->cfg, "%s: source %zu "
+	TAILQ_FOREACH(db, &box->dbq, entries) {
+		sqlbox_warnx(&box->cfg, "%s: source %zu "
 			"still open on exit", 
 			db->src->fname, db->idx);
 		while ((stmt = TAILQ_FIRST(&db->stmtq)) != NULL) {
-			sqlbox_warnx(&p->cfg, "%s: stmt %zu "
+			sqlbox_warnx(&box->cfg, "%s: stmt %zu "
 				"source %zu not finalised on exit", 
 				db->src->fname, stmt->idx, db->idx);
-			sqlbox_warnx(&p->cfg, "%s: statement: %s",
+			sqlbox_warnx(&box->cfg, "%s: statement: %s",
 				db->src->fname, stmt->pstmt->stmt);
 			sqlite3_finalize(stmt->stmt);
-			stmt->stmt = NULL;
 			TAILQ_REMOVE(&db->stmtq, stmt, entries);
-			TAILQ_INSERT_TAIL(&p->stmtq, stmt, entries);
+			TAILQ_REMOVE(&box->stmtq, stmt, gentries);
+			free(stmt);
 		}
 		sqlite3_close(db->db);
 	}
 
-	while ((stmt = TAILQ_FIRST(&p->stmtq)) != NULL) {
-		TAILQ_REMOVE(&p->stmtq, stmt, entries);
-		free(stmt);
-	}
-
-	free(p->buf);
+	assert(TAILQ_EMPTY(&box->stmtq));
 }
 
 void
-sqlbox_free(struct sqlbox *p)
+sqlbox_free(struct sqlbox *box)
 {
 
-	sqlbox_clear(p);
-	free(p);
+	sqlbox_clear(box);
+	free(box);
 }
 
 /*
@@ -181,23 +176,23 @@ sqlbox_cfg_vrfy(const struct sqlbox_cfg *cfg)
  * Returns FALSE on memory allocation failure and TRUE otherwise.
  */
 static int
-sqlbox_init(struct sqlbox *p,
+sqlbox_init(struct sqlbox *box,
 	const struct sqlbox_cfg *cfg, int fd, pid_t pid)
 {
 
-	memset(p, 0, sizeof(struct sqlbox));
+	memset(box, 0, sizeof(struct sqlbox));
 
 	if (cfg != NULL)
-		p->cfg = *cfg;
+		box->cfg = *cfg;
 
 	/* Start in default role (no effect if roles disabled). */
 
-	p->role = p->cfg.roles.defrole;
-	p->fd = fd;
-	p->pid = pid;
+	box->role = box->cfg.roles.defrole;
+	box->fd = fd;
+	box->pid = pid;
 
-	TAILQ_INIT(&p->stmtq);
-	TAILQ_INIT(&p->dbq);
+	TAILQ_INIT(&box->dbq);
+	TAILQ_INIT(&box->stmtq);
 	return 1;
 }
 

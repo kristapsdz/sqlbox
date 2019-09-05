@@ -127,8 +127,8 @@ sqlbox_read(struct sqlbox *box, char *buf, size_t sz)
  * Return <0 on failure, 0 on EOF without data, >0 on success.
  */
 int
-sqlbox_read_frame(struct sqlbox *box, 
-	const char **frame, size_t *framesz)
+sqlbox_read_frame(struct sqlbox *box, char **buf, 
+	size_t *bufsz, const char **frame, size_t *framesz)
 {
 	struct pollfd	 pfd = { .fd = box->fd, .events = POLLIN };
 	ssize_t		 rsz;
@@ -144,15 +144,15 @@ sqlbox_read_frame(struct sqlbox *box,
 	 */
 	
 	bsz = 1024;
-	if (box->bufsz == 0) {
-		assert(box->buf == NULL);
-		if ((box->buf = malloc(bsz)) == NULL) {
+	if (*bufsz == 0) {
+		assert(*buf == NULL);
+		if ((*buf = malloc(bsz)) == NULL) {
 			sqlbox_warn(&box->cfg, "malloc");
 			return -1;
 		}
-		box->bufsz = bsz;
+		*bufsz = bsz;
 	}
-	assert(box->bufsz >= bsz);
+	assert(*bufsz >= bsz);
 
 	/*
 	 * Start by reading the frame basis, which is always of size
@@ -178,7 +178,7 @@ sqlbox_read_frame(struct sqlbox *box,
 			return -1;
 		}
 
-		rsz = read(pfd.fd, box->buf + sz, bsz - sz);
+		rsz = read(pfd.fd, *buf + sz, bsz - sz);
 		if (rsz == -1) {
 			sqlbox_warn(&box->cfg, "read");
 			return -1;
@@ -208,18 +208,18 @@ sqlbox_read_frame(struct sqlbox *box,
 	 * frame size integer.
 	 */
 
-	*framesz = ntohl(*(uint32_t *)box->buf);
+	*framesz = ntohl(*(uint32_t *)*buf);
 	bsz = *framesz + sizeof(uint32_t);
 
-	if (bsz > box->bufsz) {
-		if ((pp = realloc(box->buf, bsz)) == NULL) {
+	if (bsz > *bufsz) {
+		if ((pp = realloc(*buf, bsz)) == NULL) {
 			sqlbox_warn(&box->cfg, "realloc");
 			return -1;
 		}
-		box->buf = pp;
-		box->bufsz = bsz;
+		*buf = pp;
+		*bufsz = bsz;
 	}
-	*frame = box->buf + sizeof(uint32_t);
+	*frame = *buf + sizeof(uint32_t);
 
 	/* Everything was in the first frame. */
 
@@ -245,7 +245,7 @@ sqlbox_read_frame(struct sqlbox *box,
 			return -1;
 		}
 
-		rsz = read(pfd.fd, box->buf + sz, bsz - sz);
+		rsz = read(pfd.fd, *buf + sz, bsz - sz);
 		if (rsz == -1) {
 			sqlbox_warn(&box->cfg, "read");
 			return -1;

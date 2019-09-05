@@ -17,6 +17,9 @@ TESTS	 = test-alloc-bad-defrole \
 	    test-close-bad-id \
 	    test-close-bad-role \
 	    test-close-twice \
+	    test-finalise \
+	    test-finalise-bad-stmt \
+	    test-finalise-twice \
 	    test-open-bad-not-exist \
 	    test-open-bad-role \
 	    test-open-bad-src \
@@ -39,11 +42,14 @@ TESTS	 = test-alloc-bad-defrole \
 OBJS	  = alloc.o \
 	    bound.o \
 	    close.o \
+	    finalise.o \
 	    io.o \
 	    main.o \
 	    open.o \
 	    ping.o \
 	    prepare_bind.o \
+	    role.o \
+	    step.o \
 	    warn.o
 LDFLAGS	 += -L/usr/local/lib
 CPPFLAGS += -I/usr/local/include -DDEBUG

@@ -71,129 +71,30 @@ sqlbox_db_find(struct sqlbox *box, size_t id)
 	return NULL;
 }
 
-/*
- * Return TRUE if the current role has the ability to transition to the
- * given role (or it's the same role), FALSE if otherwise.
- */
-static int
-sqlbox_rolecheck_role(struct sqlbox *box, size_t idx)
-{
-	size_t	 i;
-
-	assert(box->cfg.roles.rolesz);
-	if (box->role == idx) {
-		sqlbox_warnx(&box->cfg, "changing into "
-			"current role %zu (harmless)", idx);
-		return 1;
-	}
-	for (i = 0; i < box->cfg.roles.roles[box->role].rolesz; i++)
-		if (box->cfg.roles.roles[box->role].roles[i] == idx)
-			return 1;
-	sqlbox_warnx(&box->cfg, "role %zu denied to role %zu",
-		idx, box->role);
-	return 0;
-}
-
-int
-sqlbox_step(struct sqlbox *box, size_t stmtid)
-{
-	uint32_t	 v = htonl(stmtid);
-	const char	*frame;
-	size_t		 framesz;
-
-	if (!sqlbox_write_frame
-	    (box, SQLBOX_OP_STEP, (char *)&v, sizeof(uint32_t))) {
-		sqlbox_warnx(&box->cfg, "sqlbox_write_frame");
-		return 0;
-	}
-
-	if (sqlbox_read_frame(box, &frame, &framesz) <= 0) {
-		sqlbox_warnx(&box->cfg, "sqlbox_read_frame");
-		return 0;
-	}
-
-	/* TODO. */
-
-	return 1;
-}
-
-/*
- * Prepare and bind parameters to a statement in one step.
- * Return TRUE on success, FALSE on failure (nothing is allocated).
- */
-static int
-sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
-{
-	return 0;
-}
-
-int
-sqlbox_role(struct sqlbox *box, size_t role)
-{
-	uint32_t	 v = htonl(role);
-
-	return sqlbox_write_frame(box, 
-		SQLBOX_OP_ROLE, (char *)&v, sizeof(uint32_t));
-}
-
-/*
- * Change our role.
- * First validate the requested role and its transition, then perform
- * the actual transition.
- * Returns TRUE on success (the role was changed), FALSE otherwise.
- */
-static int
-sqlbox_op_role(struct sqlbox *box, const char *buf, size_t sz)
-{
-	size_t	 role;
-
-	/* Verify roles and transition. */
-
-	if (sz != sizeof(uint32_t)) {
-		sqlbox_warnx(&box->cfg, "cannot change "
-			"role: bad frame size: %zu", sz);
-		return 0;
-	} else if (box->cfg.roles.rolesz == 0) {
-		sqlbox_warnx(&box->cfg, "cannot change "
-			"role: no roles configured");
-		return 0;
-	}
-	role = ntohl(*(uint32_t *)buf);
-	if (role > box->cfg.roles.rolesz) {
-		sqlbox_warnx(&box->cfg, "cannot change role: "
-			"invalid role %zu (have %zu)", role, 
-			box->cfg.roles.rolesz);
-		return 0;
-	} else if (!sqlbox_rolecheck_role(box, role)) {
-		sqlbox_warnx(&box->cfg, "cannot change role: "
-			"sqlbox_rolecheck_role");
-		return 0;
-	}
-
-	box->role = role;
-	return 1;
-}
-
 int
 sqlbox_main_loop(struct sqlbox *box)
 {
-	size_t		 framesz;
+	size_t		 framesz, bufsz = 0;
 	const char	*frame;
 	enum sqlbox_op	 op;
-	int		 c;
+	int		 c, rc = 0;
+	char		*buf = NULL;
 
 	for (;;) {
-		c = sqlbox_read_frame(box, &frame, &framesz);
+		c = sqlbox_read_frame
+			(box, &buf, &bufsz, &frame, &framesz);
 		if (c < 0) {
 			sqlbox_warnx(&box->cfg, "sqlbox_read_frame");
-			return 0;
-		} else if (c == 0)
 			break;
+		} else if (c == 0) {
+			rc = 1;
+			break;
+		}
 
 		if (framesz < sizeof(uint32_t)) {
 			sqlbox_warnx(&box->cfg, "bad "
 				"frame size: %zu", framesz);
-			return 0;
+			break;
 		}
 
 		op = (enum sqlbox_op)ntohl
@@ -204,38 +105,53 @@ sqlbox_main_loop(struct sqlbox *box)
 		sqlbox_debug(&box->cfg, "%s: size: %zu, op: %d", 
 			__func__, framesz, op);
 
+		c = 0;
 		switch (op) {
 		case SQLBOX_OP_CLOSE:
 			if (sqlbox_op_close(box, frame, framesz))
-				break;
-			sqlbox_warnx(&box->cfg, "sqlbox_op_close");
-			return 0;
+				c = 1;
+			else
+				sqlbox_warnx(&box->cfg, "sqlbox_op_close");
+			break;
+		case SQLBOX_OP_FINAL:
+			if (sqlbox_op_finalise(box, frame, framesz))
+				c = 1;
+			else
+				sqlbox_warnx(&box->cfg, "sqlbox_op_final");
+			break;
 		case SQLBOX_OP_OPEN:
 			if (sqlbox_op_open(box, frame, framesz))
-				break;
-			sqlbox_warnx(&box->cfg, "sqlbox_op_open");
-			return 0;
+				c = 1;
+			else
+				sqlbox_warnx(&box->cfg, "sqlbox_op_open");
+			break;
 		case SQLBOX_OP_PING:
 			if (sqlbox_op_ping(box, frame, framesz))
-				break;
-			sqlbox_warnx(&box->cfg, "sqlbox_op_ping");
-			return 0;
+				c = 1;
+			else
+				sqlbox_warnx(&box->cfg, "sqlbox_op_ping");
+			break;
 		case SQLBOX_OP_PREPARE_BIND:
 			if (sqlbox_op_prepare_bind(box, frame, framesz))
-				break;
-			sqlbox_warnx(&box->cfg, "sqlbox_op_prepare_bind");
-			return 0;
+				c = 1;
+			else
+				sqlbox_warnx(&box->cfg, "sqlbox_op_prepare_bind");
+			break;
 		case SQLBOX_OP_ROLE:
 			if (sqlbox_op_role(box, frame, framesz))
-				break;
-			sqlbox_warnx(&box->cfg, "sqlbox_op_role");
-			return 0;
+				c = 1;
+			else
+				sqlbox_warnx(&box->cfg, "sqlbox_op_role");
+			break;
 		default:
 			sqlbox_warnx(&box->cfg, "unknown op: %d", op);
-			return 0;
+			break;
 		}
+		if (!c)
+			break;
 	}
 
-	return 1;
+	free(buf);
+	return rc;
 }
 

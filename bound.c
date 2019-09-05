@@ -118,6 +118,11 @@ sqlbox_bound_pack(struct sqlbox *box, size_t parmsz,
 	return 1;
 }
 
+/*
+ * Unpack a set of sqlbox_bound from the buffer.
+ * Returns TRUE on success, FALSE on failure.
+ * On failure, no memory is allocated into the result pointers.
+ */
 int
 sqlbox_bound_unpack(struct sqlbox *box, size_t *parmsz,
 	struct sqlbox_bound **parms, const char *buf, size_t bufsz)

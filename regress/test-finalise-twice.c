@@ -35,14 +35,7 @@ main(int argc, char *argv[])
 		{ .fname = (char *)":memory:" }
 	};
 	struct sqlbox_pstmt	 pstmts[] = {
-		{ .stmt = (char *)"INSERT INTO foo "
-			"(bar, baz) VALUES (?, ?)" }
-	};
-	struct sqlbox_bound	 parms[] = {
-		{ .iparm = 10,
-		  .type = SQLBOX_BOUND_INT },
-		{ .iparm = 20,
-		  .type = SQLBOX_BOUND_INT }
+		{ .stmt = (char *)"create table foo (foo INTEGER)" }
 	};
 
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));
@@ -60,8 +53,7 @@ main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	if (!sqlbox_ping(p))
 		return EXIT_FAILURE;
-	if (!(stmtid = sqlbox_prepare_bind
-	      (p, dbid, 0, nitems(parms), parms)))
+	if (!(stmtid = sqlbox_prepare_bind(p, dbid, 0, 0, NULL)))
 		return EXIT_FAILURE;
 	if (!sqlbox_ping(p))
 		return EXIT_FAILURE;
@@ -69,6 +61,14 @@ main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	if (!sqlbox_ping(p))
 		return EXIT_FAILURE;
+
+	/* This was already closed.*/
+
+	if (!sqlbox_finalise(p, stmtid))
+		return EXIT_FAILURE;
+	if (sqlbox_ping(p))
+		return EXIT_FAILURE;
+
 	sqlbox_free(p);
 	return EXIT_SUCCESS;
 }
