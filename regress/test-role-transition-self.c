@@ -30,31 +30,36 @@ main(int argc, char *argv[])
 {
 	struct sqlbox		*p;
 	struct sqlbox_cfg	 cfg;
+	struct sqlbox_role	 roles[] = {
+		{ .rolesz = 2,
+		  .roles = (size_t[]){ 1, 0 },
+		  .stmtsz = 0,
+		  .srcsz = 0 },
+		{ .rolesz = 0,
+		  .stmtsz = 0,
+		  .srcsz = 0 },
+		{ .rolesz = 0,
+		  .stmtsz = 0,
+		  .srcsz = 0 },
+	};
 
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 	cfg.msg.func_short = warnx;
 
-	cfg.roles.rolesz = 3;
-	cfg.roles.roles = calloc(3, sizeof(struct sqlbox_role));
-	if (cfg.roles.roles == NULL)
-		err(EXIT_FAILURE, NULL);
-
-	cfg.roles.roles[0].rolesz = 2;
-	cfg.roles.roles[0].roles = calloc(1, sizeof(size_t));
-	if (cfg.roles.roles[0].roles == NULL)
-		err(EXIT_FAILURE, NULL);
-	cfg.roles.roles[0].roles[0] = 1;
+	cfg.roles.rolesz = nitems(roles);
+	cfg.roles.roles = roles;
 	cfg.roles.defrole = 0;
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_alloc");
 
 	/* Succeed: we can do a self-transition even if not defined. */
 
 	if (!sqlbox_role(p, 0))
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_role");
 	if (!sqlbox_ping(p))
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_ping");
+
 	sqlbox_free(p);
 	return EXIT_SUCCESS;
 }

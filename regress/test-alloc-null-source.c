@@ -30,17 +30,21 @@ main(int argc, char *argv[])
 {
 	struct sqlbox		*p;
 	struct sqlbox_cfg	 cfg;
+	struct sqlbox_src	 srcs[] = {
+		{ .fname = NULL,
+		  .mode = SQLBOX_SRC_RO }
+	};
 
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 	cfg.msg.func_short = warnx;
 
 	/* This should fail: we defined a NULL source. */
 
-	cfg.srcs.srcsz = 1;
-	cfg.srcs.srcs = calloc(cfg.srcs.srcsz, sizeof(char *));
-	if (cfg.srcs.srcs == NULL)
-		err(EXIT_FAILURE, NULL);
+	cfg.srcs.srcsz = nitems(srcs);
+	cfg.srcs.srcs = srcs;
 
-	p = sqlbox_alloc(&cfg);
-	return p == NULL ? EXIT_SUCCESS : EXIT_FAILURE;
+	if ((p = sqlbox_alloc(&cfg)) != NULL)
+		errx(EXIT_FAILURE, "sqlbox_alloc should be NULL");
+
+	return EXIT_SUCCESS;
 }

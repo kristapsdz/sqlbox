@@ -87,13 +87,23 @@ struct	sqlbox_roles {
 	size_t			 defrole; /* default role or 0 */
 };
 
+enum	sqlbox_parmt {
+	SQLBOX_PARM_BLOB,
+	SQLBOX_PARM_FLOAT,
+	SQLBOX_PARM_INT,
+	SQLBOX_PARM_NULL,
+	SQLBOX_PARM_STRING,
+};
+
 /*
  * A prepared statement.
- * Right now this is just the text, but will eventually include return
- * and paramter types.
+ * Statements might have return values in the case of selecting, which
+ * we specify here as types.
  */
 struct	sqlbox_pstmt {
-	char	*stmt; /* prepared statement */
+	char			*stmt; /* prepared statement */
+	enum sqlbox_parmt	*cols; /* returned column types */
+	size_t			 colsz; /* no. columns or 0 */
 };
 
 /*
@@ -142,18 +152,20 @@ struct	sqlbox_cfg {
 	struct sqlbox_msg	msg; /* message system */
 };
 
-enum	sqlbox_boundt {
-	SQLBOX_BOUND_INT,
-	SQLBOX_BOUND_NULL,
-	SQLBOX_BOUND_STRING,
-};
-
-struct	sqlbox_bound {
+struct	sqlbox_parm {
 	union {
+		double		 fparm;
 		int64_t		 iparm;
 		const char	*sparm;
+		const void	*bparm;
 	};
-	enum sqlbox_boundt	 type;
+	enum sqlbox_parmt	 type;
+	size_t			 sz;
+};
+
+struct	sqlbox_parmset {
+	struct sqlbox_parm 	*ps;
+	size_t		 	 psz;
 };
 
 struct	sqlbox;
@@ -168,9 +180,10 @@ size_t		 sqlbox_open(struct sqlbox *, size_t);
 int		 sqlbox_ping(struct sqlbox *);
 int	 	 sqlbox_role(struct sqlbox *, size_t);
 size_t		 sqlbox_prepare_bind(struct sqlbox *, size_t,
-			size_t, size_t, const struct sqlbox_bound *);
+			size_t, size_t, const struct sqlbox_parm *);
 int		 sqlbox_finalise(struct sqlbox *, size_t);
-int		 sqlbox_step(struct sqlbox *, size_t);
+const struct sqlbox_parmset
+		*sqlbox_step(struct sqlbox *, size_t);
 
 #if 0
 enum ksqlc	 ksql_bind_blob(struct ksqlstmt *, 

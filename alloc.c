@@ -41,6 +41,17 @@
 #include "sqlbox.h"
 #include "extern.h"
 
+void
+sqlbox_stmt_free(struct sqlbox_stmt *p)
+{
+	if (p == NULL)
+		return;
+
+	free(p->res.buf);
+	free(p->res.set.ps);
+	free(p);
+}
+
 /*
  * Clear all allocated resources in an sqlbox.
  * Of focus are the communication channels between client and server
@@ -72,12 +83,23 @@ sqlbox_clear(struct sqlbox *box)
 			sqlite3_finalize(stmt->stmt);
 			TAILQ_REMOVE(&db->stmtq, stmt, entries);
 			TAILQ_REMOVE(&box->stmtq, stmt, gentries);
-			free(stmt);
+			sqlbox_stmt_free(stmt);
 		}
 		sqlite3_close(db->db);
 	}
 
-	assert(TAILQ_EMPTY(&box->stmtq));
+	/* 
+	 * The client has these.
+	 * The server will have nothing left here once they've been
+	 * cleaned out of the databases.
+	 */
+
+	while ((stmt = TAILQ_FIRST(&box->stmtq)) != NULL) {
+		sqlbox_warnx(&box->cfg, "stmt %zu (not "
+			"associated) open on exit", stmt->id);
+		TAILQ_REMOVE(&box->stmtq, stmt, gentries);
+		sqlbox_stmt_free(stmt);
+	}
 }
 
 void

@@ -35,7 +35,8 @@ Finalises a statement prepared with
 .Xr sqlbox_prepare_bind 3 .
 After being called, the statement is no longer value.
 .Sh RETURN VALUES
-Returns non-zero if communication with the box works, zero otherwise.
+Returns non-zero if communication with the box works and the statemen is
+valid, zero otherwise.
 If finalising the statement fails, subsequent access will fail.
 Use
 .Xr sqlbox_ping 3

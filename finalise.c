@@ -32,15 +32,34 @@
 #include "extern.h"
 
 int
-sqlbox_finalise(struct sqlbox *box, size_t stmtid)
+sqlbox_finalise(struct sqlbox *box, size_t id)
 {
-	uint32_t	 v = htonl(stmtid);
+	uint32_t	 	 v = htonl(id);
+	struct sqlbox_stmt	*st;
+
+	/*
+	 * The client maintains a queue of active statements that hold
+	 * the last result set.
+	 */
+
+	TAILQ_FOREACH(st, &box->stmtq, gentries)
+		if (st->id == id)
+			break;
+	if (st == NULL) {
+		sqlbox_warnx(&box->cfg, "finalise: bad stmt %zu", id);
+		return 0;
+	}
+	TAILQ_REMOVE(&box->stmtq, st, gentries);
+	sqlbox_stmt_free(st);
+
+	/* Now pass to the server. */
 
 	if (!sqlbox_write_frame
 	    (box, SQLBOX_OP_FINAL, (char *)&v, sizeof(uint32_t))) {
 		sqlbox_warnx(&box->cfg, "finalise: sqlbox_write_frame");
 		return 0;
 	}
+
 	return 1;
 }
 
@@ -48,29 +67,28 @@ int
 sqlbox_op_finalise(struct sqlbox *box, const char *buf, size_t sz)
 {
 	struct sqlbox_stmt	*st;
-	size_t			 idx;
+	size_t			 id;
+
+	/* Look up the statement in our global list. */
 
 	if (sz != sizeof(uint32_t)) {
 		sqlbox_warnx(&box->cfg, "finalise: "
 			"bad frame size: %zu", sz);
 		return 0;
 	}
-	idx = ntohl(*(uint32_t *)buf);
-
+	id = ntohl(*(uint32_t *)buf);
 	TAILQ_FOREACH(st, &box->stmtq, gentries)
-		if (st->id == idx)
+		if (st->id == id)
 			break;
-
 	if (st == NULL) {
-		sqlbox_warnx(&box->cfg, "finalise: "
-			"unknown statement: %zu", idx);
+		sqlbox_warnx(&box->cfg, "finalise: bad stmt: %zu", id);
 		return 0;
 	}
 
-	sqlite3_finalize(st->stmt);
 	TAILQ_REMOVE(&box->stmtq, st, gentries);
 	TAILQ_REMOVE(&st->db->stmtq, st, entries);
 	sqlbox_debug(&box->cfg, "finalise: %zu", st->id);
-	free(st);
+	sqlite3_finalize(st->stmt);
+	sqlbox_stmt_free(st);
 	return 1;
 }

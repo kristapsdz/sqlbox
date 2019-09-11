@@ -12,6 +12,18 @@ enum	sqlbox_op {
 };
 
 /*
+ * When the client calls sqlbox_step(3), zero or more results may be
+ * transferred from the server.
+ * We hold these in these buffers.
+ */
+struct	sqlbox_res {
+	char			*buf; /* backing buffer */
+	size_t			 bufsz; /* length of buffer */
+	ssize_t			 psz;
+	struct sqlbox_parmset	 set; /* parsed values */
+};
+
+/*
  * A statement.
  */
 struct	sqlbox_stmt {
@@ -20,6 +32,7 @@ struct	sqlbox_stmt {
 	size_t			 id; /* statement identifier */
 	const struct sqlbox_pstmt *pstmt; /* prepared statement */
 	struct sqlbox_db	*db; /* source */
+	struct sqlbox_res	 res; /* results, if any */
 	TAILQ_ENTRY(sqlbox_stmt) entries; /* per-database */
 	TAILQ_ENTRY(sqlbox_stmt) gentries; /* global */
 };
@@ -41,21 +54,6 @@ struct	sqlbox_db {
 };
 
 TAILQ_HEAD(sqlbox_dbq, sqlbox_db);
-
-/*
- * When the client calls sqlbox_step(3), zero or more results may be
- * transferred from the server.
- * We hold these in these buffers.
- */
-struct	sqlbox_res {
-	char			*buf; /* backing buffer */
-	uint32_t		 id; /* statement identifier */
-	struct sqlbox_bound	*bound;
-	size_t			 boundsz;
-	TAILQ_ENTRY(sqlbox_resq) entries;
-};
-
-TAILQ_HEAD(sqlbox_resq, sqlbox_res);
 
 struct	sqlbox {
 	struct sqlbox_cfg 	 cfg; /* configuration */
@@ -83,8 +81,8 @@ int	 sqlbox_write(struct sqlbox *, const char *, size_t);
 int	 sqlbox_write_frame(struct sqlbox *,
 		enum sqlbox_op, const char *, size_t);
 
-int	 sqlbox_bound_pack(struct sqlbox *, size_t, const struct sqlbox_bound *, char **, size_t *, size_t *);
-int	 sqlbox_bound_unpack(struct sqlbox *, size_t *, struct sqlbox_bound **, const char *, size_t);
+int	 sqlbox_parm_pack(struct sqlbox *, size_t, const struct sqlbox_parm *, char **, size_t *, size_t *);
+int	 sqlbox_parm_unpack(struct sqlbox *, struct sqlbox_parm **, ssize_t *, const char *, size_t);
 
 int	 sqlbox_op_close(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_finalise(struct sqlbox *, const char *, size_t);
@@ -93,5 +91,7 @@ int	 sqlbox_op_ping(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_prepare_bind(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_role(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_step(struct sqlbox *, const char *, size_t);
+
+void	 sqlbox_stmt_free(struct sqlbox_stmt *);
 
 #endif /* !EXTERN_H */

@@ -30,33 +30,30 @@ main(int argc, char *argv[])
 {
 	struct sqlbox		*p;
 	struct sqlbox_cfg	 cfg;
+	struct sqlbox_src	 srcs[] = {
+		{ .fname = (char *)"xyzzy" }
+	};
+	struct sqlbox_role	roles[] = {
+		{ .rolesz = 0,
+		  .stmtsz = 0,
+		  .srcsz = 1,
+		  .srcs = (size_t[]){ 0 } }
+	};
 
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 	cfg.msg.func_short = warnx;
 
-	cfg.srcs.srcsz = 1;
-	cfg.srcs.srcs = calloc(1, sizeof(struct sqlbox_src));
-	if (cfg.srcs.srcs == NULL)
-		err(EXIT_FAILURE, NULL);
-	cfg.srcs.srcs[0].fname = strdup("...");
-	if (cfg.srcs.srcs[0].fname == NULL)
-		err(EXIT_FAILURE, NULL);
+	cfg.srcs.srcsz = nitems(srcs);
+	cfg.srcs.srcs = srcs;
 
-	cfg.roles.rolesz = 1;
-	cfg.roles.roles = calloc(1, sizeof(struct sqlbox_role));
-	if (cfg.roles.roles == NULL)
-		err(EXIT_FAILURE, NULL);
-	cfg.roles.roles[0].srcsz = 1;
-	cfg.roles.roles[0].srcs = calloc(1, sizeof(size_t));
-	if (cfg.roles.roles[0].srcs == NULL)
-		err(EXIT_FAILURE, NULL);
+	cfg.roles.rolesz = nitems(roles);
+	cfg.roles.roles = roles;
 
 	/* This should succeed: we defined a good source. */
 
-	cfg.roles.roles[0].srcs[0] = 0;
-
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_alloc");
+
 	sqlbox_free(p);
 	return EXIT_SUCCESS;
 }

@@ -35,7 +35,8 @@ main(int argc, char *argv[])
 		{ .fname = (char *)":memory:" }
 	};
 	struct sqlbox_pstmt	 pstmts[] = {
-		{ .stmt = (char *)"create table foo" }
+		{ .stmt = (char *)"create table foo (foo INTEGER)",
+		  .colsz = 0 }
 	};
 
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));
@@ -47,17 +48,16 @@ main(int argc, char *argv[])
 	cfg.stmts.stmts = pstmts;
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
-		return EXIT_FAILURE;
-
+		errx(EXIT_FAILURE, "sqlbox_alloc");
 	if (!(dbid = sqlbox_open(p, 0)))
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_open");
 	if (!sqlbox_ping(p))
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_ping");
 
 	/* Fail: not an available source. */
 
 	if (sqlbox_prepare_bind(p, 0, 0, 0, NULL))
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_prepare_bind should fail");
 
 	sqlbox_free(p);
 	return EXIT_SUCCESS;

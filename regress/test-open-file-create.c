@@ -55,11 +55,11 @@ main(int argc, char *argv[])
 		errx(EXIT_FAILURE, "%s: exists", srcs[0].fname);
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_alloc");
 	if (!sqlbox_open(p, 0))
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_open");
 	if (!sqlbox_ping(p))
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_ping");
 	sqlbox_free(p);
 
 	if (stat(srcs[0].fname, &st) == -1)

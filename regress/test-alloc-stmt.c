@@ -52,7 +52,8 @@ main(int argc, char *argv[])
 	/* This should succeed: we defined a good statement. */
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_alloc");
+
 	sqlbox_free(p);
 	return EXIT_SUCCESS;
 }

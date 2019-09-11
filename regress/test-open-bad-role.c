@@ -46,19 +46,19 @@ main(int argc, char *argv[])
 
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 	cfg.msg.func_short = warnx;
-	cfg.srcs.srcsz = 2;
+	cfg.srcs.srcsz = nitems(srcs);
 	cfg.srcs.srcs = srcs;
-	cfg.roles.rolesz = 1;
+	cfg.roles.rolesz = nitems(roles);
 	cfg.roles.roles = roles;
 	cfg.roles.defrole = 0;
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_alloc");
 
 	/* Fail: our role doesn't have any sources. */
 
 	if (sqlbox_open(p, 0))
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_open should fail");
 
 	sqlbox_free(p);
 	return EXIT_SUCCESS;

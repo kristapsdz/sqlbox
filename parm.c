@@ -35,8 +35,8 @@
 #include "extern.h"
 
 int
-sqlbox_bound_pack(struct sqlbox *box, size_t parmsz,
-	const struct sqlbox_bound *parms, 
+sqlbox_parm_pack(struct sqlbox *box, size_t parmsz,
+	const struct sqlbox_parm *parms, 
 	char **buf, size_t *offs, size_t *bufsz)
 {
 	size_t	 framesz, i;
@@ -48,20 +48,25 @@ sqlbox_bound_pack(struct sqlbox *box, size_t parmsz,
 
 	framesz = parmsz * sizeof(uint32_t);
 
-	for (i = 0; i < parmsz; i++)
+	for (i = 0; i < parmsz; i++) {
 		switch (parms[i].type) {
-		case SQLBOX_BOUND_INT: /* value */
-			framesz += sizeof(int64_t); /* int */
+		case SQLBOX_PARM_NULL: /* nothing */
 			break;
-		case SQLBOX_BOUND_NULL: /* nothing */
+		case SQLBOX_PARM_FLOAT:
+			framesz += sizeof(double);
 			break;
-		case SQLBOX_BOUND_STRING: /* length+data+NUL */
+		case SQLBOX_PARM_INT:
+			framesz += sizeof(int64_t);
+			break;
+		case SQLBOX_PARM_BLOB: /* length+data */
+		case SQLBOX_PARM_STRING:
 			framesz += sizeof(uint32_t);
-			framesz += strlen(parms[i].sparm) + 1;
+			framesz += parms[i].sz;
 			break;
 		default:
 			return 0;
 		}
+	}
 
 	/* Allocate our write buffer. */
 
@@ -86,29 +91,35 @@ sqlbox_bound_pack(struct sqlbox *box, size_t parmsz,
 		tmp = htonl(parms[i].type);
 		memcpy(*buf + *offs, (char *)&tmp, sizeof(uint32_t));
 		*offs += sizeof(uint32_t);
-
 		switch (parms[i].type) {
-		case SQLBOX_BOUND_INT:
+		case SQLBOX_PARM_FLOAT:
+			memcpy(*buf + *offs, 
+				(char *)&parms[i].fparm, sizeof(double));
+			*offs += sizeof(double);
+			break;
+		case SQLBOX_PARM_INT:
 			val = htobe64(parms[i].iparm);
 			memcpy(*buf + *offs, 
 				(char *)&val, sizeof(int64_t));
 			*offs += sizeof(int64_t);
 			break;
-		case SQLBOX_BOUND_NULL:
+		case SQLBOX_PARM_NULL:
 			break;
-		case SQLBOX_BOUND_STRING:
-			/*
-			 * Note that we include the NUL terminator in
-			 * the encoded data to make it easier for
-			 * unpacking without needing to terminate.
-			 */
-			tmp = strlen(parms[i].sparm);
-			val = htonl(tmp);
+		case SQLBOX_PARM_BLOB:
+			val = htonl(parms[i].sz);
 			memcpy(*buf + *offs, 
 				(char *)&val, sizeof(uint32_t));
 			*offs += sizeof(uint32_t);
-			memcpy(*buf + *offs, parms[i].sparm, tmp + 1);
-			*offs += tmp + 1;
+			memcpy(*buf + *offs, parms[i].bparm, parms[i].sz);
+			*offs += parms[i].sz;
+			break;
+		case SQLBOX_PARM_STRING:
+			val = htonl(parms[i].sz);
+			memcpy(*buf + *offs, 
+				(char *)&val, sizeof(uint32_t));
+			*offs += sizeof(uint32_t);
+			memcpy(*buf + *offs, parms[i].sparm, parms[i].sz);
+			*offs += parms[i].sz;
 			break;
 		default:
 			abort();
@@ -119,31 +130,46 @@ sqlbox_bound_pack(struct sqlbox *box, size_t parmsz,
 }
 
 /*
- * Unpack a set of sqlbox_bound from the buffer.
+ * Unpack a set of sqlbox_parm from the buffer.
  * Returns TRUE on success, FALSE on failure.
- * On failure, no memory is allocated into the result pointers.
+ * On failure, no [new] memory is allocated into the result pointers.
  */
 int
-sqlbox_bound_unpack(struct sqlbox *box, size_t *parmsz,
-	struct sqlbox_bound **parms, const char *buf, size_t bufsz)
+sqlbox_parm_unpack(struct sqlbox *box, struct sqlbox_parm **parms, 
+	ssize_t *parmsz, const char *buf, size_t bufsz)
 {
-	size_t	 i, len;
+	size_t	 i, len, psz;
 
 	if (bufsz < sizeof(uint32_t))
 		goto badframe;
 
 	/* Read prologue: param size. */
 
-	*parmsz = ntohl(*(const uint32_t *)buf);
+	psz = ntohl(*(const uint32_t *)buf);
 	buf += sizeof(uint32_t);
 	bufsz -= sizeof(uint32_t);
 
-	/* Allocate stored parameters. */
+	/* 
+	 * Allocate stored parameters.
+	 * If parmsz < 0, that means that we haven't allocated anything
+	 * so we can set the first allocation size.
+	 * Subsequent allocation sizes *must* match the first, even if
+	 * it's zero.
+	 */
 
-	*parms = calloc(*parmsz, sizeof(struct sqlbox_bound));
-	if (*parms == NULL) {
-		sqlbox_warn(&box->cfg, "calloc");
+	if (*parmsz < 0 && psz > 0) {
+		*parms = calloc(psz, sizeof(struct sqlbox_parm));
+		if (*parms == NULL) {
+			sqlbox_warn(&box->cfg, "calloc");
+			return 0;
+		}
+		*parmsz = psz;
+	} else if (*parmsz < 0) {
+		*parms = NULL;
 		*parmsz = 0;
+	} else if ((size_t)*parmsz != psz) {
+		sqlbox_warnx(&box->cfg, "parameter length mismatch "
+			"(have %zu, %zu in parameters)", *parmsz, psz);
 		return 0;
 	}
 
@@ -153,42 +179,61 @@ sqlbox_bound_unpack(struct sqlbox *box, size_t *parmsz,
 	 * the array for that.
 	 */
 
-	for (i = 0; i < *parmsz; i++) {
+	assert(*parmsz >= 0);
+	for (i = 0; i < (size_t)*parmsz; i++) {
 		if (bufsz < sizeof(uint32_t))
 			goto badframe;
-
 		(*parms)[i].type = ntohl(*(uint32_t *)buf);
 		buf += sizeof(uint32_t);
 		bufsz -= sizeof(uint32_t);
-
 		switch ((*parms)[i].type) {
-		case SQLBOX_BOUND_INT:
+		case SQLBOX_PARM_FLOAT:
+			if (bufsz < sizeof(double))
+				goto badframe;
+			(*parms)[i].sz = sizeof(double);
+			(*parms)[i].iparm = *(double *)buf;
+			buf += sizeof(double);
+			bufsz -= sizeof(double);
+			break;
+		case SQLBOX_PARM_INT:
 			if (bufsz < sizeof(int64_t))
 				goto badframe;
+			(*parms)[i].sz = sizeof(int64_t);
 			(*parms)[i].iparm = be64toh(*(int64_t *)buf);
 			buf += sizeof(int64_t);
 			bufsz -= sizeof(int64_t);
 			break;
-		case SQLBOX_BOUND_NULL:
+		case SQLBOX_PARM_NULL:
+			(*parms)[i].sz = 0;
 			break;
-		case SQLBOX_BOUND_STRING:
-			/*
-			 * Remember that we encode the string with the
-			 * NUL terminator that's not in the length part.
-			 */
+		case SQLBOX_PARM_BLOB:
 			if (bufsz < sizeof(uint32_t))
 				goto badframe;
-			len = ntohl(*(uint32_t *)buf) + 1;
+			len = ntohl(*(uint32_t *)buf);
+			buf += sizeof(uint32_t);
+			bufsz -= sizeof(uint32_t);
+			if (bufsz < len)
+				goto badframe;
+			(*parms)[i].bparm = buf;
+			(*parms)[i].sz = len;
+			buf += len;
+			bufsz -= len;
+			break;
+		case SQLBOX_PARM_STRING:
+			if (bufsz < sizeof(uint32_t))
+				goto badframe;
+			len = ntohl(*(uint32_t *)buf);
 			buf += sizeof(uint32_t);
 			bufsz -= sizeof(uint32_t);
 			if (bufsz < len)
 				goto badframe;
 			(*parms)[i].sparm = buf;
+			(*parms)[i].sz = len;
 			buf += len;
 			bufsz -= len;
 			break;
 		default:
-			sqlbox_warnx(&box->cfg, "bad bound type: %d",
+			sqlbox_warnx(&box->cfg, "bad parm type: %d",
 				(*parms)[i].type);
 			free(*parms);
 			*parms = NULL;

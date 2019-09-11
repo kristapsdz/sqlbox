@@ -35,14 +35,14 @@ main(int argc, char *argv[])
 	cfg.msg.func_short = warnx;
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_alloc");
 
 	/* Fail: our role doesn't have any sources. */
 
 	if (!sqlbox_close(p, 0))
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_close");
 	if (sqlbox_ping(p))
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_ping should fail");
 
 	sqlbox_free(p);
 	return EXIT_SUCCESS;

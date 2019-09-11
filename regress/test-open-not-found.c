@@ -44,12 +44,12 @@ main(int argc, char *argv[])
 		err(EXIT_FAILURE, NULL);
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_alloc");
 
 	/* Fail: we didn't give it the "create" flag. */
 
 	if (sqlbox_open(p, 0))
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_open should fail");
 
 	sqlbox_free(p);
 	return EXIT_SUCCESS;

@@ -30,21 +30,28 @@ main(int argc, char *argv[])
 {
 	struct sqlbox		*p;
 	struct sqlbox_cfg	 cfg;
+	struct sqlbox_role	 roles[] = {
+		{ .rolesz = 0,
+		  .stmtsz = 0,
+		  .srcsz = 0 },
+		{ .rolesz = 0,
+		  .stmtsz = 0,
+		  .srcsz = 0 }
+	};
 
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 	cfg.msg.func_short = warnx;
 
-	cfg.roles.rolesz = 2;
-	cfg.roles.roles = calloc(2, sizeof(struct sqlbox_role));
-	if (cfg.roles.roles == NULL)
-		err(EXIT_FAILURE, NULL);
+	cfg.roles.rolesz = nitems(roles);
+	cfg.roles.roles = roles;
 
 	/* This is a valid role. */
 
 	cfg.roles.defrole = 1;
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_alloc");
+
 	sqlbox_free(p);
 	return EXIT_SUCCESS;
 }

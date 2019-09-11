@@ -52,18 +52,24 @@ sqlbox_rolecheck_stmt(struct sqlbox *box, size_t idx)
 
 size_t
 sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
-	size_t pstmt, size_t psz, const struct sqlbox_bound *ps)
+	size_t pstmt, size_t psz, const struct sqlbox_parm *ps)
 {
-	size_t		 pos = 0, bufsz = 1024;
-	uint32_t	 val;
-	char		*buf;
+	size_t			 pos = 0, bufsz = 1024;
+	uint32_t		 val;
+	char			*buf;
+	struct sqlbox_stmt	*st;
 
-	/* Initialise our frame. */
+	/* Initialise our result set holder and frame. */
 
-	if ((buf = malloc(bufsz)) == NULL) {
+	if ((st = calloc(1, sizeof(struct sqlbox_stmt))) == NULL) {
+		sqlbox_warn(&box->cfg, "prepare-bind: calloc");
+		return 0;
+	} else if ((buf = malloc(bufsz)) == NULL) {
 		sqlbox_warn(&box->cfg, "prepare-bind: malloc");
+		free(st);
 		return 0;
 	}
+	st->res.psz = -1;
 
 	/* Skip the frame size til we get the packed parms. */
 
@@ -83,10 +89,11 @@ sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 	memcpy(buf + pos, (char *)&val, sizeof(uint32_t));
 	pos += sizeof(uint32_t);
 
-	if (!sqlbox_bound_pack(box, psz, ps, &buf, &pos, &bufsz)) {
+	if (!sqlbox_parm_pack(box, psz, ps, &buf, &pos, &bufsz)) {
 		sqlbox_warnx(&box->cfg,
-			"prepare-bind: sqlbox_bound_pack");
+			"prepare-bind: sqlbox_parm_pack");
 		free(buf);
+		free(st);
 		return 0;
 	}
 
@@ -100,6 +107,7 @@ sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 	if (!sqlbox_write(box, buf, bufsz)) {
 		sqlbox_warnx(&box->cfg, "prepare-bind: sqlbox_write");
 		free(buf);
+		free(st);
 		return 0;
 	}
 	free(buf);
@@ -108,10 +116,20 @@ sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 
 	if (!sqlbox_read(box, (char *)&val, sizeof(uint32_t))) {
 		sqlbox_warnx(&box->cfg, "prepare-bind: sqlbox_read");
+		free(st);
 		return 0;
 	}
 
-	return (size_t)ntohl(val);
+	/*
+	 * We maintain a list of active statements where we'll store
+	 * results while they're being processed.
+	 * These are freed in sqlbox_finalise() or when the system is
+	 * exiting.
+	 */
+
+	st->id = ntohl(val);
+	TAILQ_INSERT_TAIL(&box->stmtq, st, gentries);
+	return st->id;
 }
 
 /*
@@ -121,15 +139,15 @@ sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 int
 sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 {
-	size_t	 		 i, idx, attempt = 0, parmsz;
-	enum sqlbox_boundt	 type;
+	size_t	 		 i, idx, attempt = 0;
+	ssize_t			 parmsz = -1;
 	struct sqlbox_db	*db;
 	sqlite3_stmt		*stmt = NULL;
 	struct sqlbox_stmt	*st;
 	struct sqlbox_pstmt	*pst = NULL;
 	int			 c;
 	uint32_t		 ack;
-	struct sqlbox_bound	*parms = NULL;
+	struct sqlbox_parm	*parms = NULL;
 
 	/* Read the source identifier. */
 
@@ -167,11 +185,12 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 	 * FIXME: we should have nothing left in the buffer after this.
 	 */
 
-	if (!sqlbox_bound_unpack(box, &parmsz, &parms, buf, sz)) {
+	if (!sqlbox_parm_unpack(box, &parms, &parmsz, buf, sz)) {
 		sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
-			"sqlbox_bound_unpack", db->src->fname);
+			"sqlbox_parm_unpack", db->src->fname);
 		sqlbox_warnx(&box->cfg, "%s: prepare-bind "
 			"statement: %s", db->src->fname, pst->stmt);
+		free(parms);
 		return 0;
 	}
 
@@ -211,22 +230,33 @@ again:
 	 * and so it needs to be stored.
 	 */
 
-	for (i = 0; i < parmsz; i++) {
+	assert(parmsz >= 0);
+	for (i = 0; i < (size_t)parmsz; i++) {
 		switch (parms[i].type) {
-		case SQLBOX_BOUND_INT:
+		case SQLBOX_PARM_BLOB:
+			c = sqlite3_bind_text(stmt, i + 1,
+				parms[i].bparm, parms[i].sz, 
+				SQLITE_TRANSIENT);
+			break;
+		case SQLBOX_PARM_FLOAT:
+			c = sqlite3_bind_double
+				(stmt, i + 1, parms[i].fparm);
+			break;
+		case SQLBOX_PARM_INT:
 			c = sqlite3_bind_int64
 				(stmt, i + 1, parms[i].iparm);
 			break;
-		case SQLBOX_BOUND_NULL:
+		case SQLBOX_PARM_NULL:
 			c = sqlite3_bind_null(stmt, i + 1);
 			break;
-		case SQLBOX_BOUND_STRING:
-			c = sqlite3_bind_text16(stmt, i + 1,
+		case SQLBOX_PARM_STRING:
+			c = sqlite3_bind_text(stmt, i + 1,
 				parms[i].sparm, -1, SQLITE_TRANSIENT);
 			break;
 		default:
 			sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
-				"bad type: %d", db->src->fname, type);
+				"bad type: %d", db->src->fname, 
+				parms[i].type);
 			sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
 				"statement: %s", db->src->fname, 
 				pst->stmt);
@@ -251,6 +281,7 @@ again:
 		return 0;
 	}
 
+	st->res.psz = -1;
 	st->stmt = stmt;
 	st->pstmt = pst;
 	st->idx = idx;

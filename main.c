@@ -143,6 +143,12 @@ sqlbox_main_loop(struct sqlbox *box)
 			else
 				sqlbox_warnx(&box->cfg, "sqlbox_op_role");
 			break;
+		case SQLBOX_OP_STEP:
+			if (sqlbox_op_step(box, frame, framesz))
+				c = 1;
+			else
+				sqlbox_warnx(&box->cfg, "sqlbox_op_step");
+			break;
 		default:
 			sqlbox_warnx(&box->cfg, "unknown op: %d", op);
 			break;

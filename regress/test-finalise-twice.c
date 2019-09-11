@@ -35,7 +35,8 @@ main(int argc, char *argv[])
 		{ .fname = (char *)":memory:" }
 	};
 	struct sqlbox_pstmt	 pstmts[] = {
-		{ .stmt = (char *)"create table foo (foo INTEGER)" }
+		{ .stmt = (char *)"create table foo (foo INTEGER)",
+		  .colsz = 0 }
 	};
 
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));
@@ -47,27 +48,26 @@ main(int argc, char *argv[])
 	cfg.stmts.stmts = pstmts;
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
-		return EXIT_FAILURE;
-
+		errx(EXIT_FAILURE, "sqlbox_alloc");
 	if (!(dbid = sqlbox_open(p, 0)))
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_open");
 	if (!sqlbox_ping(p))
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_ping");
 	if (!(stmtid = sqlbox_prepare_bind(p, dbid, 0, 0, NULL)))
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_prepare_bind");
 	if (!sqlbox_ping(p))
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_ping");
 	if (!sqlbox_finalise(p, stmtid))
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_finalise");
 	if (!sqlbox_ping(p))
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_ping");
 
 	/* This was already closed.*/
 
-	if (!sqlbox_finalise(p, stmtid))
-		return EXIT_FAILURE;
-	if (sqlbox_ping(p))
-		return EXIT_FAILURE;
+	if (sqlbox_finalise(p, stmtid))
+		errx(EXIT_FAILURE, "sqlbox_finalise should fail");
+	if (!sqlbox_ping(p))
+		errx(EXIT_FAILURE, "sqlbox_ping");
 
 	sqlbox_free(p);
 	return EXIT_SUCCESS;

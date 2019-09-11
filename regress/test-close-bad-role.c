@@ -55,16 +55,19 @@ main(int argc, char *argv[])
 	cfg.roles.defrole = 0;
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
-		return EXIT_FAILURE;
-
+		errx(EXIT_FAILURE, "sqlbox_alloc");
 	if (!(id = sqlbox_open(p, 0)))
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_open");
 	if (!sqlbox_role(p, 1))
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_role");
 	if (!sqlbox_close(p, id))
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_close");
+
+	/* This should fail: don't have role perms. */
+
 	if (sqlbox_ping(p))
-		return EXIT_FAILURE;
+		errx(EXIT_FAILURE, "sqlbox_ping should fail");
+
 	sqlbox_free(p);
 	return EXIT_SUCCESS;
 }

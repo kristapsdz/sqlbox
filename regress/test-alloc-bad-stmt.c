@@ -44,6 +44,8 @@ main(int argc, char *argv[])
 
 	/* This should fail: we defined a bad statement. */
 
-	p = sqlbox_alloc(&cfg);
-	return p == NULL ? EXIT_SUCCESS : EXIT_FAILURE;
+	if ((p = sqlbox_alloc(&cfg)) != NULL)
+		errx(EXIT_FAILURE, "sqlbox_alloc should be NULL");
+
+	return EXIT_SUCCESS;
 }

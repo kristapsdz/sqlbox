@@ -33,19 +33,19 @@ TESTS	 = test-alloc-bad-defrole \
 	    test-prepare_bind-bad-src \
 	    test-prepare_bind-bad-stmt \
 	    test-prepare_bind-noparms \
-	    test-prepare_bind-simple \
 	    test-role-bad-role \
 	    test-role-bad-transition \
 	    test-role-norole \
 	    test-role-transition \
-	    test-role-transition-self
+	    test-role-transition-self \
+	    test-step-simple
 OBJS	  = alloc.o \
-	    bound.o \
 	    close.o \
 	    finalise.o \
 	    io.o \
 	    main.o \
 	    open.o \
+	    parm.o \
 	    ping.o \
 	    prepare_bind.o \
 	    role.o \
