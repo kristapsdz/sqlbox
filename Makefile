@@ -38,7 +38,8 @@ TESTS	 = test-alloc-bad-defrole \
 	    test-role-norole \
 	    test-role-transition \
 	    test-role-transition-self \
-	    test-step-simple
+	    test-step-create \
+	    test-step-create-insert-select
 OBJS	  = alloc.o \
 	    close.o \
 	    finalise.o \

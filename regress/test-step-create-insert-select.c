@@ -1,3 +1,4 @@
+
 /*	$Id$ */
 /*
  * Copyright (c) 2019 Kristaps Dzonsons <kristaps@bsd.lv>
@@ -37,13 +38,15 @@ main(int argc, char *argv[])
 	};
 	struct sqlbox_pstmt	 pstmts[] = {
 		{ .stmt = (char *)"CREATE TABLE foo (bar INTEGER)",
-		  .colsz = 0 }
+		  .colsz = 0 },
+		{ .stmt = (char *)"INSERT INTO foo (bar) VALUES (?)",
+		  .colsz = 0 },
+		{ .stmt = (char *)"SELECT * FROM foo",
+		  .colsz = 0 },
 	};
 	struct sqlbox_parm	 parms[] = {
 		{ .iparm = 10,
 		  .type = SQLBOX_PARM_INT },
-		{ .iparm = 20,
-		  .type = SQLBOX_PARM_INT }
 	};
 	const struct sqlbox_parmset *res;
 
@@ -61,15 +64,39 @@ main(int argc, char *argv[])
 		errx(EXIT_FAILURE, "sqlbox_open");
 	if (!sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping");
-	if (!(stmtid = sqlbox_prepare_bind
-	      (p, dbid, 0, nitems(parms), parms)))
+
+	if (!(stmtid = sqlbox_prepare_bind(p, dbid, 0, 0, NULL)))
 		errx(EXIT_FAILURE, "sqlbox_prepare_bind");
-	if (!sqlbox_ping(p))
-		errx(EXIT_FAILURE, "sqlbox_ping");
 	if ((res = sqlbox_step(p, stmtid)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_step");
+	if (res->psz != 0)
+		errx(EXIT_FAILURE, "res->psz != 0");
 	if (!sqlbox_finalise(p, stmtid))
 		errx(EXIT_FAILURE, "sqlbox_finalise");
+
+	if (!(stmtid = sqlbox_prepare_bind
+	      (p, dbid, 1, nitems(parms), parms)))
+		errx(EXIT_FAILURE, "sqlbox_prepare_bind");
+	if ((res = sqlbox_step(p, stmtid)) == NULL)
+		errx(EXIT_FAILURE, "sqlbox_step");
+	if (res->psz != 0)
+		errx(EXIT_FAILURE, "res->psz != 0");
+	if (!sqlbox_finalise(p, stmtid))
+		errx(EXIT_FAILURE, "sqlbox_finalise");
+
+	if (!(stmtid = sqlbox_prepare_bind(p, dbid, 2, 0, NULL)))
+		errx(EXIT_FAILURE, "sqlbox_prepare_bind");
+	if ((res = sqlbox_step(p, stmtid)) == NULL)
+		errx(EXIT_FAILURE, "sqlbox_step");
+	if (res->psz != 1)
+		errx(EXIT_FAILURE, "res->psz != 1");
+	if (res->ps[0].type != SQLBOX_PARM_INT)
+		errx(EXIT_FAILURE, "res->ps[0].type != SQLBOX_PARM_INT");
+	if (res->ps[0].iparm != 10)
+		errx(EXIT_FAILURE, "res->ps[0].iparm != 10");
+	if (!sqlbox_finalise(p, stmtid))
+		errx(EXIT_FAILURE, "sqlbox_finalise");
+
 	if (!sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping");
 
