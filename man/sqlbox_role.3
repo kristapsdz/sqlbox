@@ -66,7 +66,47 @@ to check explicitly.
 .\" .Sh FILES
 .\" .Sh EXIT STATUS
 .\" For sections 1, 6, and 8 only.
-.\" .Sh EXAMPLES
+.Sh EXAMPLES
+To transition from one
+.Qq privileged
+role into another
+.Qq unprivileged
+role (which cannot further transition nor open a database):
+.Bd -literal
+struct sqlbox *p;
+struct sqlbox_cfg cfg;
+struct sqlbox_src srcs[] = {
+  { .fname = (char *)":memory:",
+    .mode = SQLBOX_SRC_RWC },
+};
+struct sqlbox_role roles[] = {
+  { .rolesz = 2,
+    .roles = (size_t[]){ 1, 0 },
+    .stmtsz = 0,
+    .srcsz = 1,
+    .srcs = (size_t[]){ 0 } },
+  { .rolesz = 0,
+    .stmtsz = 0,
+    .srcsz = 0 }
+};
+memset(&cfg, 0, sizeof(struct sqlbox_cfg));
+cfg.msg.func_short = warnx;
+cfg.roles.rolesz = 2;
+cfg.roles.roles = roles;
+cfg.roles.rolesz = 1;
+cfg.roles.roles = srcs;
+cfg.roles.defrole = 0;
+
+if ((p = sqlbox_alloc(&cfg)) == NULL)
+  errx(EXIT_FAILURE, "sqlbox_alloc");
+if (!(id = sqlbox_open(p, 0)))
+  errx(EXIT_FAILURE, "sqlbox_open");
+if (!sqlbox_role(p, 1))
+  errx(EXIT_FAILURE, "sqlbox_role");
+/* Now operate as the "unprivileged" role. */
+/* The database will be closed out automatically. */
+sqlbox_free(p);
+.Ed
 .\" .Sh DIAGNOSTICS
 .\" For sections 1, 4, 6, 7, 8, and 9 printf/stderr messages only.
 .\" .Sh ERRORS

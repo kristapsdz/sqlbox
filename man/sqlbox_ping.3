@@ -65,13 +65,13 @@ cfg.msg.func_short = warnx;
 cfg.srcs.srcsz = 1;
 cfg.srcs.srcs = srcs;
 if ((p = sqlbox_alloc(&cfg)) == NULL)
-	errx(EXIT_FAILURE, "sqlbox_alloc");
+  errx(EXIT_FAILURE, "sqlbox_alloc");
 if (!(id = sqlbox_open(p, 0)))
-	errx(EXIT_FAILURE, "sqlbox_open");
+  errx(EXIT_FAILURE, "sqlbox_open");
 if (!sqlbox_close(p, id))
-	errx(EXIT_FAILURE, "sqlbox_close");
+  errx(EXIT_FAILURE, "sqlbox_close");
 if (!sqlbox_ping(p))
-	errx(EXIT_FAILURE, "sqlbox_ping");
+  errx(EXIT_FAILURE, "sqlbox_ping");
 /* Success! Do other stuff... */
 sqlbox_free(p);
 .Ed

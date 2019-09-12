@@ -84,8 +84,8 @@ This opens an in-memory database then immediately exits.
 .Bd -literal
 struct sqlbox *p;
 struct sqlbox_src srcs[] = {
-	{ .fname = (char *)":memory:",
-	  .mode = SQLBOX_SRC_RWC },
+  { .fname = (char *)":memory:",
+    .mode = SQLBOX_SRC_RWC },
 };
 struct sqlbox_cfg cfg;
 size_t id;
@@ -95,9 +95,9 @@ cfg.msg.func_short = warnx;
 cfg.srcs.srcsz = 1;
 cfg.srcs.srcs = srcs;
 if ((p = sqlbox_alloc(&cfg)) == NULL)
-	errx(EXIT_FAILURE, "sqlbox_alloc");
+  errx(EXIT_FAILURE, "sqlbox_alloc");
 if (!(id = sqlbox_open(p, 0)))
-	errx(EXIT_FAILURE, "sqlbox_open");
+  errx(EXIT_FAILURE, "sqlbox_open");
 
 sqlbox_free(p);
 .Ed
@@ -108,8 +108,8 @@ The database is explicitly closed.
 .Bd -literal
 struct sqlbox *p;
 struct sqlbox_src srcs[] = {
-	{ .fname = (char *)"db.db",
-	  .mode = SQLBOX_SRC_RWC },
+  { .fname = (char *)"db.db",
+    .mode = SQLBOX_SRC_RWC },
 };
 struct sqlbox_cfg cfg;
 size_t id;
@@ -119,12 +119,12 @@ cfg.msg.func_short = warnx;
 cfg.srcs.srcsz = 1;
 cfg.srcs.srcs = srcs;
 if ((p = sqlbox_alloc(&cfg)) == NULL)
-	errx(EXIT_FAILURE, "sqlbox_alloc");
+  errx(EXIT_FAILURE, "sqlbox_alloc");
 if (!(id = sqlbox_open(p, 0)))
-	errx(EXIT_FAILURE, "sqlbox_open");
+  errx(EXIT_FAILURE, "sqlbox_open");
 /* Perform work... */
 if (!sqlbox_close(p, id))
-	errx(EXIT_FAILURE, "sqlbox_close");
+  errx(EXIT_FAILURE, "sqlbox_close");
 sqlbox_free(p);
 .Ed
 .\" .Sh DIAGNOSTICS

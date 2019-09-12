@@ -78,15 +78,15 @@ cfg.srcs.srcs = srcs;
 cfg.stmts.stmtsz = 1;
 cfg.stmts.stmts = pstmts;
 if ((p = sqlbox_alloc(&cfg)) == NULL)
-	errx(EXIT_FAILURE, "sqlbox_alloc");
+  errx(EXIT_FAILURE, "sqlbox_alloc");
 if (!(dbid = sqlbox_open(p, 0)))
-	errx(EXIT_FAILURE, "sqlbox_open");
+  errx(EXIT_FAILURE, "sqlbox_open");
 if (!(stmtid = sqlbox_prepare_bind(p, dbid, 0, 0, NULL)))
-	errx(EXIT_FAILURE, "sqlbox_prepare_bind");
+  errx(EXIT_FAILURE, "sqlbox_prepare_bind");
 if ((res = sqlbox_step(p, stmtid)) == NULL)
-	errx(EXIT_FAILURE, "sqlbox_step");
+  errx(EXIT_FAILURE, "sqlbox_step");
 if (!sqlbox_finalise(p, stmtid))
-	errx(EXIT_FAILURE, "sqlbox_finalise");
+  errx(EXIT_FAILURE, "sqlbox_finalise");
 sqlbox_free(p);
 .Ed
 .\" .Sh DIAGNOSTICS
