@@ -55,6 +55,11 @@ sqlbox_close(struct sqlbox *box, size_t src)
 {
 	uint32_t	 v = htonl(src);
 
+	if (src == 0) {
+		sqlbox_warnx(&box->cfg, "close: source is zero");
+		return 0;
+	}
+
 	if (!sqlbox_write_frame
 	    (box, SQLBOX_OP_CLOSE, (char *)&v, sizeof(uint32_t))) {
 		sqlbox_warnx(&box->cfg, "close: sqlbox_write_frame");

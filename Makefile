@@ -17,6 +17,7 @@ TESTS	 = test-alloc-bad-defrole \
 	    test-close-bad-id \
 	    test-close-bad-role \
 	    test-close-twice \
+	    test-close-zero-id \
 	    test-finalise \
 	    test-finalise-bad-stmt \
 	    test-finalise-twice \

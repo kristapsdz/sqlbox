@@ -39,7 +39,7 @@ main(int argc, char *argv[])
 
 	/* Fail: our role doesn't have any sources. */
 
-	if (!sqlbox_close(p, 0))
+	if (!sqlbox_close(p, 100))
 		errx(EXIT_FAILURE, "sqlbox_close");
 	if (sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping should fail");
