@@ -49,9 +49,12 @@ This is not considered an error, as a common usage pattern is a role
 with permission opening the database, shedding its role, then the close
 being relegated to the full destruction of the box.
 .Sh RETURN VALUES
-Returns zero if communication with the box fails or
+Returns zero if communication with
+.Fa box
+fails or
 .Fa id
 is zero.
+Otherwise, returns non-zero.
 .Pp
 If closing the database fails (not open or does not exist, statements
 not finalised), subsequent

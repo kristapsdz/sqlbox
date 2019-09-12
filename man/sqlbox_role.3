@@ -31,20 +31,35 @@
 .Fa "size_t role"
 .Fc
 .Sh DESCRIPTION
-Change the active role to
+Change the active role of
+.Fa box
+to
 .Fa role ,
+.Pp
+Changing to the current role has no effect.
+Roles are given in
+.Vt struct sqlbox_role
+to
+.Xr sqlbox_alloc 3 .
+Role transition is given in the
+.Va roles
+array indicating which roles may transition into which other roles.
+The value for self-transition is ignored: self-transition is a noop.
+.Sh RETURN VALUES
+Returns zero if communication with
+.Fa box
+fails.
+Otherwise, returns non-zero.
+.Pp
 If
 .Fa role
 is not a valid role, no roles have been configured, or the current role
-does not have permission to transition to it, the context will exit
-without notifying the caller.
-To explicitly test whether the operation succeeds, follow with
-.Xr sqlbox_ping 3 .
-.Pp
-Changing to the current role has no effect.
-.\" .Sh RETURN VALUES
-.Fn sqlbox_role
-returns non-zero on success (the context is active) or zero on failure.
+does not have permission to transition to it, subsequent
+.Fa box
+access will fail.
+Use
+.Xr sqlbox_ping 3
+to check explicitly.
 .\" For sections 2, 3, and 9 function return values only.
 .\" .Sh ENVIRONMENT
 .\" For sections 1, 6, 7, and 8 only.

@@ -34,17 +34,47 @@ Tests whether
 .Fa box
 is active.
 This is useful for checking whether operations that do not report an
-error have failed before the next operation of interest.
-.\" .Sh RETURN VALUES
-.Fn sqlbox_ping
-returns non-zero on success (the context is active), or zero on failure.
+error (e.g.,
+.Xr sqlbox_finalise 3 )
+have failed before the next operation of interest.
+.Sh RETURN VALUES
+Returns non-zero on success or zero if communication with
+.Fa box
+fails.
 .\" For sections 2, 3, and 9 function return values only.
 .\" .Sh ENVIRONMENT
 .\" For sections 1, 6, 7, and 8 only.
 .\" .Sh FILES
 .\" .Sh EXIT STATUS
 .\" For sections 1, 6, and 8 only.
-.\" .Sh EXAMPLES
+.Sh EXAMPLES
+To check whether
+.Xr sqlbox_close 3
+failed:
+.Bd -literal
+struct sqlbox *p;
+struct sqlbox_src srcs[] = {
+  { .fname = (char *)":memory:",
+    .mode = SQLBOX_SRC_RWC },
+};
+struct sqlbox_cfg cfg;
+size_t id;
+
+memset(&cfg, 0, sizeof(struct sqlbox_cfg));
+cfg.msg.func_short = warnx;
+cfg.srcs.srcsz = 1;
+cfg.srcs.srcs = srcs;
+if ((p = sqlbox_alloc(&cfg)) == NULL)
+	errx(EXIT_FAILURE, "sqlbox_alloc");
+if (!(id = sqlbox_open(p, 0)))
+	errx(EXIT_FAILURE, "sqlbox_open");
+if (!sqlbox_close(p, id))
+	errx(EXIT_FAILURE, "sqlbox_close");
+if (!sqlbox_ping(p))
+	errx(EXIT_FAILURE, "sqlbox_ping");
+/* Success! Do other stuff... */
+sqlbox_free(p);
+.Ed
 .\" .Sh DIAGNOSTICS
 .\" For sections 1, 4, 6, 7, 8, and 9 printf/stderr messages only.
 .\" .Sh ERRORS
