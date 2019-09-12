@@ -30,23 +30,26 @@
 .Fa "struct sqlbox_cfg *cfg"
 .Fc
 .Sh DESCRIPTION
-Creates an sqlbox context: verifies
+Creates an sqlbox context.
+.Fn sqlbox_alloc
+first verifies
 .Fa cfg ,
-forks a child process, then the child waits for instructions over a
-socket pair while the parent returns.
+then forks a child process, then returns.
+The child process waits for instructions over a socket pair.
 The
 .Fa cfg
-contents are inherited by the child process but never freed, so they may
-either be constructed statically or allocated and freed by the caller.
+is inherited by the child process but never freed, so they may either be
+constructed statically or allocated and freed by the caller.
 .Pp
 .Fn sqlbox_alloc
 performs the following checks on
 .Fa cfg ,
 if not
-.Dv NULL :
+.Dv NULL ,
+before forking:
 .Bl -bullet
 .It
-database filenames may not be
+source filenames may not be
 .Dv NULL
 .It
 statements may not be
@@ -63,12 +66,15 @@ each role database must be a valid index
 .Sh RETURN VALUES
 Returns the allocated database handle or
 .Dv NULL
-if the configuration is invalid, memory allocation failed, or the
+if
+.Fa cfg
+is invalid, memory allocation failed, or the
 .Xr fork 2
 or
 .Xr socketpair 2
 functions failed.
-Allocated handles should be released with
+.Pp
+On success, the pointer should be freed with
 .Xr sqlbox_free 3 .
 .\" For sections 2, 3, and 9 function return values only.
 .\" .Sh ENVIRONMENT
@@ -91,10 +97,17 @@ memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 cfg.msg.func_short = warnx;
 cfg.srcs.srcs = srcs;
 cfg.srcs.srcsz = 1;
-p = sqlbox_alloc(&cfg);
+if ((p = sqlbox_alloc(&cfg)) == NULL)
+  errx(EXIT_FAILURE, "sqlbox_alloc");
 .Ed
 .Pp
 The following does the same, but with RBAC for the source.
+In this example, arrays in
+.Vt struct sqlbox_role
+are not set to
+.Dv NULL
+if they have an associated length as in the case of
+.Va rolesz .
 .Bd -literal
 struct sqlbox *p;
 struct sqlbox_cfg cfg;
@@ -114,7 +127,8 @@ cfg.srcs.srcsz = 1;
 cfg.roles.roles = roles;
 cfg.roles.rolesz = 1;
 cfg.roles.defrole = 0;
-p = sqlbox_alloc(&cfg);
+if ((p = sqlbox_alloc(&cfg)) == NULL)
+  errx(EXIT_FAILURE, "sqlbox_alloc");
 .Ed
 .\" .Sh DIAGNOSTICS
 .\" For sections 1, 4, 6, 7, 8, and 9 printf/stderr messages only.
