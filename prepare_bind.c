@@ -59,6 +59,11 @@ sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 	char			*buf;
 	struct sqlbox_stmt	*st;
 
+	if (srcid == 0) {
+		sqlbox_warnx(&box->cfg, "prepare-bind: source is zero");
+		return 0;
+	}
+
 	/* Initialise our result set holder and frame. */
 
 	if ((st = calloc(1, sizeof(struct sqlbox_stmt))) == NULL) {
