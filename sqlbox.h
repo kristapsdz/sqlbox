@@ -97,13 +97,11 @@ enum	sqlbox_parmt {
 
 /*
  * A prepared statement.
- * Statements might have return values in the case of selecting, which
- * we specify here as types.
+ * This is in a structure as future-proof of adding more information for
+ * the prepared statement (types, etc.).
  */
 struct	sqlbox_pstmt {
 	char			*stmt; /* prepared statement */
-	enum sqlbox_parmt	*cols; /* returned column types */
-	size_t			 colsz; /* no. columns or 0 */
 };
 
 /*

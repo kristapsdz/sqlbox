@@ -35,8 +35,7 @@ main(int argc, char *argv[])
 		{ .fname = (char *)":memory:" }
 	};
 	struct sqlbox_pstmt	 pstmts[] = {
-		{ .stmt = (char *)"create table foo (foo INTEGER)",
-		  .colsz = 0 }
+		{ .stmt = (char *)"create table foo (foo INTEGER)" }
 	};
 
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));

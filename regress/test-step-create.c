@@ -36,8 +36,7 @@ main(int argc, char *argv[])
 		  .mode = SQLBOX_SRC_RW }
 	};
 	struct sqlbox_pstmt	 pstmts[] = {
-		{ .stmt = (char *)"CREATE TABLE foo (bar INTEGER)",
-		  .colsz = 0 }
+		{ .stmt = (char *)"CREATE TABLE foo (bar INTEGER)" }
 	};
 	const struct sqlbox_parmset *res;
 

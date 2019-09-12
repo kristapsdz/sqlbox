@@ -37,12 +37,9 @@ main(int argc, char *argv[])
 		  .mode = SQLBOX_SRC_RW }
 	};
 	struct sqlbox_pstmt	 pstmts[] = {
-		{ .stmt = (char *)"CREATE TABLE foo (bar INTEGER)",
-		  .colsz = 0 },
-		{ .stmt = (char *)"INSERT INTO foo (bar) VALUES (?)",
-		  .colsz = 0 },
-		{ .stmt = (char *)"SELECT * FROM foo",
-		  .colsz = 0 },
+		{ .stmt = (char *)"CREATE TABLE foo (bar INTEGER)" },
+		{ .stmt = (char *)"INSERT INTO foo (bar) VALUES (?)" },
+		{ .stmt = (char *)"SELECT * FROM foo" }
 	};
 	struct sqlbox_parm	 parms[] = {
 		{ .iparm = 10,
