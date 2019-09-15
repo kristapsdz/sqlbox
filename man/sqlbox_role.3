@@ -60,6 +60,15 @@ access will fail.
 Use
 .Xr sqlbox_ping 3
 to check explicitly.
+.Pp
+If
+.Fn sqlbox_role
+fails,
+.Fa box
+is no longer accessible beyond
+.Xr sqlbox_ping 3
+and
+.Xr sqlbox_free 3 .
 .\" For sections 2, 3, and 9 function return values only.
 .\" .Sh ENVIRONMENT
 .\" For sections 1, 6, 7, and 8 only.

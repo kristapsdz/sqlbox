@@ -39,8 +39,12 @@ TESTS	 = test-alloc-bad-defrole \
 	    test-role-norole \
 	    test-role-transition \
 	    test-role-transition-self \
+	    test-step-bad-stmt \
+	    test-step-double-exec \
 	    test-step-create \
-	    test-step-create-insert-select
+	    test-step-create-insert-select \
+	    test-step-create-insert-selectmulti \
+	    test-step-create-insert-selectmulticol
 OBJS	  = alloc.o \
 	    close.o \
 	    finalise.o \
@@ -66,7 +70,7 @@ compats.o $(OBJS) $(TESTS): config.h
 $(OBJS): sqlbox.h extern.h
 
 $(TESTS): libsqlbox.a regress/regress.h
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ regress/$*.c compats.o $(LDFLAGS) libsqlbox.a -lsqlite3
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ regress/$*.c compats.o $(LDFLAGS) libsqlbox.a -lsqlite3 -lm
 
 .for test in $(TESTS)
 ${test}: regress/${test}.c

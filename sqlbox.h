@@ -88,11 +88,11 @@ struct	sqlbox_roles {
 };
 
 enum	sqlbox_parmt {
-	SQLBOX_PARM_BLOB,
-	SQLBOX_PARM_FLOAT,
-	SQLBOX_PARM_INT,
-	SQLBOX_PARM_NULL,
-	SQLBOX_PARM_STRING,
+	SQLBOX_PARM_BLOB = 0,
+	SQLBOX_PARM_FLOAT = 1,
+	SQLBOX_PARM_INT = 2,
+	SQLBOX_PARM_NULL = 3,
+	SQLBOX_PARM_STRING = 4,
 };
 
 /*
@@ -143,6 +143,9 @@ struct	sqlbox_msg {
 	void	 *dat; /* passed to func */
 };
 
+/*
+ * Contains all data required for an sqlbox configuration.
+ */
 struct	sqlbox_cfg {
 	struct sqlbox_pstmts	stmts; /* statements */
 	struct sqlbox_roles	roles; /* RBAC roles */
@@ -150,20 +153,35 @@ struct	sqlbox_cfg {
 	struct sqlbox_msg	msg; /* message system */
 };
 
+/*
+ * A single column either for setting parameters to bind or reading
+ * results from stepping.
+ * Data is all associated with a type and a length.
+ * When binding, strings (sparm and SQLBOX_PARM_STRING) must have their
+ * size (total byte length) set to zero to be auto-computed or otherwise
+ * *must include* the NUL terminating character.
+ * Binary data must have the size set.
+ * Floats and integers ignore the size.
+ */
 struct	sqlbox_parm {
 	union {
-		double		 fparm;
-		int64_t		 iparm;
-		const char	*sparm;
-		const void	*bparm;
+		double		 fparm; /* floats */
+		int64_t		 iparm; /* integers */
+		const char	*sparm; /* NUL-terminated UTF-8 */
+		const void	*bparm; /* binary data */
 	};
 	enum sqlbox_parmt	 type;
-	size_t			 sz;
+	size_t			 sz; /* data length (bytes) */
 };
 
+/*
+ * A possibly-empty result ("row") from stepping a prepared statement.
+ * A result with zero columns indicates no more data will follow by
+ * stepping the prepared statement.
+ */
 struct	sqlbox_parmset {
-	struct sqlbox_parm 	*ps;
-	size_t		 	 psz;
+	struct sqlbox_parm 	*ps; /* columns of the resulting row */
+	size_t		 	 psz; /* number of columns or zero */
 };
 
 struct	sqlbox;

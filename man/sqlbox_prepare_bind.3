@@ -54,6 +54,20 @@ The
 array, if
 .Fa psz
 is non-zero, consists of typed values bound to those parameters.
+Types must correspond to typed values, for example, floats of type
+.Dv SQLBOX_PARM_FLOAT
+must be set in the
+.Va fparm
+anonymous union of
+.Vt struct sqlbox_parm .
+The
+.Va sz
+value is ignored for floats and integers, but must be provided for
+blobs.
+For strings, a zero indicates it should be computed using
+.Xr strlen 3 .
+Otherwise, it should be the full string length, including the NUL
+terminator.
 .Pp
 It returns a non-zero identifier for later use by
 .Xr sqlbox_step 3
@@ -74,6 +88,15 @@ fails, the statement could not be prepared due to an illegal statement
 or database value, the current role cannot prepare the given statement,
 or the database itself raises an error.
 Otherwise it returns the >0 statement identifier.
+.Pp
+If
+.Fn sqlbox_prepare_bind
+fails,
+.Fa box
+is no longer accessible beyond
+.Xr sqlbox_ping 3
+and
+.Xr sqlbox_free 3 .
 .\" For sections 2, 3, and 9 function return values only.
 .\" .Sh ENVIRONMENT
 .\" For sections 1, 6, 7, and 8 only.

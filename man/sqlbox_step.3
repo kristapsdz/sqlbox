@@ -15,41 +15,50 @@
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
 .Dd $Mdocdate$
-.Dt SQLBOX_FINALISE 3
+.Dt SQLBOX_STEP 3
 .Os
 .Sh NAME
-.Nm sqlbox_finalise
-.Nd finalise a statement
+.Nm sqlbox_step
+.Nd execute a prepared statement
 .Sh LIBRARY
 .Lb sqlbox
 .Sh SYNOPSIS
 .In stddef.h
 .In sqlbox.h
-.Ft int
-.Fo sqlbox_finalise
+.Ft const struct sqlbox_parmset *
+.Fo sqlbox_step
 .Fa "struct sqlbox *box"
 .Fa "size_t id"
 .Fc
 .Sh DESCRIPTION
-Finalise (close and free resources) the non-zero statement
+Executes a statement
 .Fa id
-as returned by
+prepared with
 .Xr sqlbox_prepare_bind 3 .
-After being called, the statement may no longer be used.
-.Sh RETURN VALUES
-Return zero if
-.Fa id
-is invalid or communication with the box fails, non-zero otherwise.
 .Pp
-If finalising the statement fails, subsequent
-.Fa box
-access will fail.
-Use
-.Xr sqlbox_ping 3
-to check explicitly.
+The result set consists of values from each column of the returned data
+in the underlying type of the value.
+If the statement does not return any column (such as a
+.Li CREATE TABLE
+or
+.Li UPDATE ,
+or if there are no more rows in a
+.Li SELECT
+statement), the result set will be empty.
+The result set as a whole, including the memory allocated for each
+column, is only valid until the next
+.Fn sqlbox_step
+or
+.Xr sqlbox_finalise 3 .
+.Sh RETURN VALUES
+Returns the results of the query or
+.Dv NULL
+on failure.
+Failure covers situations like failure to communicate with the box,
+stepping after the last result has been returned, or database error.
 .Pp
 If
-.Fn sqlbox_finalise
+.Fn sqlbox_step
 fails,
 .Fa box
 is no longer accessible beyond
@@ -63,39 +72,48 @@ and
 .\" .Sh EXIT STATUS
 .\" For sections 1, 6, and 8 only.
 .Sh EXAMPLES
-The following example opens (or creates) database
-.Pa db.db ,
-creates a table, and exits.
-The database is closed automatically by
-.Xr sqlbox_free 3 .
+The following opens a database
+.Pa db.db
+and inserts an integer value into it.
+It depends upon
+.Xr sqlbox_free 3
+to close out the database.
 .Bd -literal
 size_t dbid, stmtid;
 struct sqlbox *p;
 struct sqlbox_cfg cfg;
 struct sqlbox_src srcs[] = {
   { .fname = (char *)"db.db",
-    .mode = SQLBOX_SRC_RWC }
+    .mode = SQLBOX_SRC_RW }
 };
 struct sqlbox_pstmt pstmts[] = {
-  { .stmt = (char *)"CREATE TABLE foo (bar INTEGER)" }
+  { .stmt = (char *)"INSERT INTO foo (bar) VALUES (?)" },
+};
+struct sqlbox_parm parms[] = {
+  { .iparm = 10,
+    .type = SQLBOX_PARM_INT },
 };
 const struct sqlbox_parmset *res;
+
 memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 cfg.msg.func_short = warnx;
 cfg.srcs.srcsz = 1;
 cfg.srcs.srcs = srcs;
 cfg.stmts.stmtsz = 1;
 cfg.stmts.stmts = pstmts;
+
 if ((p = sqlbox_alloc(&cfg)) == NULL)
   errx(EXIT_FAILURE, "sqlbox_alloc");
 if (!(dbid = sqlbox_open(p, 0)))
   errx(EXIT_FAILURE, "sqlbox_open");
-if (!(stmtid = sqlbox_prepare_bind(p, dbid, 0, 0, NULL)))
+if (!(stmtid = sqlbox_prepare_bind(p, dbid, 1, 1, parms)))
   errx(EXIT_FAILURE, "sqlbox_prepare_bind");
 if ((res = sqlbox_step(p, stmtid)) == NULL)
   errx(EXIT_FAILURE, "sqlbox_step");
+/* The result will have zero columns. */
 if (!sqlbox_finalise(p, stmtid))
   errx(EXIT_FAILURE, "sqlbox_finalise");
+
 sqlbox_free(p);
 .Ed
 .\" .Sh DIAGNOSTICS
@@ -103,8 +121,8 @@ sqlbox_free(p);
 .\" .Sh ERRORS
 .\" For sections 2, 3, 4, and 9 errno settings only.
 .Sh SEE ALSO
-.Xr sqlbox_ping 3 ,
-.Xr sqlbox_prepare_bind 3
+.Xr sqlbox_finalise 3 ,
+.Xr sqlbox_open 3
 .\" .Sh STANDARDS
 .\" .Sh HISTORY
 .\" .Sh AUTHORS

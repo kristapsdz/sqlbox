@@ -73,6 +73,15 @@ although it's probably not what you want.
 .Sh RETURN VALUES
 Returns an identifier >0 if communication with the box works, zero
 otherwise (opening the source files, etc.).
+.Pp
+If
+.Fn sqlbox_open
+fails,
+.Fa box
+is no longer accessible beyond
+.Xr sqlbox_ping 3
+and
+.Xr sqlbox_free 3 .
 .\" For sections 2, 3, and 9 function return values only.
 .\" .Sh ENVIRONMENT
 .\" For sections 1, 6, 7, and 8 only.

@@ -77,7 +77,7 @@ sqlbox_step(struct sqlbox *box, size_t stmtid)
 
 	if (!sqlbox_parm_unpack(box,
 	    &st->res.set.ps, &st->res.psz, frame, framesz)) {
-		sqlbox_warnx(&box->cfg, "step: sqlbox_bound_unpack");
+		sqlbox_warnx(&box->cfg, "step: sqlbox_parm_unpack");
 		return NULL;
 	}
 
@@ -95,8 +95,8 @@ int
 sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 {
 	struct sqlbox_stmt	*st;
-	size_t			 pos, id, attempt = 0, i;
-	int			 hasrow;
+	size_t			 pos, id, attempt = 0, i, cols = 0;
+	int			 ccount;
 	uint32_t		 val;
 
 	/* Look up the statement in our global list. */
@@ -112,6 +112,20 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 			break;
 	if (st == NULL) {
 		sqlbox_warnx(&box->cfg, "step: bad stmt: %zu", id);
+		return 0;
+	}
+
+	/* 
+	 * Did we already run this to completion?
+	 * We know this if the existing result set has size zero.
+	 * If so, we're not allowed to reinvoke it.
+	 */
+
+	if (st->res.psz == 0) {
+		sqlbox_warnx(&box->cfg, "%s: step: already "
+			"stepped", st->db->src->fname);
+		sqlbox_warnx(&box->cfg, "%s: step: statement: "
+			"%s", st->db->src->fname, st->pstmt->stmt);
 		return 0;
 	}
 
@@ -131,10 +145,16 @@ again:
 		sqlbox_sleep(attempt++);
 		goto again;
 	case SQLITE_DONE:
-		hasrow = 0;
 		break;
 	case SQLITE_ROW:
-		hasrow = sqlite3_column_count(st->stmt);
+		if ((ccount = sqlite3_column_count(st->stmt)) > 0) {
+			cols = (size_t)ccount;
+			break;
+		}
+		sqlbox_warnx(&box->cfg, "%s: step: row without "
+			"columns?", st->db->src->fname);
+		sqlbox_warnx(&box->cfg, "%s: step: statement: "
+			"%s", st->db->src->fname, st->pstmt->stmt);
 		break;
 	default:
 		sqlbox_warnx(&box->cfg, "%s: step: %s", 
@@ -144,37 +164,35 @@ again:
 	}
 
 	/*
-	 * See if we need to prime our result set.
-	 * Our result sizes must be the same, but the result types may
-	 * change.
-	 * Note that the text and blob pointers are immediately
-	 * serialised below, so we don't need to worry about the return
-	 * pointers going stale.
+	 * See if we need to prime our result set: if we have columns,
+	 * allocate results (make sure, with more results, that the
+	 * number of results are the same).
 	 */
 
-	if (hasrow < 0) {
-		sqlbox_warnx(&box->cfg, "%s: step: negative result "
-			"length: %d", st->db->src->fname, hasrow);
-		return 0;
-	} else if (st->res.psz >= 0 && hasrow != st->res.psz) {
+	if (cols && st->res.psz >= 0 && cols != (size_t)st->res.psz) {
 		sqlbox_warnx(&box->cfg, "%s: step: result length "
-			"mismatch (have %zd, %d in results)",
-			st->db->src->fname, st->res.psz, hasrow);
+			"mismatch (have %zd, %zu in results)",
+			st->db->src->fname, st->res.psz, cols);
 		return 0;
-	} else if (st->res.psz < 0 && hasrow > 0) {
+	} else if (cols && st->res.psz < 0) {
 		st->res.set.ps = calloc
-			(hasrow, sizeof(struct sqlbox_parm));
+			(cols, sizeof(struct sqlbox_parm));
 		if (st->res.set.ps == NULL) {
 			sqlbox_warn(&box->cfg, "step: calloc");
 			return 0;
 		}
-		st->res.psz = hasrow;
-		st->res.set.psz = (size_t)hasrow;
-	} else if (st->res.psz < 0) {
-		assert(hasrow == 0);
+		st->res.psz = cols;
+		st->res.set.psz = cols;
+	} else if (cols == 0 || st->res.psz < 0) {
+		assert(cols == 0);
 		st->res.psz = 0;
 		st->res.set.psz = 0;
 	}
+
+	/*
+	 * Text and blob pointers are immediately serialised, so we
+	 * don't need to worry about the return pointers going stale.
+	 */
 
 	for (i = 0; i < st->res.set.psz; i++) {
 		switch (sqlite3_column_type(st->stmt, i)) {
@@ -186,7 +204,7 @@ again:
 				sqlite3_column_bytes(st->stmt, i);
 			break;
 		case SQLITE_FLOAT:
-			st->res.set.ps[i].type = SQLBOX_PARM_INT;
+			st->res.set.ps[i].type = SQLBOX_PARM_FLOAT;
 			st->res.set.ps[i].fparm = 
 				sqlite3_column_double(st->stmt, i);
 			st->res.set.ps[i].sz = sizeof(double);
@@ -201,6 +219,7 @@ again:
 			st->res.set.ps[i].type = SQLBOX_PARM_STRING;
 			st->res.set.ps[i].sparm = 
 				sqlite3_column_text(st->stmt, i);
+			warnx("here: %s", st->res.set.ps[i].sparm);
 			st->res.set.ps[i].sz = strlen
 				(st->res.set.ps[i].sparm) + 1;
 			break;

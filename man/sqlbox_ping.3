@@ -41,6 +41,15 @@ have failed before the next operation of interest.
 Returns non-zero on success or zero if communication with
 .Fa box
 fails.
+.Pp
+If
+.Fn sqlbox_ping
+fails,
+.Fa box
+is no longer accessible beyond
+.Xr sqlbox_ping 3
+and
+.Xr sqlbox_free 3 .
 .\" For sections 2, 3, and 9 function return values only.
 .\" .Sh ENVIRONMENT
 .\" For sections 1, 6, 7, and 8 only.

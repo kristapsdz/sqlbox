@@ -39,7 +39,7 @@ sqlbox_parm_pack(struct sqlbox *box, size_t parmsz,
 	const struct sqlbox_parm *parms, 
 	char **buf, size_t *offs, size_t *bufsz)
 {
-	size_t	 framesz, i;
+	size_t	 framesz, i, sz;
 	void	*pp;
 	uint32_t tmp;
 	int64_t	 val;
@@ -114,12 +114,14 @@ sqlbox_parm_pack(struct sqlbox *box, size_t parmsz,
 			*offs += parms[i].sz;
 			break;
 		case SQLBOX_PARM_STRING:
-			val = htonl(parms[i].sz);
+			sz = parms[i].sz == 0 ? 
+				strlen(parms[i].sparm) + 1 : parms[i].sz;
+			val = htonl(sz);
 			memcpy(*buf + *offs, 
 				(char *)&val, sizeof(uint32_t));
 			*offs += sizeof(uint32_t);
-			memcpy(*buf + *offs, parms[i].sparm, parms[i].sz);
-			*offs += parms[i].sz;
+			memcpy(*buf + *offs, parms[i].sparm, sz);
+			*offs += sz;
 			break;
 		default:
 			abort();
@@ -153,11 +155,15 @@ sqlbox_parm_unpack(struct sqlbox *box, struct sqlbox_parm **parms,
 	 * Allocate stored parameters.
 	 * If parmsz < 0, that means that we haven't allocated anything
 	 * so we can set the first allocation size.
+	 * If parmsz == 0, then we've already run the query.
 	 * Subsequent allocation sizes *must* match the first, even if
 	 * it's zero.
 	 */
 
-	if (*parmsz < 0 && psz > 0) {
+	if (*parmsz == 0) {
+		sqlbox_warnx(&box->cfg, "parameters were already zero");
+		return 0;
+	} else if (*parmsz < 0 && psz > 0) {
 		*parms = calloc(psz, sizeof(struct sqlbox_parm));
 		if (*parms == NULL) {
 			sqlbox_warn(&box->cfg, "calloc");
@@ -167,11 +173,12 @@ sqlbox_parm_unpack(struct sqlbox *box, struct sqlbox_parm **parms,
 	} else if (*parmsz < 0) {
 		*parms = NULL;
 		*parmsz = 0;
-	} else if ((size_t)*parmsz != psz) {
+	} else if (psz && (size_t)*parmsz != psz) {
 		sqlbox_warnx(&box->cfg, "parameter length mismatch "
 			"(have %zu, %zu in parameters)", *parmsz, psz);
 		return 0;
-	}
+	} else if (psz == 0)
+		*parmsz = 0;
 
 	/* 
 	 * Copy out into our parameters.
@@ -191,7 +198,7 @@ sqlbox_parm_unpack(struct sqlbox *box, struct sqlbox_parm **parms,
 			if (bufsz < sizeof(double))
 				goto badframe;
 			(*parms)[i].sz = sizeof(double);
-			(*parms)[i].iparm = *(double *)buf;
+			(*parms)[i].fparm = *(double *)buf;
 			buf += sizeof(double);
 			bufsz -= sizeof(double);
 			break;

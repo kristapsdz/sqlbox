@@ -255,6 +255,7 @@ again:
 			c = sqlite3_bind_null(stmt, i + 1);
 			break;
 		case SQLBOX_PARM_STRING:
+			warnx("binding: %s", parms[i].sparm);
 			c = sqlite3_bind_text(stmt, i + 1,
 				parms[i].sparm, -1, SQLITE_TRANSIENT);
 			break;
