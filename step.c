@@ -219,7 +219,6 @@ again:
 			st->res.set.ps[i].type = SQLBOX_PARM_STRING;
 			st->res.set.ps[i].sparm = 
 				sqlite3_column_text(st->stmt, i);
-			warnx("here: %s", st->res.set.ps[i].sparm);
 			st->res.set.ps[i].sz = strlen
 				(st->res.set.ps[i].sparm) + 1;
 			break;
