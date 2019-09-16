@@ -70,7 +70,7 @@ sqlbox_clear(struct sqlbox *box)
 	if (box->fd != -1)
 		close(box->fd);
 
-	TAILQ_FOREACH(db, &box->dbq, entries) {
+	while ((db = TAILQ_FIRST(&box->dbq)) != NULL) {
 		sqlbox_warnx(&box->cfg, "%s: source %zu "
 			"still open on exit", 
 			db->src->fname, db->idx);
@@ -85,7 +85,9 @@ sqlbox_clear(struct sqlbox *box)
 			TAILQ_REMOVE(&box->stmtq, stmt, gentries);
 			sqlbox_stmt_free(stmt);
 		}
+		TAILQ_REMOVE(&box->dbq, db, entries);
 		sqlite3_close(db->db);
+		free(db);
 	}
 
 	/* 
