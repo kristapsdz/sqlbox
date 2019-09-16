@@ -219,8 +219,8 @@ again:
 			st->res.set.ps[i].type = SQLBOX_PARM_STRING;
 			st->res.set.ps[i].sparm = 
 				sqlite3_column_text(st->stmt, i);
-			st->res.set.ps[i].sz = strlen
-				(st->res.set.ps[i].sparm) + 1;
+			st->res.set.ps[i].sz = 
+				sqlite3_column_bytes(st->stmt, i) + 1;
 			break;
 		case SQLITE_NULL:
 			st->res.set.ps[i].type = SQLBOX_PARM_NULL;

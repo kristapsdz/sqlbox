@@ -44,7 +44,8 @@ TESTS	 = test-alloc-bad-defrole \
 	    test-step-create \
 	    test-step-create-insert-select \
 	    test-step-create-insert-selectmulti \
-	    test-step-create-insert-selectmulticol
+	    test-step-create-insert-selectmulticol \
+	    test-step-string-explicit-length
 OBJS	  = alloc.o \
 	    close.o \
 	    finalise.o \
