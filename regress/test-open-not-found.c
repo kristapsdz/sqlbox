@@ -30,18 +30,15 @@ main(int argc, char *argv[])
 {
 	struct sqlbox		*p;
 	struct sqlbox_cfg	 cfg;
+	struct sqlbox_src	 srcs[] = {
+		{ .fname = (char *)"hope-this-dont-exist.db",
+		  .mode = SQLBOX_SRC_RW }
+	};
 
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 	cfg.msg.func_short = warnx;
-
-	cfg.srcs.srcsz = 1;
-	cfg.srcs.srcs = calloc(1, sizeof(struct sqlbox_src));
-	if (cfg.srcs.srcs == NULL)
-		err(EXIT_FAILURE, NULL);
-	cfg.srcs.srcs[0].fname = strdup
-		("hope-this-dont-exist.db");
-	if (cfg.srcs.srcs[0].fname == NULL)
-		err(EXIT_FAILURE, NULL);
+	cfg.srcs.srcsz = nitems(srcs);
+	cfg.srcs.srcs = srcs;
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_alloc");
