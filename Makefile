@@ -46,7 +46,10 @@ TESTS	 = test-alloc-bad-defrole \
 	    test-step-create-insert-selectmulti \
 	    test-step-create-insert-selectmulticol \
 	    test-step-float-explicit-length \
+	    test-step-float-maxvalue \
 	    test-step-int-explicit-length \
+	    test-step-int-maxvalue \
+	    test-step-int-maxnegvalue \
 	    test-step-string-explicit-length \
 	    test-step-string-implicit-length
 OBJS	  = alloc.o \
