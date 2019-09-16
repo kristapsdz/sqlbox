@@ -36,7 +36,11 @@ sqlbox_ping(struct sqlbox *box)
 {
 	uint32_t	 syn, ack;
 
+#if HAVE_ARC4RANDOM
 	syn = arc4random();
+#else
+	syn = random();
+#endif
 	if (!sqlbox_write_frame(box, 
 	    SQLBOX_OP_PING, (char *)&syn, sizeof(uint32_t))) {
 		sqlbox_warnx(&box->cfg, "ping: sqlbox_write_frame");
