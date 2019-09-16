@@ -208,7 +208,7 @@ sqlbox_read_frame(struct sqlbox *box, char **buf,
 	 * frame size integer.
 	 */
 
-	*framesz = ntohl(*(uint32_t *)*buf);
+	*framesz = le32toh(*(uint32_t *)*buf);
 	bsz = *framesz + sizeof(uint32_t);
 
 	if (bsz > *bufsz) {
@@ -273,10 +273,10 @@ sqlbox_write_frame(struct sqlbox *box,
 
 	/* Account for operation... */
 
-	tmp = htonl(sz + sizeof(uint32_t));
+	tmp = htole32(sz + sizeof(uint32_t));
 	memcpy(frame, &tmp, sizeof(uint32_t));
 
-	tmp = htonl(op);
+	tmp = htole32(op);
 	memcpy(frame + 4, &tmp, sizeof(uint32_t));
 
 	assert(sz <= 1024 - 8);

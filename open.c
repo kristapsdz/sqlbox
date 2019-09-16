@@ -53,7 +53,7 @@ sqlbox_rolecheck_src(struct sqlbox *box, size_t idx)
 size_t
 sqlbox_open(struct sqlbox *box, size_t src)
 {
-	uint32_t	 v = htonl(src), ack;
+	uint32_t	 v = htole32(src), ack;
 
 	if (!sqlbox_write_frame
 	    (box, SQLBOX_OP_OPEN, (char *)&v, sizeof(uint32_t))) {
@@ -64,7 +64,7 @@ sqlbox_open(struct sqlbox *box, size_t src)
 		sqlbox_warnx(&box->cfg, "open: sqlbox_read");
 		return 0;
 	}
-	return (size_t)ntohl(ack);
+	return (size_t)le32toh(ack);
 }
 
 /*
@@ -91,7 +91,7 @@ sqlbox_op_open(struct sqlbox *box, const char *buf, size_t sz)
 			"bad frame size: %zu", sz);
 		return 0;
 	}
-	idx = ntohl(*(uint32_t *)buf);
+	idx = le32toh(*(uint32_t *)buf);
 	if (idx >= box->cfg.srcs.srcsz) {
 		sqlbox_warnx(&box->cfg, "open: invalid source "
 			"%zu (have %zu)", idx, box->cfg.srcs.srcsz);
@@ -157,7 +157,7 @@ again:
 	/* Add to list of available sources and write back id. */
 
 	TAILQ_INSERT_TAIL(&box->dbq, db, entries);
-	ack = htonl(db->id);
+	ack = htole32(db->id);
 
 	if (!sqlbox_write(box, (char *)&ack, sizeof(uint32_t))) {
 		sqlbox_warnx(&box->cfg, "%s: open: sqlbox_write", fn);

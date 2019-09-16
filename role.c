@@ -57,7 +57,7 @@ sqlbox_rolecheck_role(struct sqlbox *box, size_t idx)
 int
 sqlbox_role(struct sqlbox *box, size_t role)
 {
-	uint32_t	 v = htonl(role);
+	uint32_t	 v = htole32(role);
 
 	if (!sqlbox_write_frame
 	    (box, SQLBOX_OP_ROLE, (char *)&v, sizeof(uint32_t))) {
@@ -88,7 +88,7 @@ sqlbox_op_role(struct sqlbox *box, const char *buf, size_t sz)
 		return 0;
 	}
 
-	role = ntohl(*(uint32_t *)buf);
+	role = le32toh(*(uint32_t *)buf);
 	if (role > box->cfg.roles.rolesz) {
 		sqlbox_warnx(&box->cfg, "role: invalid role %zu "
 			"(have %zu)", role, box->cfg.roles.rolesz);

@@ -34,7 +34,7 @@
 const struct sqlbox_parmset *
 sqlbox_step(struct sqlbox *box, size_t stmtid)
 {
-	uint32_t		 v = htonl(stmtid);
+	uint32_t		 v = htole32(stmtid);
 	const char		*frame;
 	size_t			 framesz;
 	struct sqlbox_stmt 	*st;
@@ -106,7 +106,7 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 			"bad frame size: %zu", sz);
 		return 0;
 	}
-	id = ntohl(*(uint32_t *)buf);
+	id = le32toh(*(uint32_t *)buf);
 	TAILQ_FOREACH(st, &box->stmtq, gentries)
 		if (st->id == id)
 			break;
@@ -217,7 +217,7 @@ again:
 			break;
 		case SQLITE_TEXT:
 			st->res.set.ps[i].type = SQLBOX_PARM_STRING;
-			st->res.set.ps[i].sparm = 
+			st->res.set.ps[i].sparm =
 				sqlite3_column_text(st->stmt, i);
 			st->res.set.ps[i].sz = 
 				sqlite3_column_bytes(st->stmt, i) + 1;
@@ -264,7 +264,7 @@ again:
 
 	/* Now write our frame size. */
 
-	val = htonl(pos - 4);
+	val = htole32(pos - 4);
 	memcpy(st->res.buf, (char *)&val, sizeof(uint32_t));
 
 	pos = pos > 1024 ? pos : 1024;

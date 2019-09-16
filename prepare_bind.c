@@ -82,15 +82,15 @@ sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 
 	/* Pack operation, source, statement, and parameters. */
 
-	val = htonl(SQLBOX_OP_PREPARE_BIND);
+	val = htole32(SQLBOX_OP_PREPARE_BIND);
 	memcpy(buf + pos, (char *)&val, sizeof(uint32_t));
 	pos += sizeof(uint32_t);
 
-	val = htonl(srcid);
+	val = htole32(srcid);
 	memcpy(buf + pos, (char *)&val, sizeof(uint32_t));
 	pos += sizeof(uint32_t);
 
-	val = htonl(pstmt);
+	val = htole32(pstmt);
 	memcpy(buf + pos, (char *)&val, sizeof(uint32_t));
 	pos += sizeof(uint32_t);
 
@@ -104,7 +104,7 @@ sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 
 	/* Go back and do the frame size. */
 
-	val = htonl(pos - 4);
+	val = htole32(pos - 4);
 	memcpy(buf, (char *)&val, sizeof(uint32_t));
 
 	/* Write data, free our buffer. */
@@ -132,7 +132,7 @@ sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 	 * exiting.
 	 */
 
-	st->id = ntohl(val);
+	st->id = le32toh(val);
 	TAILQ_INSERT_TAIL(&box->stmtq, st, gentries);
 	return st->id;
 }
@@ -158,7 +158,7 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 
 	if (sz < sizeof(uint32_t))
 		goto badframe;
-	db = sqlbox_db_find(box, ntohl(*(uint32_t *)buf));
+	db = sqlbox_db_find(box, le32toh(*(uint32_t *)buf));
 	if (db == NULL) {
 		sqlbox_warnx(&box->cfg, "prepare-bind: sqlbox_db_find");
 		return 0;
@@ -170,7 +170,7 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 
 	if (sz < sizeof(uint32_t))
 		goto badframe;
-	idx = ntohl(*(uint32_t *)buf);
+	idx = le32toh(*(uint32_t *)buf);
 	buf += sizeof(uint32_t);
 	sz -= sizeof(uint32_t);
 
@@ -296,7 +296,7 @@ again:
 	TAILQ_INSERT_TAIL(&db->stmtq, st, entries);
 	TAILQ_INSERT_TAIL(&box->stmtq, st, gentries);
 
-	ack = htonl(st->id);
+	ack = htole32(st->id);
 
 	if (!sqlbox_write(box, (char *)&ack, sizeof(uint32_t))) {
 		sqlbox_warnx(&box->cfg, "%s: prepare-bind: "

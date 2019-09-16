@@ -97,7 +97,7 @@ sqlbox_main_loop(struct sqlbox *box)
 			break;
 		}
 
-		op = (enum sqlbox_op)ntohl
+		op = (enum sqlbox_op)le32toh
 			(*(const uint32_t *)frame);
 		frame += sizeof(uint32_t);
 		framesz -= sizeof(uint32_t);

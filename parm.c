@@ -81,14 +81,14 @@ sqlbox_parm_pack(struct sqlbox *box, size_t parmsz,
 
 	/* Prologue: param size. */
 
-	tmp = htonl(parmsz);
+	tmp = htole32(parmsz);
 	memcpy(*buf + *offs, (char *)&tmp, sizeof(uint32_t));
 	*offs += sizeof(uint32_t);
 
 	/* Now all parameter data. */
 
 	for (i = 0; i < parmsz; i++) {
-		tmp = htonl(parms[i].type);
+		tmp = htole32(parms[i].type);
 		memcpy(*buf + *offs, (char *)&tmp, sizeof(uint32_t));
 		*offs += sizeof(uint32_t);
 		switch (parms[i].type) {
@@ -106,7 +106,7 @@ sqlbox_parm_pack(struct sqlbox *box, size_t parmsz,
 		case SQLBOX_PARM_NULL:
 			break;
 		case SQLBOX_PARM_BLOB:
-			val = htonl(parms[i].sz);
+			val = htole32(parms[i].sz);
 			memcpy(*buf + *offs, 
 				(char *)&val, sizeof(uint32_t));
 			*offs += sizeof(uint32_t);
@@ -116,7 +116,7 @@ sqlbox_parm_pack(struct sqlbox *box, size_t parmsz,
 		case SQLBOX_PARM_STRING:
 			sz = parms[i].sz == 0 ? 
 				strlen(parms[i].sparm) + 1 : parms[i].sz;
-			val = htonl(sz);
+			val = htole32(sz);
 			memcpy(*buf + *offs, 
 				(char *)&val, sizeof(uint32_t));
 			*offs += sizeof(uint32_t);
@@ -147,7 +147,7 @@ sqlbox_parm_unpack(struct sqlbox *box, struct sqlbox_parm **parms,
 
 	/* Read prologue: param size. */
 
-	psz = ntohl(*(const uint32_t *)buf);
+	psz = le32toh(*(const uint32_t *)buf);
 	buf += sizeof(uint32_t);
 	bufsz -= sizeof(uint32_t);
 
@@ -190,7 +190,7 @@ sqlbox_parm_unpack(struct sqlbox *box, struct sqlbox_parm **parms,
 	for (i = 0; i < (size_t)*parmsz; i++) {
 		if (bufsz < sizeof(uint32_t))
 			goto badframe;
-		(*parms)[i].type = ntohl(*(uint32_t *)buf);
+		(*parms)[i].type = le32toh(*(uint32_t *)buf);
 		buf += sizeof(uint32_t);
 		bufsz -= sizeof(uint32_t);
 		switch ((*parms)[i].type) {
@@ -216,7 +216,7 @@ sqlbox_parm_unpack(struct sqlbox *box, struct sqlbox_parm **parms,
 		case SQLBOX_PARM_BLOB:
 			if (bufsz < sizeof(uint32_t))
 				goto badframe;
-			len = ntohl(*(uint32_t *)buf);
+			len = le32toh(*(uint32_t *)buf);
 			buf += sizeof(uint32_t);
 			bufsz -= sizeof(uint32_t);
 			if (bufsz < len)
@@ -229,7 +229,7 @@ sqlbox_parm_unpack(struct sqlbox *box, struct sqlbox_parm **parms,
 		case SQLBOX_PARM_STRING:
 			if (bufsz < sizeof(uint32_t))
 				goto badframe;
-			len = ntohl(*(uint32_t *)buf);
+			len = le32toh(*(uint32_t *)buf);
 			buf += sizeof(uint32_t);
 			bufsz -= sizeof(uint32_t);
 			if (bufsz < len)

@@ -53,7 +53,7 @@ sqlbox_rolecheck_src(struct sqlbox *box, size_t idx)
 int
 sqlbox_close(struct sqlbox *box, size_t src)
 {
-	uint32_t	 v = htonl(src);
+	uint32_t	 v = htole32(src);
 
 	if (src == 0) {
 		sqlbox_warnx(&box->cfg, "close: source is zero");
@@ -89,7 +89,7 @@ sqlbox_op_close(struct sqlbox *box, const char *buf, size_t sz)
 		return 0;
 	}
 	if ((db = sqlbox_db_find
-	    (box, ntohl(*(uint32_t *)buf))) == NULL) {
+	    (box, le32toh(*(uint32_t *)buf))) == NULL) {
 		sqlbox_warnx(&box->cfg, "close: sqlbox_db_find");
 		return 0;
 	}

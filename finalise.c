@@ -34,7 +34,7 @@
 int
 sqlbox_finalise(struct sqlbox *box, size_t id)
 {
-	uint32_t	 	 v = htonl(id);
+	uint32_t	 	 v = htole32(id);
 	struct sqlbox_stmt	*st;
 
 	/*
@@ -76,7 +76,7 @@ sqlbox_op_finalise(struct sqlbox *box, const char *buf, size_t sz)
 			"bad frame size: %zu", sz);
 		return 0;
 	}
-	id = ntohl(*(uint32_t *)buf);
+	id = le32toh(*(uint32_t *)buf);
 	TAILQ_FOREACH(st, &box->stmtq, gentries)
 		if (st->id == id)
 			break;
