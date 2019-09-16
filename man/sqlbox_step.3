@@ -35,9 +35,27 @@ Executes a statement
 .Fa id
 prepared with
 .Xr sqlbox_prepare_bind 3 .
+It returns a result set:
+.Bd -literal
+struct sqlbox_parm {
+  union {
+    double fparm; /* SQLBOX_PARM_FLOAT */
+    int64_t iparm; /* SQLBOX_PARM_INT */
+    const char *sparm; /* SQLBOX_PARM_STRING */
+    const void *bparm; /* SQLBOX_PARM_BLOB */
+  };
+  enum sqlbox_parmt type;
+  size_t sz;
+};
+
+struct sqlbox_parmset {
+  struct sqlbox_parm *ps;
+  size_t psz;
+};
+.Ed
 .Pp
-The result set consists of values from each column of the returned data
-in the underlying type of the value.
+The set consists of values from each column of the returned data in the
+underlying type of the value.
 If the statement does not return any column (such as a
 .Li CREATE TABLE
 or
@@ -46,17 +64,18 @@ or if there are no more rows in a
 .Li SELECT
 statement), the result set will be empty: the
 .Va psz
-of
-.Vt struct sqlbox_parmset
 will be zero.
 The result set as a whole, including the memory allocated for each
+.Va sparm
+and
+.Va bparm
 column, is only valid until the next
 .Fn sqlbox_step
 or
 .Xr sqlbox_finalise 3 .
 .Pp
-For queries, the types returned in each
-.Vt struct sqlbox_parm
+For queries, the types set in
+.Va type
 are those set by the database schema, not the corresponding insertion
 statements.
 To convert between types (e.g., integers to strings), use the standard
@@ -91,6 +110,10 @@ and inserts an integer value into it.
 It depends upon
 .Xr sqlbox_free 3
 to close out the database.
+It assumes that the
+.Li bar
+column has been initialised as an SQL type
+.Li INTEGER .
 .Bd -literal
 size_t dbid, stmtid;
 struct sqlbox *p;
