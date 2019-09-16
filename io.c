@@ -271,6 +271,8 @@ sqlbox_write_frame(struct sqlbox *box,
 	char		 frame[1024];
 	uint32_t	 tmp;
 
+	memset(frame, 0, sizeof(frame));
+
 	/* Account for operation... */
 
 	tmp = htole32(sz + sizeof(uint32_t));
