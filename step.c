@@ -244,7 +244,7 @@ again:
 
 	if (st->res.bufsz == 0) {
 		st->res.bufsz = 1024;
-		st->res.buf = malloc(st->res.bufsz);
+		st->res.buf = calloc(1, st->res.bufsz);
 		if (st->res.buf == NULL) {
 			sqlbox_warn(&box->cfg, "step: malloc");
 			return 0;

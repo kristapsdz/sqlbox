@@ -69,8 +69,8 @@ sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 	if ((st = calloc(1, sizeof(struct sqlbox_stmt))) == NULL) {
 		sqlbox_warn(&box->cfg, "prepare-bind: calloc");
 		return 0;
-	} else if ((buf = malloc(bufsz)) == NULL) {
-		sqlbox_warn(&box->cfg, "prepare-bind: malloc");
+	} else if ((buf = calloc(1, bufsz)) == NULL) {
+		sqlbox_warn(&box->cfg, "prepare-bind: calloc");
 		free(st);
 		return 0;
 	}
