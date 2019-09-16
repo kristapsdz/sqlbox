@@ -49,6 +49,7 @@ The number of parameters
 .Fa psz
 must match the prepared statement parameters given in the SQL or be
 zero.
+.Pp
 The
 .Fa ps
 array, if
@@ -58,21 +59,25 @@ Types must correspond to typed values, for example, floats of type
 .Dv SQLBOX_PARM_FLOAT
 must be set in the
 .Va fparm
-anonymous union of
+of
 .Vt struct sqlbox_parm .
+.Pp
 The
 .Va sz
-value is ignored for floats and integers, but must be provided for
-blobs.
+of
+.Vt struct sqlbox_parm
+is ignored for floats and integers, but must be provided for blobs and
+optionally for strings.
 For strings, a zero indicates it should be computed using
 .Xr strlen 3 .
-Otherwise, it should be the full string length, including the NUL
+Otherwise, it should be the full string length including the NUL
 terminator.
 If the string is shorter than the given length (i.e., contains an
 embedded NUL terminator), the database will only accept only up to the
 first NUL terminator.
 .Pp
-It returns a non-zero identifier for later use by
+.Fn sqlbox_prepare_bind
+returns a non-zero identifier for later use by
 .Xr sqlbox_step 3
 and
 .Xr sqlbox_finalise 3 .
