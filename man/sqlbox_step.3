@@ -44,12 +44,25 @@ or
 .Li UPDATE ,
 or if there are no more rows in a
 .Li SELECT
-statement), the result set will be empty.
+statement), the result set will be empty: the
+.Va psz
+of
+.Vt struct sqlbox_parmset
+will be zero.
 The result set as a whole, including the memory allocated for each
 column, is only valid until the next
 .Fn sqlbox_step
 or
 .Xr sqlbox_finalise 3 .
+.Pp
+For queries, the types returned in each
+.Vt struct sqlbox_parm
+are those set by the database schema, not the corresponding insertion
+statements.
+To convert between types (e.g., integers to strings), use the standard
+.Xr snprintf 3 ,
+.Xr strtonum 3 ,
+and so on.
 .Sh RETURN VALUES
 Returns the results of the query or
 .Dv NULL

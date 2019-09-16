@@ -38,9 +38,10 @@ main(int argc, char *argv[])
 	};
 	struct sqlbox_pstmt	 pstmts[] = {
 		{ .stmt = (char *)"CREATE TABLE foo "
-			"(col1 INTEGER, col2 REAL, col3 TEXT)" },
+			"(col1 INTEGER, col2 REAL,"
+			" col3 TEXT, col4 BLOB)" },
 		{ .stmt = (char *)"INSERT INTO foo "
-			"(col1, col2, col3) VALUES (?,?,?)" },
+			"(col1, col2, col3, col4) VALUES (?,?,?,?)" },
 		{ .stmt = (char *)"SELECT * FROM foo ORDER BY col1" }
 	};
 	struct sqlbox_parm	 parms1[] = {
@@ -51,6 +52,9 @@ main(int argc, char *argv[])
 		{ .sparm = "xyzzy",
 		  .type = SQLBOX_PARM_STRING,
 		  .sz = 0 }, /* autocompute */
+		{ .bparm = (char[]){ 0, 1, 2, 3 },
+		  .type = SQLBOX_PARM_BLOB,
+		  .sz = 4 },
 	};
 	struct sqlbox_parm	 parms2[] = {
 		{ .iparm = 20,
@@ -60,6 +64,9 @@ main(int argc, char *argv[])
 		{ .sparm = "yzzyx",
 		  .type = SQLBOX_PARM_STRING,
 		  .sz = 0 }, /* autocompute */
+		{ .bparm = (char[]){ 5, 4, 3, 2, 1, 0 },
+		  .type = SQLBOX_PARM_BLOB,
+		  .sz = 6 },
 	};
 	const struct sqlbox_parmset *res;
 
@@ -111,8 +118,8 @@ main(int argc, char *argv[])
 		errx(EXIT_FAILURE, "sqlbox_prepare_bind");
 	if ((res = sqlbox_step(p, stmtid)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_step");
-	if (res->psz != 3)
-		errx(EXIT_FAILURE, "res->psz != 3");
+	if (res->psz != 4)
+		errx(EXIT_FAILURE, "res->psz != 4");
 	if (res->ps[0].type != SQLBOX_PARM_INT)
 		errx(EXIT_FAILURE, "res->ps[0].type != SQLBOX_PARM_INT");
 	if (res->ps[0].iparm != 10)
@@ -124,12 +131,18 @@ main(int argc, char *argv[])
 	if (res->ps[2].type != SQLBOX_PARM_STRING)
 		errx(EXIT_FAILURE, "res->ps[2].type != SQLBOX_PARM_STRING");
 	if (strcmp(res->ps[2].sparm, "xyzzy"))
-		errx(EXIT_FAILURE, "res->ps[2].sparm != \"xyzzy\" (%s, %zu)", res->ps[2].sparm, res->ps[2].sz);
+		errx(EXIT_FAILURE, "res->ps[2].sparm != \"xyzzy\"");
+	if (res->ps[3].type != SQLBOX_PARM_BLOB)
+		errx(EXIT_FAILURE, "res->ps[3].type != SQLBOX_PARM_BLOB");
+	if (res->ps[3].sz != 4)
+		errx(EXIT_FAILURE, "res->ps[3].sz != 4");
+	if (memcmp(res->ps[3].bparm, parms1[3].bparm, 4))
+		errx(EXIT_FAILURE, "res->ps[3].bparm != {0, 1, 2, 3}");
 
 	if ((res = sqlbox_step(p, stmtid)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_step");
-	if (res->psz != 3)
-		errx(EXIT_FAILURE, "res->psz != 3");
+	if (res->psz != 4)
+		errx(EXIT_FAILURE, "res->psz != 4");
 	if (res->ps[0].type != SQLBOX_PARM_INT)
 		errx(EXIT_FAILURE, "res->ps[0].type != SQLBOX_PARM_INT");
 	if (res->ps[0].iparm != 20)
@@ -142,7 +155,12 @@ main(int argc, char *argv[])
 		errx(EXIT_FAILURE, "res->ps[2].type != SQLBOX_PARM_STRING");
 	if (strcmp(res->ps[2].sparm, "yzzyx"))
 		errx(EXIT_FAILURE, "res->ps[2].sparm != \"yzzyx\"");
-
+	if (res->ps[3].type != SQLBOX_PARM_BLOB)
+		errx(EXIT_FAILURE, "res->ps[3].type != SQLBOX_PARM_BLOB");
+	if (res->ps[3].sz != 6)
+		errx(EXIT_FAILURE, "res->ps[3].sz != 6");
+	if (memcmp(res->ps[3].bparm, parms2[3].bparm, 6))
+		errx(EXIT_FAILURE, "res->ps[3].bparm != {5, 4, 3, 2, 1, 0}");
 
 	if ((res = sqlbox_step(p, stmtid)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_step");

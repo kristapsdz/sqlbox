@@ -239,7 +239,7 @@ again:
 	for (i = 0; i < (size_t)parmsz; i++) {
 		switch (parms[i].type) {
 		case SQLBOX_PARM_BLOB:
-			c = sqlite3_bind_text(stmt, i + 1,
+			c = sqlite3_bind_blob(stmt, i + 1,
 				parms[i].bparm, parms[i].sz, 
 				SQLITE_TRANSIENT);
 			break;
@@ -256,7 +256,8 @@ again:
 			break;
 		case SQLBOX_PARM_STRING:
 			c = sqlite3_bind_text(stmt, i + 1,
-				parms[i].sparm, -1, SQLITE_TRANSIENT);
+				parms[i].sparm, parms[i].sz - 1, 
+				SQLITE_TRANSIENT);
 			break;
 		default:
 			sqlbox_warnx(&box->cfg, "%s: prepare-bind: "

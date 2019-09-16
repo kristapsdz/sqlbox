@@ -87,12 +87,12 @@ main(int argc, char *argv[])
 	if (res->ps[0].type != SQLBOX_PARM_STRING)
 		errx(EXIT_FAILURE, "res->ps[0].type != SQLBOX_PARM_STRING");
 
-	/* We'll only get out the first three bytes. */
-
-	if (res->ps[0].sz != 3)
-		errx(EXIT_FAILURE, "res->ps[0].sz != 3");
+	if (res->ps[0].sz != 6)
+		errx(EXIT_FAILURE, "res->ps[0].sz != 6");
 	if (strcmp(res->ps[0].sparm, "ab"))
-		errx(EXIT_FAILURE, "res->ps[0].sparm != \"ab\"");
+		errx(EXIT_FAILURE, "res->ps[0].sparm >= \"ab\"");
+	if (memcmp(res->ps[0].sparm, parms1[0].sparm, 6))
+		errx(EXIT_FAILURE, "res->ps[0].sparm != \"ab\\0cd\"");
 
 	if (!sqlbox_finalise(p, stmtid))
 		errx(EXIT_FAILURE, "sqlbox_finalise");

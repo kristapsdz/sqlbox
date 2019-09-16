@@ -73,8 +73,8 @@ For strings, a zero indicates it should be computed using
 Otherwise, it should be the full string length including the NUL
 terminator.
 If the string is shorter than the given length (i.e., contains an
-embedded NUL terminator), the database will only accept only up to the
-first NUL terminator.
+embedded NUL terminator), the database will still return the full given
+length of the original size (terminating NUL inclusive).
 .Pp
 .Fn sqlbox_prepare_bind
 returns a non-zero identifier for later use by
