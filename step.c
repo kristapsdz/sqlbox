@@ -217,7 +217,7 @@ again:
 			break;
 		case SQLITE_TEXT:
 			st->res.set.ps[i].type = SQLBOX_PARM_STRING;
-			st->res.set.ps[i].sparm =
+			st->res.set.ps[i].sparm = (char *)
 				sqlite3_column_text(st->stmt, i);
 			st->res.set.ps[i].sz = 
 				sqlite3_column_bytes(st->stmt, i) + 1;
@@ -250,7 +250,7 @@ again:
 			return 0;
 		}
 	}
-	assert(st->res.bufsz >= 0);
+	assert(st->res.bufsz >= 1024);
 
 	/* Skip the frame size til we get the packed parms. */
 
