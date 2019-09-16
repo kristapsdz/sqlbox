@@ -98,7 +98,7 @@ sqlbox_parm_pack(struct sqlbox *box, size_t parmsz,
 			*offs += sizeof(double);
 			break;
 		case SQLBOX_PARM_INT:
-			val = htobe64(parms[i].iparm);
+			val = htole64(parms[i].iparm);
 			memcpy(*buf + *offs, 
 				(char *)&val, sizeof(int64_t));
 			*offs += sizeof(int64_t);
@@ -206,7 +206,7 @@ sqlbox_parm_unpack(struct sqlbox *box, struct sqlbox_parm **parms,
 			if (bufsz < sizeof(int64_t))
 				goto badframe;
 			(*parms)[i].sz = sizeof(int64_t);
-			(*parms)[i].iparm = be64toh(*(int64_t *)buf);
+			(*parms)[i].iparm = le64toh(*(int64_t *)buf);
 			buf += sizeof(int64_t);
 			bufsz -= sizeof(int64_t);
 			break;
