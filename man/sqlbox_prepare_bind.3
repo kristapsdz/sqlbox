@@ -90,7 +90,8 @@ without finalised statements will result in an error.
 .Sh RETURN VALUES
 Returns zero if
 .Fa src
-is zero, memory allocation fails, communication with
+is zero, strings are not NUL-terminated at their size (if non-zero),
+memory allocation fails, communication with
 .Fa box
 fails, the statement could not be prepared due to an illegal statement
 or database value, the current role cannot prepare the given statement,

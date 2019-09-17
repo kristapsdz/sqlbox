@@ -39,11 +39,7 @@ sqlbox_step(struct sqlbox *box, size_t stmtid)
 	size_t			 framesz;
 	struct sqlbox_stmt 	*st;
 
-	TAILQ_FOREACH(st, &box->stmtq, gentries)
-		if (st->id == stmtid)
-			break;
-
-	if (st == NULL) {
+	if ((st = sqlbox_stmt_find(box, stmtid)) == NULL) {
 		sqlbox_warnx(&box->cfg, "step: bad stmt %zu", stmtid);
 		return NULL;
 	}
@@ -107,10 +103,7 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 		return 0;
 	}
 	id = le32toh(*(uint32_t *)buf);
-	TAILQ_FOREACH(st, &box->stmtq, gentries)
-		if (st->id == id)
-			break;
-	if (st == NULL) {
+	if ((st = sqlbox_stmt_find(box, id)) == NULL) {
 		sqlbox_warnx(&box->cfg, "step: bad stmt: %zu", id);
 		return 0;
 	}

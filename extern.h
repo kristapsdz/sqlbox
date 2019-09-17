@@ -9,6 +9,8 @@ enum	sqlbox_op {
 	SQLBOX_OP_PREPARE_BIND,
 	SQLBOX_OP_ROLE,
 	SQLBOX_OP_STEP,
+	SQLBOX_OP_TRANS_OPEN,
+	SQLBOX_OP__MAX
 };
 
 /*
@@ -49,6 +51,7 @@ struct	sqlbox_db {
 	struct sqlbox_stmtq	 stmtq; /* used list */
 	size_t			 id; /* source identifier */
 	size_t			 idx; /* source idx */
+	size_t		 	 trans; /* if >0, exp. transaction */
 	const struct sqlbox_src	*src; /* source */
 	TAILQ_ENTRY(sqlbox_db)	 entries;
 };
@@ -67,6 +70,7 @@ struct	sqlbox {
 
 void	 sqlbox_sleep(size_t);
 struct sqlbox_db *sqlbox_db_find(struct sqlbox *, size_t);
+struct sqlbox_stmt *sqlbox_stmt_find(struct sqlbox *, size_t);
 void	 sqlbox_warn(const struct sqlbox_cfg *, const char *, ...)
 		__attribute__((format(printf, 2, 3)));
 void	 sqlbox_warnx(const struct sqlbox_cfg *, const char *, ...)
@@ -91,6 +95,7 @@ int	 sqlbox_op_ping(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_prepare_bind(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_role(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_step(struct sqlbox *, const char *, size_t);
+int	 sqlbox_op_trans_open(struct sqlbox *, const char *, size_t);
 
 void	 sqlbox_stmt_free(struct sqlbox_stmt *);
 

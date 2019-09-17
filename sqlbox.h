@@ -201,6 +201,12 @@ int		 sqlbox_finalise(struct sqlbox *, size_t);
 const struct sqlbox_parmset
 		*sqlbox_step(struct sqlbox *, size_t);
 
+int		 sqlbox_trans_immediate(struct sqlbox *, size_t, size_t);
+int		 sqlbox_trans_deferred(struct sqlbox *, size_t, size_t);
+int		 sqlbox_trans_exclusive(struct sqlbox *, size_t, size_t);
+int		 sqlbox_trans_commit(struct sqlbox *, size_t, size_t);
+int		 sqlbox_trans_rollback(struct sqlbox *, size_t, size_t);
+
 #if 0
 enum ksqlc	 ksql_bind_blob(struct ksqlstmt *, 
 			size_t, const void *, size_t);

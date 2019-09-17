@@ -41,6 +41,19 @@
 #include "sqlbox.h"
 #include "extern.h"
 
+typedef	int (*sqlbox_op)(struct sqlbox *, const char *, size_t);
+
+static	const sqlbox_op ops[SQLBOX_OP__MAX] = {
+	sqlbox_op_close, /* SQLBOX_OP_CLOSE */
+	sqlbox_op_finalise, /* SQLBOX_OP_FINAL */
+	sqlbox_op_open, /* SQLBOX_OP_OPEN */
+	sqlbox_op_ping, /* SQLBOX_OP_PING */
+	sqlbox_op_prepare_bind, /* SQLBOX_OP_PREPARE_BIND */
+	sqlbox_op_role, /* SQLBOX_OP_ROLE */
+	sqlbox_op_step, /* SQLBOX_OP_STEP */
+	sqlbox_op_trans_open, /* SQLBOX_OP_TRANS_OPEN */
+};
+
 /*
  * This is a way for us to sleep between connection attempts.
  * To reduce lock contention, our sleep will be random.
@@ -57,6 +70,20 @@ sqlbox_sleep(size_t attempt)
 	/* FIXME: don't use random(). */
 	usleep(us * (double)(random() / (double)RAND_MAX));
 }
+
+struct sqlbox_stmt *
+sqlbox_stmt_find(struct sqlbox *box, size_t id)
+{
+	struct sqlbox_stmt	*stmt;
+
+	TAILQ_FOREACH(stmt, &box->stmtq, gentries)
+		if (stmt->id == id)
+			return stmt;
+
+	sqlbox_warnx(&box->cfg, "cannot find statement: %zu", id);
+	return NULL;
+}
+
 
 struct sqlbox_db *
 sqlbox_db_find(struct sqlbox *box, size_t id)
@@ -102,59 +129,17 @@ sqlbox_main_loop(struct sqlbox *box)
 		frame += sizeof(uint32_t);
 		framesz -= sizeof(uint32_t);
 
-		sqlbox_debug(&box->cfg, "%s: size: %zu, op: %d", 
-			__func__, framesz, op);
-
-		c = 0;
-		switch (op) {
-		case SQLBOX_OP_CLOSE:
-			if (sqlbox_op_close(box, frame, framesz))
-				c = 1;
-			else
-				sqlbox_warnx(&box->cfg, "sqlbox_op_close");
-			break;
-		case SQLBOX_OP_FINAL:
-			if (sqlbox_op_finalise(box, frame, framesz))
-				c = 1;
-			else
-				sqlbox_warnx(&box->cfg, "sqlbox_op_final");
-			break;
-		case SQLBOX_OP_OPEN:
-			if (sqlbox_op_open(box, frame, framesz))
-				c = 1;
-			else
-				sqlbox_warnx(&box->cfg, "sqlbox_op_open");
-			break;
-		case SQLBOX_OP_PING:
-			if (sqlbox_op_ping(box, frame, framesz))
-				c = 1;
-			else
-				sqlbox_warnx(&box->cfg, "sqlbox_op_ping");
-			break;
-		case SQLBOX_OP_PREPARE_BIND:
-			if (sqlbox_op_prepare_bind(box, frame, framesz))
-				c = 1;
-			else
-				sqlbox_warnx(&box->cfg, "sqlbox_op_prepare_bind");
-			break;
-		case SQLBOX_OP_ROLE:
-			if (sqlbox_op_role(box, frame, framesz))
-				c = 1;
-			else
-				sqlbox_warnx(&box->cfg, "sqlbox_op_role");
-			break;
-		case SQLBOX_OP_STEP:
-			if (sqlbox_op_step(box, frame, framesz))
-				c = 1;
-			else
-				sqlbox_warnx(&box->cfg, "sqlbox_op_step");
-			break;
-		default:
+		if (op >= SQLBOX_OP__MAX) {
 			sqlbox_warnx(&box->cfg, "unknown op: %d", op);
 			break;
 		}
-		if (!c)
+
+		sqlbox_debug(&box->cfg, "%s: size: %zu, op: %d", 
+			__func__, framesz, op);
+		if (!(ops[op])(box, frame, framesz)) {
+			sqlbox_warnx(&box->cfg, "sqlbox_op(%d)", op);
 			break;
+		}
 	}
 
 	free(buf);

@@ -57,7 +57,7 @@ is zero.
 Otherwise, returns non-zero.
 .Pp
 If closing the database fails (not open or does not exist, statements
-not finalised), subsequent
+not finalised, a transaction still open), subsequent
 .Fa box
 access will fail.
 Use

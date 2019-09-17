@@ -112,6 +112,11 @@ sqlbox_op_close(struct sqlbox *box, const char *buf, size_t sz)
 			"(id %zu) has unfinalised statements", 
 			db->src->fname, db->idx, db->id);
 		return 0;
+	} else if (db->trans) {
+		sqlbox_warnx(&box->cfg, "%s: transaction "
+			"%zu still open on exit (auto rollback)", 
+			db->src->fname, db->trans);
+		return 0;
 	}
 
 	/* 

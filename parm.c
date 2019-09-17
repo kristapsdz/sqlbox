@@ -116,6 +116,7 @@ sqlbox_parm_pack(struct sqlbox *box, size_t parmsz,
 		case SQLBOX_PARM_STRING:
 			sz = parms[i].sz == 0 ? 
 				strlen(parms[i].sparm) + 1 : parms[i].sz;
+			assert(sz > 0);
 			val = htole32(sz);
 			memcpy(*buf + *offs, 
 				(char *)&val, sizeof(uint32_t));
@@ -140,7 +141,7 @@ int
 sqlbox_parm_unpack(struct sqlbox *box, struct sqlbox_parm **parms, 
 	ssize_t *parmsz, const char *buf, size_t bufsz)
 {
-	size_t	 i, len, psz;
+	size_t	 i = 0, len, psz;
 
 	if (bufsz < sizeof(uint32_t))
 		goto badframe;
@@ -230,29 +231,40 @@ sqlbox_parm_unpack(struct sqlbox *box, struct sqlbox_parm **parms,
 			if (bufsz < sizeof(uint32_t))
 				goto badframe;
 			len = le32toh(*(uint32_t *)buf);
+			if (len == 0) {
+				sqlbox_warnx(&box->cfg, "unpacking "
+					"parameter %zu: string "
+					"malformed", i);
+				goto err;
+			}
 			buf += sizeof(uint32_t);
 			bufsz -= sizeof(uint32_t);
 			if (bufsz < len)
 				goto badframe;
 			(*parms)[i].sparm = buf;
 			(*parms)[i].sz = len;
+			if (buf[len - 1] != '\0') {
+				sqlbox_warnx(&box->cfg, "unpacking "
+					"parameter %zu: string "
+					"malformed", i);
+				goto err;
+			}
 			buf += len;
 			bufsz -= len;
 			break;
 		default:
-			sqlbox_warnx(&box->cfg, "bad parm type: %d",
+			sqlbox_warnx(&box->cfg, "unpacking parameter "
+				"%zu: unknown type: %d", i, 
 				(*parms)[i].type);
-			free(*parms);
-			*parms = NULL;
-			*parmsz = 0;
-			return 0;
+			goto err;
 		}
 	}
 
 	return 1;
 badframe:
 	sqlbox_warnx(&box->cfg, "unpacking "
-		"parameters: invalid frame size");
+		"parameter %zu: invalid frame size", i);
+err:
 	free(*parms);
 	*parms = NULL;
 	*parmsz = 0;

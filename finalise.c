@@ -42,10 +42,7 @@ sqlbox_finalise(struct sqlbox *box, size_t id)
 	 * the last result set.
 	 */
 
-	TAILQ_FOREACH(st, &box->stmtq, gentries)
-		if (st->id == id)
-			break;
-	if (st == NULL) {
+	if ((st = sqlbox_stmt_find(box, id)) == NULL) {
 		sqlbox_warnx(&box->cfg, "finalise: bad stmt %zu", id);
 		return 0;
 	}
@@ -77,14 +74,10 @@ sqlbox_op_finalise(struct sqlbox *box, const char *buf, size_t sz)
 		return 0;
 	}
 	id = le32toh(*(uint32_t *)buf);
-	TAILQ_FOREACH(st, &box->stmtq, gentries)
-		if (st->id == id)
-			break;
-	if (st == NULL) {
+	if ((st = sqlbox_stmt_find(box, id)) == NULL) {
 		sqlbox_warnx(&box->cfg, "finalise: bad stmt: %zu", id);
 		return 0;
 	}
-
 	TAILQ_REMOVE(&box->stmtq, st, gentries);
 	TAILQ_REMOVE(&st->db->stmtq, st, entries);
 	sqlbox_debug(&box->cfg, "finalise: %zu", st->id);

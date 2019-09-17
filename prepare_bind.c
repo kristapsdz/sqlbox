@@ -54,7 +54,7 @@ size_t
 sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 	size_t pstmt, size_t psz, const struct sqlbox_parm *ps)
 {
-	size_t			 pos = 0, bufsz = 1024;
+	size_t			 pos = 0, bufsz = 1024, i;
 	uint32_t		 val;
 	char			*buf;
 	struct sqlbox_stmt	*st;
@@ -63,6 +63,17 @@ sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 		sqlbox_warnx(&box->cfg, "prepare-bind: source is zero");
 		return 0;
 	}
+
+	/* Make sure explicit-sized strings are NUL terminated. */
+
+	for (i = 0; i < psz; i++) 
+		if (ps[i].type == SQLBOX_PARM_STRING &&
+		    ps[i].sz > 0 &&
+		    ps[i].sparm[ps[i].sz - 1] != '\0') {
+			sqlbox_warnx(&box->cfg, "prepare-bind: "
+				"parameter %zu is malformed", i);
+			return 0;
+		}
 
 	/* Initialise our result set holder and frame. */
 

@@ -51,7 +51,8 @@ TESTS	 = test-alloc-bad-defrole \
 	    test-step-int-maxvalue \
 	    test-step-int-maxnegvalue \
 	    test-step-string-explicit-length \
-	    test-step-string-implicit-length
+	    test-step-string-implicit-length \
+	    test-step-string-missing-nul
 OBJS	  = alloc.o \
 	    close.o \
 	    finalise.o \
@@ -63,6 +64,7 @@ OBJS	  = alloc.o \
 	    prepare_bind.o \
 	    role.o \
 	    step.o \
+	    transaction.o \
 	    warn.o
 LDFLAGS	 += -L/usr/local/lib
 CPPFLAGS += -I/usr/local/include -DDEBUG

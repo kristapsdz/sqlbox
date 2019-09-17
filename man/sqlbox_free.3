@@ -35,8 +35,8 @@ Shuts down
 by closing the box communication channel and releasing memory.
 When the
 .Fa box
-channel closes, it will finalise open statements, closes open databases,
-and release memory.
+channel closes, it will finalise databases' open statements, roll back
+databases' transactions, close open databases, and release memory.
 This does not free any of the
 .Vt sqlbox_cfg
 memory passed to

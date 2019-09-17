@@ -85,6 +85,16 @@ sqlbox_clear(struct sqlbox *box)
 			TAILQ_REMOVE(&box->stmtq, stmt, gentries);
 			sqlbox_stmt_free(stmt);
 		}
+		
+		/*
+		 * If a transaction is open, it will automatically be
+		 * rolled back when the database is closed.
+		 */
+
+		if (db->trans)
+			sqlbox_warnx(&box->cfg, "%s: transaction "
+				"%zu still open on exit (auto rollback)", 
+				db->src->fname, db->trans);
 		TAILQ_REMOVE(&box->dbq, db, entries);
 		sqlite3_close(db->db);
 		free(db);
