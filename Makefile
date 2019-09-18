@@ -52,7 +52,8 @@ TESTS	 = test-alloc-bad-defrole \
 	    test-step-int-maxnegvalue \
 	    test-step-string-explicit-length \
 	    test-step-string-implicit-length \
-	    test-step-string-missing-nul
+	    test-step-string-missing-nul \
+	    test-trans-open-bad-src
 OBJS	  = alloc.o \
 	    close.o \
 	    finalise.o \

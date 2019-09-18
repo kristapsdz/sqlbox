@@ -44,10 +44,6 @@ static	const char *const transts[SQLBOX_TRANS__MAX] = {
 	"BEGIN EXCLUSIVE TRANSACTION",
 };
 
-/*
- * All this does is ship our identifier and transaction type.
- * Returns TRUE on success, FALSE on failure.
- */
 static int
 sqlbox_trans_open(struct sqlbox *box, 
 	size_t srcid, size_t tid, enum transt type)
@@ -55,10 +51,10 @@ sqlbox_trans_open(struct sqlbox *box,
 	char			 buf[sizeof(uint32_t) * 3];
 	uint32_t		 v;
 
-	if (tid == 0) {
-		sqlbox_warnx(&box->cfg, "trans-open: id is zero");
-		return 0;
-	}
+	/* 
+	 * Don't check any values for errors: we'll do all of that in
+	 * the child process and bail out if they're bad.
+	 */
 
 	v = htole32(srcid);
 	memcpy(buf, &v, sizeof(uint32_t));
@@ -112,11 +108,7 @@ sqlbox_op_trans_open(struct sqlbox *box, const char *buf, size_t sz)
 		return 0;
 	}
 
-	/* 
-	 * Look up the source in our global list and make sure that
-	 * we're not already in a transaction, which is disallowed by
-	 * sqlite.
-	 */
+	/* Look up database and check no pending transaction. */
 
 	id = le32toh(*(uint32_t *)buf);
 	if ((db = sqlbox_db_find(box, id)) == NULL) {
@@ -130,7 +122,16 @@ sqlbox_op_trans_open(struct sqlbox *box, const char *buf, size_t sz)
 		return 0;
 	}
 
+	/* Verify transaction identifier. */
+
 	id = le32toh(*(uint32_t *)buf + sizeof(uint32_t));
+	if (id == 0) {
+		sqlbox_warnx(&box->cfg, "%s: trans-open: "
+			"transaction is zero", db->src->fname);
+		return 0;
+	}
+
+	/* Verify transaction type. */
 
 	type = (enum transt)le32toh(*(uint32_t *)buf + sizeof(uint32_t) * 2);
 	if (type >= SQLBOX_TRANS__MAX) {
@@ -146,12 +147,12 @@ again:
 		sqlbox_sleep(attempt++);
 		goto again;
 	case SQLITE_OK:
+		break;
+	default:
 		sqlbox_warnx(&box->cfg, "%s: trans-open: %s", 
 			db->src->fname, sqlite3_errmsg(db->db));
 		sqlite3_close(db->db);
 		return 0;
-	default:
-		break;
 	}
 
 	db->trans = id;
