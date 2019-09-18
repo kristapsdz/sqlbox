@@ -37,10 +37,12 @@ main(int argc, char *argv[])
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_alloc");
 
-	/* Fail: this should fail immediately. */
+	/* Fail: an invalid identifier. */
 
-	if (sqlbox_close(p, 0))
+	if (!sqlbox_close(p, 0))
 		errx(EXIT_FAILURE, "sqlbox_close should fail");
+	if (sqlbox_ping(p))
+		errx(EXIT_FAILURE, "sqlbox_ping should fail");
 
 	sqlbox_free(p);
 	return EXIT_SUCCESS;
