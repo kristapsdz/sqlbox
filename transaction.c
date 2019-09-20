@@ -124,7 +124,7 @@ sqlbox_op_trans_open(struct sqlbox *box, const char *buf, size_t sz)
 
 	/* Verify transaction identifier. */
 
-	id = le32toh(*(uint32_t *)buf + sizeof(uint32_t));
+	id = le32toh(*(uint32_t *)(buf + sizeof(uint32_t)));
 	if (id == 0) {
 		sqlbox_warnx(&box->cfg, "%s: trans-open: "
 			"transaction is zero", db->src->fname);
@@ -133,7 +133,8 @@ sqlbox_op_trans_open(struct sqlbox *box, const char *buf, size_t sz)
 
 	/* Verify transaction type. */
 
-	type = (enum transt)le32toh(*(uint32_t *)buf + sizeof(uint32_t) * 2);
+	type = (enum transt)le32toh
+		(*(uint32_t *)(buf + sizeof(uint32_t) * 2));
 	if (type >= SQLBOX_TRANS__MAX) {
 		sqlbox_warnx(&box->cfg, "trans-open: invalid type");
 		return 0;

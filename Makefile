@@ -53,7 +53,11 @@ TESTS	 = test-alloc-bad-defrole \
 	    test-step-string-explicit-length \
 	    test-step-string-implicit-length \
 	    test-step-string-missing-nul \
-	    test-trans-open-bad-src
+	    test-trans-open \
+	    test-trans-open-bad-close \
+	    test-trans-open-bad-id \
+	    test-trans-open-bad-src \
+	    test-trans-open-nested
 OBJS	  = alloc.o \
 	    close.o \
 	    finalise.o \

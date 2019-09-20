@@ -53,8 +53,10 @@ and
 .Fn sqlbox_trans_immediate
 functions begin a transaction identified as non-zero
 .Fa id
-on non-zero database
-.Fa srcid .
+on non-zero source index
+.Fa srcid
+as returned by
+.Xr sqlbox_open 3 .
 .Pp
 These functions differ in transaction semantics:
 .Fn sqlbox_trans_deferred
