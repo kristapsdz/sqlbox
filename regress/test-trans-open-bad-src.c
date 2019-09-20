@@ -43,7 +43,7 @@ main(int argc, char *argv[])
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_alloc");
 	if (!sqlbox_trans_deferred(p, 1, 1))
-		errx(EXIT_FAILURE, "sqlbox_open");
+		errx(EXIT_FAILURE, "sqlbox_trans_deferred");
 	if (sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping should fail");
 

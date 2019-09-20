@@ -35,6 +35,7 @@ main(int argc, char *argv[])
 		  .mode = SQLBOX_SRC_RWC }
 	};
 	size_t			 srcid;
+	const size_t		 tid = 1;
 
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 	cfg.srcs.srcs = srcs;
@@ -45,8 +46,8 @@ main(int argc, char *argv[])
 		errx(EXIT_FAILURE, "sqlbox_alloc");
 	if (!(srcid = sqlbox_open(p, 0)))
 		errx(EXIT_FAILURE, "sqlbox_open");
-	if (!sqlbox_trans_deferred(p, srcid, 0))
-		errx(EXIT_FAILURE, "sqlbox_trans_deferred");
+	if (!sqlbox_trans_commit(p, 0, tid))
+		errx(EXIT_FAILURE, "sqlbox_trans_commit");
 	if (sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping should fail");
 

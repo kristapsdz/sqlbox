@@ -32,9 +32,12 @@ main(int argc, char *argv[])
 	struct sqlbox_cfg	 cfg;
 	struct sqlbox_src	 srcs[] = {
 		{ .fname = (char *)":memory:",
+		  .mode = SQLBOX_SRC_RWC },
+		{ .fname = (char *)":memory:",
 		  .mode = SQLBOX_SRC_RWC }
 	};
-	size_t			 srcid;
+	size_t			 srcid1, srcid2;
+	const size_t		 tid = 1;
 
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 	cfg.srcs.srcs = srcs;
@@ -43,12 +46,18 @@ main(int argc, char *argv[])
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_alloc");
-	if (!(srcid = sqlbox_open(p, 0)))
+	if (!(srcid1 = sqlbox_open(p, 0)))
 		errx(EXIT_FAILURE, "sqlbox_open");
-	if (!sqlbox_trans_deferred(p, srcid, 0))
+	if (!(srcid2 = sqlbox_open(p, 1)))
+		errx(EXIT_FAILURE, "sqlbox_open");
+	if (!sqlbox_trans_deferred(p, srcid1, tid))
 		errx(EXIT_FAILURE, "sqlbox_trans_deferred");
-	if (sqlbox_ping(p))
-		errx(EXIT_FAILURE, "sqlbox_ping should fail");
+	if (!sqlbox_ping(p))
+		errx(EXIT_FAILURE, "sqlbox_ping");
+	if (!sqlbox_trans_deferred(p, srcid2, tid))
+		errx(EXIT_FAILURE, "sqlbox_trans_deferred");
+	if (!sqlbox_ping(p))
+		errx(EXIT_FAILURE, "sqlbox_ping");
 
 	sqlbox_free(p);
 	return EXIT_SUCCESS;

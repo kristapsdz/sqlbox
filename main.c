@@ -51,6 +51,7 @@ static	const sqlbox_op ops[SQLBOX_OP__MAX] = {
 	sqlbox_op_prepare_bind, /* SQLBOX_OP_PREPARE_BIND */
 	sqlbox_op_role, /* SQLBOX_OP_ROLE */
 	sqlbox_op_step, /* SQLBOX_OP_STEP */
+	sqlbox_op_trans_close, /* SQLBOX_OP_TRANS_CLOSE */
 	sqlbox_op_trans_open, /* SQLBOX_OP_TRANS_OPEN */
 };
 

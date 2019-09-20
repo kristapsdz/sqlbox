@@ -67,7 +67,8 @@ opens a single writer without other readers immediately, and
 .Fn sqlbox_trans_immediate
 opens a single writer with possibly other readers immediately.
 .Pp
-Transactions may not be nested (of any type).
+Transactions may not be nested (of any type) on any single database
+source.
 It is an error to
 .Xr sqlbox_close 3
 a database without first rolling back or committing open transactions.

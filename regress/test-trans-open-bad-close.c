@@ -47,7 +47,7 @@ main(int argc, char *argv[])
 	if (!(srcid = sqlbox_open(p, 0)))
 		errx(EXIT_FAILURE, "sqlbox_open");
 	if (!sqlbox_trans_deferred(p, srcid, tid))
-		errx(EXIT_FAILURE, "sqlbox_open");
+		errx(EXIT_FAILURE, "sqlbox_trans_deferred");
 	if (!sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping");
 
