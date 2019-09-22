@@ -120,7 +120,7 @@ sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 
 	/* Write data, free our buffer. */
 
-	if (!sqlbox_write(box, buf, bufsz)) {
+	if (!sqlbox_write(box, buf, pos > SQLBOX_FRAME ? pos : SQLBOX_FRAME)) {
 		sqlbox_warnx(&box->cfg, "prepare-bind: sqlbox_write");
 		free(buf);
 		free(st);
@@ -258,22 +258,34 @@ again:
 			c = sqlite3_bind_blob(stmt, i + 1,
 				parms[i].bparm, parms[i].sz, 
 				SQLITE_TRANSIENT);
+			sqlbox_debug(&box->cfg, "sqlite3_bind_blob[%zu]: "
+				"%s, %s (%zu bytes)", i, db->src->fname, 
+				pst->stmt, parms[i].sz - 1);
 			break;
 		case SQLBOX_PARM_FLOAT:
 			c = sqlite3_bind_double
 				(stmt, i + 1, parms[i].fparm);
+			sqlbox_debug(&box->cfg, "sqlite3_bind_double[%zu]: "
+				"%s, %s", i, db->src->fname, pst->stmt);
 			break;
 		case SQLBOX_PARM_INT:
 			c = sqlite3_bind_int64
 				(stmt, i + 1, parms[i].iparm);
+			sqlbox_debug(&box->cfg, "sqlite3_bind_int64[%zu]: "
+				"%s, %s", i, db->src->fname, pst->stmt);
 			break;
 		case SQLBOX_PARM_NULL:
 			c = sqlite3_bind_null(stmt, i + 1);
+			sqlbox_debug(&box->cfg, "sqlite3_bind_null[%zu]: "
+				"%s, %s", i, db->src->fname, pst->stmt);
 			break;
 		case SQLBOX_PARM_STRING:
 			c = sqlite3_bind_text(stmt, i + 1,
 				parms[i].sparm, parms[i].sz - 1, 
 				SQLITE_TRANSIENT);
+			sqlbox_debug(&box->cfg, "sqlite3_bind_text[%zu]: "
+				"%s, %s (%zu bytes)", i, db->src->fname, 
+				pst->stmt, parms[i].sz - 1);
 			break;
 		default:
 			sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
