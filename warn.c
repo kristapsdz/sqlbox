@@ -92,8 +92,10 @@ sqlbox_warn(const struct sqlbox_cfg *cfg, const char *fmt, ...)
 	va_end(ap);
 	if (sz < 0)
 		return;
-	if ((size_t)sz < sizeof(buf)) 
+	if ((size_t)sz < sizeof(buf)) {
+		strlcat(buf, ": ", sizeof(buf));
 		strlcat(buf, strerror(er), sizeof(buf));
+	}
 	if (cfg->msg.func != NULL)
 		cfg->msg.func(buf, cfg->msg.dat);
 	else
