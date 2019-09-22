@@ -49,6 +49,8 @@ sqlbox_write(struct sqlbox *box, const char *buf, size_t sz)
 
 	assert(sz > 0);
 
+	sqlbox_debug(&box->cfg, "write: %zu", sz);
+
 	for (;;) {
 		if (poll(&pfd, 1, INFTIM) == -1) {
 			sqlbox_warn(&box->cfg, "ppoll (write)");
@@ -91,6 +93,8 @@ sqlbox_read(struct sqlbox *box, char *buf, size_t sz)
 	size_t		 tsz = 0;
 
 	assert(sz > 0);
+
+	sqlbox_debug(&box->cfg, "read: %zu", sz);
 
 	for (;;) {
 		if (poll(&pfd, 1, INFTIM) == -1) {
@@ -162,6 +166,8 @@ sqlbox_read_frame(struct sqlbox *box, char **buf,
 	 * subsequent frames.
 	 */
 
+	sqlbox_debug(&box->cfg, "read(frame): %zu", bsz);
+
 	while (sz < bsz) {
 		if (poll(&pfd, 1, INFTIM) == -1) {
 			sqlbox_warn(&box->cfg, "ppoll");
@@ -211,6 +217,8 @@ sqlbox_read_frame(struct sqlbox *box, char **buf,
 	*framesz = le32toh(*(uint32_t *)*buf);
 	bsz = *framesz + sizeof(uint32_t);
 
+	sqlbox_debug(&box->cfg, "read(frame): framesz: %zu", *framesz);
+
 	if (bsz > *bufsz) {
 		if ((pp = realloc(*buf, bsz)) == NULL) {
 			sqlbox_warn(&box->cfg, "realloc");
@@ -223,11 +231,12 @@ sqlbox_read_frame(struct sqlbox *box, char **buf,
 
 	/* Everything was in the first frame. */
 
-	if (*framesz <= bsz) {
+	if (bsz <= SQLBOX_FRAME)
 		return 1;
-	}
 
 	/* Now read the rest of the frame. */
+
+	sqlbox_debug(&box->cfg, "read(frame, continuance): %zu", bsz);
 
 	while (sz < bsz) {
 		if (poll(&pfd, 1, INFTIM) == -1) {
