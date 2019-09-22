@@ -54,7 +54,7 @@ size_t
 sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 	size_t pstmt, size_t psz, const struct sqlbox_parm *ps)
 {
-	size_t			 pos = 0, bufsz = 1024, i;
+	size_t			 pos = 0, bufsz = SQLBOX_FRAME, i;
 	uint32_t		 val;
 	char			*buf;
 	struct sqlbox_stmt	*st;
@@ -218,6 +218,8 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 	 */
 again:
 	stmt = NULL;
+	sqlbox_debug(&box->cfg, "sqlite3_prepare_v2: %s, %s",
+		db->src->fname, pst->stmt);
 	c = sqlite3_prepare_v2(db->db, pst->stmt, -1, &stmt, NULL);
 
 	switch (c) {
@@ -233,8 +235,11 @@ again:
 			db->src->fname, sqlite3_errmsg(db->db));
 		sqlbox_warnx(&box->cfg, "%s: prepare-bind "
 			"statement: %s", db->src->fname, pst->stmt);
-		if (stmt != NULL)
+		if (stmt != NULL) {
+			sqlbox_debug(&box->cfg, "sqlite3_finalize: "
+				"%s, %s", db->src->fname, pst->stmt);
 			sqlite3_finalize(stmt);
+		}
 		free(parms);
 		return 0;
 	}
@@ -277,6 +282,8 @@ again:
 			sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
 				"statement: %s", db->src->fname, 
 				pst->stmt);
+			sqlbox_debug(&box->cfg, "sqlite3_finalize: "
+				"%s, %s", db->src->fname, pst->stmt);
 			sqlite3_finalize(stmt);
 			free(parms);
 			return 0;
@@ -294,6 +301,8 @@ again:
 			"calloc", db->src->fname);
 		sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
 			"statement: %s", db->src->fname, pst->stmt);
+		sqlbox_debug(&box->cfg, "sqlite3_finalize: "
+			"%s, %s", db->src->fname, pst->stmt);
 		sqlite3_finalize(stmt);
 		return 0;
 	}
@@ -316,6 +325,8 @@ again:
 			"statement: %s", db->src->fname, pst->stmt);
 		TAILQ_REMOVE(&db->stmtq, st, entries);
 		TAILQ_REMOVE(&box->stmtq, st, gentries);
+		sqlbox_debug(&box->cfg, "sqlite3_finalize: "
+			"%s, %s", db->src->fname, pst->stmt);
 		sqlite3_finalize(stmt);
 		free(st);
 		return 0;
@@ -328,8 +339,11 @@ badframe:
 	if (pst != NULL && db != NULL) 
 		sqlbox_warnx(&box->cfg, "%s: prepare-bind: statement: "
 			"%s", db->src->fname, pst->stmt);
-	if (stmt != NULL)
+	if (stmt != NULL) {
+		sqlbox_debug(&box->cfg, "sqlite3_finalize: "
+			"%s, %s", db->src->fname, pst->stmt);
 		sqlite3_finalize(stmt);
+	}
 	return 0;
 }
 

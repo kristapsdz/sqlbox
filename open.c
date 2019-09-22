@@ -132,10 +132,12 @@ sqlbox_op_open(struct sqlbox *box, const char *buf, size_t sz)
 	 * If we error out, be sure to free all resources.
 	 */
 again:
+	sqlbox_debug(&box->cfg, "sqlite3_open_v2: %s", fn);
 	switch (sqlite3_open_v2(fn, &db->db, fl, NULL)) {
 	case SQLITE_BUSY:
 	case SQLITE_LOCKED:
 	case SQLITE_PROTOCOL:
+		sqlbox_debug(&box->cfg, "sqlite3_close: %s", fn);
 		sqlite3_close(db->db);
 		db->db = NULL;
 		sqlbox_sleep(attempt++);
@@ -146,6 +148,8 @@ again:
 		if (db->db != NULL) {
 			sqlbox_warnx(&box->cfg, "%s: open: %s", 
 				fn, sqlite3_errmsg(db->db));
+			sqlbox_debug(&box->cfg,
+				"sqlite3_close: %s", fn);
 			sqlite3_close(db->db);
 		} else
 			sqlbox_warnx(&box->cfg, "%s: open: "
@@ -162,6 +166,7 @@ again:
 	if (!sqlbox_write(box, (char *)&ack, sizeof(uint32_t))) {
 		sqlbox_warnx(&box->cfg, "%s: open: sqlbox_write", fn);
 		TAILQ_REMOVE(&box->dbq, db, entries);
+		sqlbox_debug(&box->cfg, "sqlite3_close: %s", fn);
 		sqlite3_close(db->db);
 		free(db);
 		return 0;

@@ -15,68 +15,49 @@
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
 .Dd $Mdocdate$
-.Dt SQLBOX_TRANS_IMMEDIATE 3
+.Dt SQLBOX_TRANS_COMMIT 3
 .Os
 .Sh NAME
-.Nm sqlbox_trans_deferred ,
-.Nm sqlbox_trans_exclusive ,
-.Nm sqlbox_trans_immediate
-.Nd begin a database transaction
+.Nm sqlbox_trans_commit ,
+.Nm sqlbox_trans_rollback
+.Nd end a database transaction
 .Sh LIBRARY
 .Lb sqlbox
 .Sh SYNOPSIS
 .In stddef.h
 .In sqlbox.h
 .Ft int
-.Fo sqlbox_trans_deferred
+.Fo sqlbox_trans_commit
 .Fa "struct sqlbox *box"
 .Fa "size_t srcid"
 .Fa "size_t id"
 .Fc
 .Ft int
-.Fo sqlbox_trans_exclusive
-.Fa "struct sqlbox *box"
-.Fa "size_t srcid"
-.Fa "size_t id"
-.Fc
-.Ft int
-.Fo sqlbox_trans_immediate
+.Fo sqlbox_trans_rollback
 .Fa "struct sqlbox *box"
 .Fa "size_t srcid"
 .Fa "size_t id"
 .Fc
 .Sh DESCRIPTION
 The
-.Fn sqlbox_trans_deferred ,
-.Fn sqlbox_trans_exclusive ,
+.Fn sqlbox_trans_commit
 and
-.Fn sqlbox_trans_immediate
-functions begin a transaction identified as non-zero
+.Fn sqlbox_trans_rollback
+functions close a transaction identified as non-zero
 .Fa id
-on non-zero source index
+previously opened with the
+.Xr sqlbox_trans_immediate 3
+family on non-zero source index
 .Fa srcid
 as returned by
 .Xr sqlbox_open 3 .
 .Pp
-These functions differ in transaction semantics:
-.Fn sqlbox_trans_deferred
-opens a shared reader transaction on the first read operation and a
-single writer on the first write,
-.Fn sqlbox_trans_exclusive
-opens a single writer without other readers immediately, and
-.Fn sqlbox_trans_immediate
-opens a single writer with possibly other readers immediately.
+These functions differ in that
+.Fn sqlbox_trans_commit
+will commit all statements subsequent to beginning the transaction and
+.Fn sqlbox_trans_rollback
+will discard them.
 .Pp
-When in doubt of which kind of transaction to use,
-.Fn sqlbox_trans_immediate
-is the simplest and most commonly-used.
-.Fn sqlbox_trans_exclusive
-has the highest performance hit (by locking the entire database) and
-.Fn sqlbox_trans_deferred
-has complex behaviour.
-.Pp
-Transactions may not be nested (of any type) on any single database
-source.
 It is an error to
 .Xr sqlbox_close 3
 a database without first rolling back or committing open transactions.
@@ -86,8 +67,8 @@ Returns zero if communication with
 fails.
 Otherwise, returns non-zero.
 .Pp
-If opening the transaction fails (nested, source not found, database
-errors,
+If ending the transaction fails (not open, different transaction already
+open, source not found, database errors,
 .Fa id
 or
 .Fa srcid

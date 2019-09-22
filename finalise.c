@@ -80,7 +80,8 @@ sqlbox_op_finalise(struct sqlbox *box, const char *buf, size_t sz)
 	}
 	TAILQ_REMOVE(&box->stmtq, st, gentries);
 	TAILQ_REMOVE(&st->db->stmtq, st, entries);
-	sqlbox_debug(&box->cfg, "finalise: %zu", st->id);
+	sqlbox_debug(&box->cfg, "sqlite3_finalize: %s, %s",
+		st->db->src->fname, st->pstmt->stmt);
 	sqlite3_finalize(st->stmt);
 	sqlbox_stmt_free(st);
 	return 1;

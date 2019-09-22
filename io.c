@@ -140,10 +140,10 @@ sqlbox_read_frame(struct sqlbox *box, char **buf,
 
 	/* 
 	 * We want to read at least a frame size of data.
-	 * Frame sizes are 1024 bytes.
+	 * Frame sizes are SQLBOX_FRAME bytes.
 	 */
 	
-	bsz = 1024;
+	bsz = SQLBOX_FRAME;
 	if (*bufsz == 0) {
 		assert(*buf == NULL);
 		if ((*buf = malloc(bsz)) == NULL) {
@@ -156,7 +156,7 @@ sqlbox_read_frame(struct sqlbox *box, char **buf,
 
 	/*
 	 * Start by reading the frame basis, which is always of size
-	 * 1024 bytes.
+	 * SQLBOX_FRAME bytes.
 	 * This will also contain the real size of the frame, which, if
 	 * greater than 1020 bytes, will involve the reading of
 	 * subsequent frames.
@@ -261,14 +261,15 @@ sqlbox_read_frame(struct sqlbox *box, char **buf,
 
 /*
  * Write a buffer "buf" of length "sz" into a frame of type "op".
- * FIXME: for the time being, "sz" must fit in 1016 bytes.
+ * FIXME: for the time being, "sz" must fit in SQLBOX_FRAME - 8 bytes
+ * (the latter for 2 32-bit integers).
  * Return TRUE on success, FALSE on failure.
  */
 int
 sqlbox_write_frame(struct sqlbox *box,
 	enum sqlbox_op op, const char *buf, size_t sz)
 {
-	char		 frame[1024];
+	char		 frame[SQLBOX_FRAME];
 	uint32_t	 tmp;
 
 	memset(frame, 0, sizeof(frame));
@@ -279,10 +280,10 @@ sqlbox_write_frame(struct sqlbox *box,
 	memcpy(frame, &tmp, sizeof(uint32_t));
 
 	tmp = htole32(op);
-	memcpy(frame + 4, &tmp, sizeof(uint32_t));
+	memcpy(frame + sizeof(uint32_t), &tmp, sizeof(uint32_t));
 
-	assert(sz <= 1024 - 8);
-	memcpy(frame + 8, buf, sz);
+	assert(sz <= SQLBOX_FRAME - sizeof(uint32_t) * 2);
+	memcpy(frame + sizeof(uint32_t) * 2, buf, sz);
 
 	return sqlbox_write(box, frame, sizeof(frame));
 }

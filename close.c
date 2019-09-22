@@ -120,6 +120,7 @@ sqlbox_op_close(struct sqlbox *box, const char *buf, size_t sz)
 	 */
 
 	TAILQ_REMOVE(&box->dbq, db, entries);
+	sqlbox_debug(&box->cfg, "sqlite3_close: %s", db->src->fname);
 	if (sqlite3_close(db->db) != SQLITE_OK)
 		sqlbox_warnx(&box->cfg, "%s: close: %s", 
 			db->src->fname, sqlite3_errmsg(db->db));

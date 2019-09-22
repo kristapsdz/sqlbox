@@ -199,6 +199,8 @@ sqlbox_op_trans_open(struct sqlbox *box, const char *buf, size_t sz)
 	}
 
 again:
+	sqlbox_debug(&box->cfg, "sqlite3_exec: %s, %s",
+		db->src->fname, transts[type]);
 	switch (sqlite3_exec(db->db, transts[type], NULL, NULL, NULL)) {
 	case SQLITE_BUSY:
 	case SQLITE_LOCKED:
@@ -210,7 +212,6 @@ again:
 	default:
 		sqlbox_warnx(&box->cfg, "%s: trans-open: %s", 
 			db->src->fname, sqlite3_errmsg(db->db));
-		sqlite3_close(db->db);
 		return 0;
 	}
 
@@ -268,6 +269,8 @@ sqlbox_op_trans_close(struct sqlbox *box, const char *buf, size_t sz)
 	}
 
 again:
+	sqlbox_debug(&box->cfg, "sqlite3_exec: %s, %s",
+		db->src->fname, transts[type]);
 	switch (sqlite3_exec(db->db, transts[type], NULL, NULL, NULL)) {
 	case SQLITE_BUSY:
 	case SQLITE_LOCKED:
@@ -279,7 +282,6 @@ again:
 	default:
 		sqlbox_warnx(&box->cfg, "%s: trans-close: %s", 
 			db->src->fname, sqlite3_errmsg(db->db));
-		sqlite3_close(db->db);
 		return 0;
 	}
 

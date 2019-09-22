@@ -125,6 +125,8 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 	/* Now we run the database routine. */
 	
 again:
+	sqlbox_debug(&box->cfg, "sqlite3_step: %s, %s",
+		st->db->src->fname, st->pstmt->stmt);
 	switch (sqlite3_step(st->stmt)) {
 	case SQLITE_BUSY:
 		/*
@@ -232,18 +234,18 @@ again:
 
 	/* 
 	 * We now serialise our results over the wire.
-	 * Start with at least a 1024 byte buffer.
+	 * Start with at least a SQLBOX_FRAME byte buffer.
 	 */
 
 	if (st->res.bufsz == 0) {
-		st->res.bufsz = 1024;
+		st->res.bufsz = SQLBOX_FRAME;
 		st->res.buf = calloc(1, st->res.bufsz);
 		if (st->res.buf == NULL) {
 			sqlbox_warn(&box->cfg, "step: malloc");
 			return 0;
 		}
 	}
-	assert(st->res.bufsz >= 1024);
+	assert(st->res.bufsz >= SQLBOX_FRAME);
 
 	/* Skip the frame size til we get the packed parms. */
 
@@ -260,7 +262,7 @@ again:
 	val = htole32(pos - 4);
 	memcpy(st->res.buf, (char *)&val, sizeof(uint32_t));
 
-	pos = pos > 1024 ? pos : 1024;
+	pos = pos > SQLBOX_FRAME ? pos : SQLBOX_FRAME;
 
 	if (!sqlbox_write(box, st->res.buf, pos)) {
 		sqlbox_warnx(&box->cfg, "step: sqlbox_write");

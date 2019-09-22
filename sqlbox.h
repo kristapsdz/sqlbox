@@ -189,18 +189,16 @@ struct	sqlbox;
 __BEGIN_DECLS
 
 struct sqlbox	*sqlbox_alloc(struct sqlbox_cfg *);
-void		 sqlbox_free(struct sqlbox *);
-
 int		 sqlbox_close(struct sqlbox *, size_t);
+int		 sqlbox_finalise(struct sqlbox *, size_t);
+void		 sqlbox_free(struct sqlbox *);
 size_t		 sqlbox_open(struct sqlbox *, size_t);
 int		 sqlbox_ping(struct sqlbox *);
-int	 	 sqlbox_role(struct sqlbox *, size_t);
 size_t		 sqlbox_prepare_bind(struct sqlbox *, size_t,
 			size_t, size_t, const struct sqlbox_parm *);
-int		 sqlbox_finalise(struct sqlbox *, size_t);
+int	 	 sqlbox_role(struct sqlbox *, size_t);
 const struct sqlbox_parmset
 		*sqlbox_step(struct sqlbox *, size_t);
-
 int		 sqlbox_trans_immediate(struct sqlbox *, size_t, size_t);
 int		 sqlbox_trans_deferred(struct sqlbox *, size_t, size_t);
 int		 sqlbox_trans_exclusive(struct sqlbox *, size_t, size_t);
@@ -234,30 +232,8 @@ enum ksqlc	 ksql_stmt_cstep(struct ksqlstmt *);
 enum ksqlc	 ksql_stmt_reset(struct ksqlstmt *);
 enum ksqlc	 ksql_stmt_free(struct ksqlstmt *);
 
-const void	*ksql_stmt_blob(struct ksqlstmt *, size_t)
-			__attribute__((deprecated));
-size_t		 ksql_stmt_bytes(struct ksqlstmt *, size_t)
-			__attribute__((deprecated));
-double		 ksql_stmt_double(struct ksqlstmt *, size_t)
-			__attribute__((deprecated));
-int64_t		 ksql_stmt_int(struct ksqlstmt *, size_t)
-			__attribute__((deprecated));
-int		 ksql_stmt_isnull(struct ksqlstmt *, size_t)
-			__attribute__((deprecated));
-const char	*ksql_stmt_str(struct ksqlstmt *, size_t)
-			__attribute__((deprecated));
-
-enum ksqlc	 ksql_trans_commit(struct ksql *, size_t);
-enum ksqlc	 ksql_trans_exclopen(struct ksql *, size_t);
-enum ksqlc	 ksql_trans_open(struct ksql *, size_t);
-enum ksqlc	 ksql_trans_rollback(struct ksql *, size_t);
-enum ksqlc	 ksql_trans_singleopen(struct ksql *, size_t);
-
 enum ksqlc	 ksql_trace(struct ksql *);
 enum ksqlc	 ksql_untrace(struct ksql *);
-
-void		 ksqlitedbmsg(void *, int, int, const char *, const char *);
-void		 ksqlitemsg(void *, enum ksqlc, const char *, const char *);
 
 __END_DECLS
 

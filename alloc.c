@@ -80,6 +80,9 @@ sqlbox_clear(struct sqlbox *box)
 				db->src->fname, stmt->idx, db->idx);
 			sqlbox_warnx(&box->cfg, "%s: statement: %s",
 				db->src->fname, stmt->pstmt->stmt);
+			sqlbox_debug(&box->cfg, "sqlite3_finalize: "
+				"%s, %s", db->src->fname, 
+				stmt->pstmt->stmt);
 			sqlite3_finalize(stmt->stmt);
 			TAILQ_REMOVE(&db->stmtq, stmt, entries);
 			TAILQ_REMOVE(&box->stmtq, stmt, gentries);
@@ -96,6 +99,8 @@ sqlbox_clear(struct sqlbox *box)
 				"%zu still open on exit (auto rollback)", 
 				db->src->fname, db->trans);
 		TAILQ_REMOVE(&box->dbq, db, entries);
+		sqlbox_debug(&box->cfg, 
+			"sqlite3_close: %s", db->src->fname);
 		sqlite3_close(db->db);
 		free(db);
 	}
