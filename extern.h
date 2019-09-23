@@ -17,7 +17,14 @@
 #ifndef EXTERN_H
 #define EXTERN_H
 
-#define	SQLBOX_FRAME	128
+/*
+ * This is an important value.
+ * It's the size of the "baseline" frame for transferring data and
+ * operations.
+ * It should be less than the block size for socketpair() but big enough
+ * to hold an average payload of data (parameters to bind, results).
+ */
+#define	SQLBOX_FRAME	1024
 
 enum	sqlbox_op {
 	SQLBOX_OP_CLOSE,
