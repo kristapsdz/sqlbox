@@ -34,6 +34,9 @@ TESTS	 = test-alloc-bad-defrole \
 	    test-prepare_bind-bad-src \
 	    test-prepare_bind-bad-stmt \
 	    test-prepare_bind-noparms \
+	    test-rebind \
+	    test-rebind-after-finalise \
+	    test-rebind-bad-id \
 	    test-role-bad-role \
 	    test-role-bad-transition \
 	    test-role-norole \

@@ -102,6 +102,10 @@ sqlbox_rebind(struct sqlbox *box, size_t id,
 	}
 	free(buf);
 
+	free(st->res.set.ps);
+	st->res.psz = -1;
+	st->res.set.ps = NULL;
+	st->res.set.psz = 0;
 	return 1;
 }
 
@@ -133,13 +137,19 @@ sqlbox_op_rebind(struct sqlbox *box, const char *buf, size_t sz)
 	buf += sizeof(uint32_t);
 	sz -= sizeof(uint32_t);
 
+	sqlbox_debug(&box->cfg, "sqlite3_reset: %s, %s",
+		st->db->src->fname, st->pstmt->stmt);
 	if (sqlite3_reset(st->stmt) != SQLITE_OK) {
 		sqlbox_warnx(&box->cfg, "%s: sqlite3_reset: %s", 
 			st->db->src->fname, sqlite3_errmsg(st->db->db));
 		sqlbox_warnx(&box->cfg, "%s: rebind statement: %s", 
 			st->db->src->fname, st->pstmt->stmt);
 		return 0;
-	} else if (sqlite3_clear_bindings(st->stmt) != SQLITE_OK) {
+	}
+
+	sqlbox_debug(&box->cfg, "sqlite3_clear_bindings: %s, %s",
+		st->db->src->fname, st->pstmt->stmt);
+	if (sqlite3_clear_bindings(st->stmt) != SQLITE_OK) {
 		sqlbox_warnx(&box->cfg, "%s: sqlite3_clear_bindings: %s", 
 			st->db->src->fname, sqlite3_errmsg(st->db->db));
 		sqlbox_warnx(&box->cfg, "%s: rebind statement: %s", 
@@ -232,6 +242,14 @@ sqlbox_op_rebind(struct sqlbox *box, const char *buf, size_t sz)
 	}
 
 	free(parms);
+	
+	/* Now get ready for new stepping. */
+
+	free(st->res.set.ps);
+	st->res.psz = -1;
+	st->res.set.ps = NULL;
+	st->res.set.psz = 0;
+
 	return 1;
 }
 
