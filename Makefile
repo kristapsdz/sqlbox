@@ -59,6 +59,7 @@ TESTS	 = test-alloc-bad-defrole \
 	    test-step-string-long-multi \
 	    test-trans-close-bad-id \
 	    test-trans-close-bad-src \
+	    test-trans-close-reopen \
 	    test-trans-close-twice \
 	    test-trans-open \
 	    test-trans-open-bad-close \
@@ -75,6 +76,7 @@ OBJS	  = alloc.o \
 	    parm.o \
 	    ping.o \
 	    prepare_bind.o \
+	    rebind.o \
 	    role.o \
 	    step.o \
 	    transaction.o \
@@ -87,7 +89,7 @@ CPPFLAGS += -I/usr/local/include
 
 all: libsqlbox.a
 
-perf: $(PERFS)
+perf: perf-prep-insert-final.dat
 
 libsqlbox.a: $(OBJS) compats.o
 	$(AR) rs $@ $(OBJS) compats.o
@@ -103,25 +105,8 @@ $(TESTS): libsqlbox.a regress/regress.h
 ${test}: regress/${test}.c
 .endfor
 
-perf-prep-insert-final.dat: perf-prep-insert-final-ksql perf-prep-insert-final-sqlbox perf-prep-insert-final-sqlite3
-	rm -f $@
-	@for f in 100 1000 10000 20000 40000 ; \
-	do \
-		for test in 1 2 3 4 5 ; \
-		do \
-			echo /usr/bin/time ./perf-prep-insert-final-ksql -n $$f ; \
-			/usr/bin/time ./perf-prep-insert-final-ksql -n $$f >/dev/null 2>tmp.dat ; \
-			v1=`awk '{print $$1}' tmp.dat` ; \
-			echo /usr/bin/time ./perf-prep-insert-final-sqlbox -n $$f ; \
-			/usr/bin/time ./perf-prep-insert-final-sqlbox -n $$f >/dev/null 2>tmp.dat ; \
-			v2=`awk '{print $$1}' tmp.dat` ; \
-			echo /usr/bin/time ./perf-prep-insert-final-sqlite3 -n $$f ; \
-			/usr/bin/time ./perf-prep-insert-final-sqlite3 -n $$f >/dev/null 2>tmp.dat ; \
-			v3=`awk '{print $$1}' tmp.dat` ; \
-			echo "$$f $$v1 $$v2 $$v3" >> $@ ; \
-		done ; \
-	done
-	rm -f tmp.dat
+perf-prep-insert-final.dat: perf-prep-insert-final-ksql perf-prep-insert-final-sqlbox perf-prep-insert-final-sqlite3 perf.sh
+	sh ./perf.sh perf-prep-insert-final >$@
 
 perf-prep-insert-final-ksql: perf/perf-prep-insert-final-ksql.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/perf-prep-insert-final-ksql.c $(LDFLAGS) -lksql -lsqlite3 -lm

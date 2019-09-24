@@ -40,6 +40,7 @@ sqlbox_finalise(struct sqlbox *box, size_t id)
 	/*
 	 * The client maintains a queue of active statements that hold
 	 * the last result set.
+	 * FIXME: kill server if we don't find it.
 	 */
 
 	if ((st = sqlbox_stmt_find(box, id)) == NULL) {

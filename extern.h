@@ -32,6 +32,7 @@ enum	sqlbox_op {
 	SQLBOX_OP_OPEN,
 	SQLBOX_OP_PING,
 	SQLBOX_OP_PREPARE_BIND,
+	SQLBOX_OP_REBIND,
 	SQLBOX_OP_ROLE,
 	SQLBOX_OP_STEP,
 	SQLBOX_OP_TRANS_CLOSE,
@@ -119,6 +120,7 @@ int	 sqlbox_op_finalise(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_open(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_ping(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_prepare_bind(struct sqlbox *, const char *, size_t);
+int	 sqlbox_op_rebind(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_role(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_step(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_trans_close(struct sqlbox *, const char *, size_t);

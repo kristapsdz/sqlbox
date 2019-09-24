@@ -64,7 +64,10 @@ sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 		return 0;
 	}
 
-	/* Make sure explicit-sized strings are NUL terminated. */
+	/* 
+	 * Make sure explicit-sized strings are NUL terminated.
+	 * FIXME: kill server on error;
+	 */
 
 	for (i = 0; i < psz; i++) 
 		if (ps[i].type == SQLBOX_PARM_STRING &&
@@ -80,7 +83,7 @@ sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 	if ((st = calloc(1, sizeof(struct sqlbox_stmt))) == NULL) {
 		sqlbox_warn(&box->cfg, "prepare-bind: calloc");
 		return 0;
-	} else if ((buf = calloc(1, bufsz)) == NULL) {
+	} else if ((buf = calloc(bufsz, 1)) == NULL) {
 		sqlbox_warn(&box->cfg, "prepare-bind: calloc");
 		free(st);
 		return 0;
@@ -291,6 +294,18 @@ again:
 			sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
 				"bad type: %d", db->src->fname, 
 				parms[i].type);
+			sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
+				"statement: %s", db->src->fname, 
+				pst->stmt);
+			sqlbox_debug(&box->cfg, "sqlite3_finalize: "
+				"%s, %s", db->src->fname, pst->stmt);
+			sqlite3_finalize(stmt);
+			free(parms);
+			return 0;
+		}
+		if (c != SQLITE_OK) {
+			sqlbox_warnx(&box->cfg, "%s: prepare-bind: %s", 
+				db->src->fname, sqlite3_errmsg(db->db));
 			sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
 				"statement: %s", db->src->fname, 
 				pst->stmt);

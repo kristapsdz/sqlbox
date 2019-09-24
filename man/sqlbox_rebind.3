@@ -1,0 +1,123 @@
+.\"	$Id$
+.\"
+.\" Copyright (c) 2019 Kristaps Dzonsons <kristaps@bsd.lv>
+.\"
+.\" Permission to use, copy, modify, and distribute this software for any
+.\" purpose with or without fee is hereby granted, provided that the above
+.\" copyright notice and this permission notice appear in all copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\" WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\" ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\" WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+.\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+.\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd $Mdocdate$
+.Dt SQLBOX_REBIND 3
+.Os
+.Sh NAME
+.Nm sqlbox_rebind
+.Nd rebind parameters to a statement
+.Sh LIBRARY
+.Lb sqlbox
+.Sh SYNOPSIS
+.In stddef.h
+.In sqlbox.h
+.Ft size_t
+.Fo sqlbox_rebind
+.Fa "struct sqlbox *box"
+.Fa "size_t id"
+.Fa "size_t psz"
+.Fa "const struct sqlbox_parm *ps"
+.Fc
+.Sh DESCRIPTION
+Rebinds parameters to a statement
+.Fa id
+created with
+.Xr sqlbox_prepare_bind 3 .
+This resets the statement and removes any previously-bound parameters.
+The number of parameters
+.Fa psz
+must match the prepared statement parameters given in the SQL or be
+zero.
+.Pp
+The
+.Fa ps
+array, if
+.Fa psz
+is non-zero, consists of typed values bound to those parameters.
+Types must correspond to typed values, for example, floats of type
+.Dv SQLBOX_PARM_FLOAT
+must be set in the
+.Va fparm
+of
+.Vt struct sqlbox_parm .
+.Pp
+The
+.Va sz
+of
+.Vt struct sqlbox_parm
+is ignored for floats and integers, but must be provided for blobs and
+optionally for strings.
+For strings, a zero indicates it should be computed using
+.Xr strlen 3 .
+Otherwise, it should be the full string length including the NUL
+terminator.
+If the string is shorter than the given length (i.e., contains an
+embedded NUL terminator), the database will still return the full given
+length of the original size (terminating NUL inclusive).
+.Ss SQLite3 Implementation
+The statement is first reset with
+.Xr sqlite3_reset 3 ,
+its existing bound parameters removed with
+.Xr sqlite3_clear_bindings 3 ,
+then new parameters bound with
+.Xr sqlite3_bind_blob 3
+and family.
+.Sh RETURN VALUES
+Returns zero if
+.Fa id
+is invalid, strings are not NUL-terminated at their size (if non-zero),
+memory allocation fails, or communication with
+.Fa box
+fails.
+Otherwise it returns the >0 statement identifier.
+.Pp
+If rebinding to the statement fails, subsequent
+.Fa box
+access will fail.
+Use
+.Xr sqlbox_ping 3
+to check explicitly.
+.Pp
+If
+.Fn sqlbox_rebind
+fails,
+.Fa box
+is no longer accessible beyond
+.Xr sqlbox_ping 3
+and
+.Xr sqlbox_free 3 .
+.\" For sections 2, 3, and 9 function return values only.
+.\" .Sh ENVIRONMENT
+.\" For sections 1, 6, 7, and 8 only.
+.\" .Sh FILES
+.\" .Sh EXIT STATUS
+.\" For sections 1, 6, and 8 only.
+.\" .Sh EXAMPLES
+.\" .Sh DIAGNOSTICS
+.\" For sections 1, 4, 6, 7, 8, and 9 printf/stderr messages only.
+.\" .Sh ERRORS
+.\" For sections 2, 3, 4, and 9 errno settings only.
+.Sh SEE ALSO
+.Xr sqlbox_finalise 3 ,
+.Xr sqlbox_open 3
+.\" .Sh STANDARDS
+.\" .Sh HISTORY
+.\" .Sh AUTHORS
+.\" .Sh CAVEATS
+.\" .Sh BUGS
+.\" .Sh SECURITY CONSIDERATIONS
+.\" Not used in OpenBSD.
