@@ -82,6 +82,18 @@ To convert between types (e.g., integers to strings), use the standard
 .Xr snprintf 3 ,
 .Xr strtonum 3 ,
 and so on.
+.Ss SQLite3 Implementation
+Uses
+.Xr sqlite3_step 3
+to step through, randomly backing off on return of
+.Dv SQLITE_BUSY ,
+.Dv SQLITE_LOCKED ,
+or
+.Dv SQLITE_PROTOCOL ,
+and failing if not returning
+.Dv SQLITE_DONE
+or
+.Dv SQLITE_ROW .
 .Sh RETURN VALUES
 Returns the results of the query or
 .Dv NULL

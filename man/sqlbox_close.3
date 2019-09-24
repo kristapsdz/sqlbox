@@ -48,6 +48,9 @@ is not called, the database will automatically be closed with
 This is not considered an error, as a common usage pattern is a role
 with permission opening the database, shedding its role, then the close
 being relegated to the full destruction of the box.
+.Ss SQLite3 Implementation
+The database is closed with
+.Xr sqlite3_close 3 .
 .Sh RETURN VALUES
 Returns zero if communication with
 .Fa box

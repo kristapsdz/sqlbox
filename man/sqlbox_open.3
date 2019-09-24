@@ -70,6 +70,19 @@ being relegated to the full destruction of the box.
 .Pp
 It's perfectly alright to open multiple databases of the same index,
 although it's probably not what you want.
+.Ss SQLite3 Implementation
+Opens the database with
+.Xr sqlite3_open_v2 3 .
+Has a random back-off on return of
+.Dv SQLITE_BUSY ,
+.Dv SQLITE_LOCKED ,
+or
+.Dv SQLITE_PROTOCOL .
+Otherwise, if not
+.Dv SQLITE_OK ,
+considers it a failed open.
+Possibly closes again on error with
+.Xr sqlite3_close 3 .
 .Sh RETURN VALUES
 Returns an identifier >0 if communication with the box works, zero
 otherwise (opening the source files, etc.).

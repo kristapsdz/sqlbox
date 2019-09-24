@@ -61,6 +61,21 @@ will discard them.
 It is an error to
 .Xr sqlbox_close 3
 a database without first rolling back or committing open transactions.
+.Ss SQLite3 Implementation
+Runs
+.Xr sqlite3_exec
+using the
+.Cm COMMIT
+or
+.Cm ROLLBACK
+statements with the type depending on the invocation.
+Randomly backs off on return of
+.Dv SQLITE_BUSY ,
+.Dv SQLITE_LOCKED ,
+or
+.Dv SQLITE_PROTOCOL ,
+and returns failure on anything else other than
+.Dv SQLITE_OK .
 .Sh RETURN VALUES
 Returns zero if communication with
 .Fa box

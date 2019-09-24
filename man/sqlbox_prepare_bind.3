@@ -87,6 +87,19 @@ the system exits.
 The former case of
 .Xr sqlbox_close 3
 without finalised statements will result in an error.
+.Ss SQLite3 Implementation
+Prepares the statement with
+.Xr sqlite3_prepare_v2 3 ,
+randomly backing off if returning
+.Dv SQLITE_BUSY ,
+.Dv SQLITE_LOCKED ,
+or
+.Dv SQLITE_PROTOCOL ,
+otherwise failing if not
+.Dv SQLITE_OK .
+Parameters are bound with the
+.Xr sqlite3_bind_blob 3
+family.
 .Sh RETURN VALUES
 Returns zero if
 .Fa src

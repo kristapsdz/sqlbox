@@ -36,6 +36,9 @@ Finalise (close and free resources) the non-zero statement
 as returned by
 .Xr sqlbox_prepare_bind 3 .
 After being called, the statement may no longer be used.
+.Ss SQLite3 Implementation
+Invokes
+.Xr sqlite3_finalize 3 .
 .Sh RETURN VALUES
 Return zero if
 .Fa id
