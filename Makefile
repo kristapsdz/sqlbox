@@ -86,13 +86,16 @@ OBJS	  = alloc.o \
 	    warn.o
 PERFS	  = perf-prep-insert-final-ksql \
 	    perf-prep-insert-final-sqlbox \
-	    perf-prep-insert-final-sqlite3
+	    perf-prep-insert-final-sqlite3 \
+	    perf-rebind-ksql \
+	    perf-rebind-sqlbox \
+	    perf-rebind-sqlite3
 LDFLAGS	 += -L/usr/local/lib
 CPPFLAGS += -I/usr/local/include
 
 all: libsqlbox.a
 
-perf: perf-prep-insert-final.dat
+perf: perf-prep-insert-final.dat perf-rebind.dat
 
 libsqlbox.a: $(OBJS) compats.o
 	$(AR) rs $@ $(OBJS) compats.o
@@ -108,17 +111,19 @@ $(TESTS): libsqlbox.a regress/regress.h
 ${test}: regress/${test}.c
 .endfor
 
-perf-prep-insert-final.dat: perf-prep-insert-final-ksql perf-prep-insert-final-sqlbox perf-prep-insert-final-sqlite3 perf.sh
-	sh ./perf.sh perf-prep-insert-final >$@
+.for perf in perf-prep-insert-final perf-rebind
+${perf}.dat: ${perf}-ksql ${perf}-sqlbox ${perf}-sqlite3 perf.sh
+	sh ./perf.sh ${perf} >$@
 
-perf-prep-insert-final-ksql: perf/perf-prep-insert-final-ksql.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/perf-prep-insert-final-ksql.c $(LDFLAGS) -lksql -lsqlite3 -lm
+${perf}-ksql: perf/${perf}-ksql.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-ksql.c $(LDFLAGS) -lksql -lsqlite3 -lm
 
-perf-prep-insert-final-sqlbox: perf/perf-prep-insert-final-sqlbox.c libsqlbox.a
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/perf-prep-insert-final-sqlbox.c $(LDFLAGS) libsqlbox.a -lsqlite3 -lm
+${perf}-sqlbox: perf/${perf}-sqlbox.c libsqlbox.a
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-sqlbox.c $(LDFLAGS) libsqlbox.a -lsqlite3 -lm
 
-perf-prep-insert-final-sqlite3: perf/perf-prep-insert-final-sqlite3.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/perf-prep-insert-final-sqlite3.c $(LDFLAGS) -lsqlite3 -lm
+${perf}-sqlite3: perf/${perf}-sqlite3.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-sqlite3.c $(LDFLAGS) -lsqlite3 -lm
+.endfor
 
 clean:
 	rm -f libsqlbox.a compats.o $(OBJS) $(TESTS) $(PERFS)
