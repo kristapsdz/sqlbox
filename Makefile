@@ -62,6 +62,7 @@ TESTS	 = test-alloc-bad-defrole \
 	    test-step-string-implicit-length \
 	    test-step-string-missing-nul \
 	    test-step-string-long \
+	    test-step-string-long-implicit \
 	    test-step-string-long-multi \
 	    test-trans-close-bad-id \
 	    test-trans-close-bad-src \
