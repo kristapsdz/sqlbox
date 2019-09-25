@@ -46,7 +46,7 @@ sqlbox_parm_pack(struct sqlbox *box, size_t parmsz,
 
 	/* Start with types and payload size. */
 
-	framesz = parmsz * sizeof(uint32_t);
+	framesz = sizeof(uint32_t) + parmsz * sizeof(uint32_t);
 
 	for (i = 0; i < parmsz; i++) {
 		switch (parms[i].type) {
