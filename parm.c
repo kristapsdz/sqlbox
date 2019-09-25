@@ -59,9 +59,13 @@ sqlbox_parm_pack(struct sqlbox *box, size_t parmsz,
 			framesz += sizeof(int64_t);
 			break;
 		case SQLBOX_PARM_BLOB: /* length+data */
-		case SQLBOX_PARM_STRING:
 			framesz += sizeof(uint32_t);
 			framesz += parms[i].sz;
+			break;
+		case SQLBOX_PARM_STRING:
+			framesz += sizeof(uint32_t);
+			framesz += parms[i].sz == 0 ? 
+				strlen(parms[i].sparm) + 1 : parms[i].sz;
 			break;
 		default:
 			return 0;
