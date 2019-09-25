@@ -200,6 +200,7 @@ const struct sqlbox_parmset
 		*sqlbox_cstep(struct sqlbox *, size_t);
 int		 sqlbox_finalise(struct sqlbox *, size_t);
 void		 sqlbox_free(struct sqlbox *);
+int64_t		 sqlbox_lastid(struct sqlbox *, size_t);
 size_t		 sqlbox_open(struct sqlbox *, size_t);
 int		 sqlbox_ping(struct sqlbox *);
 size_t		 sqlbox_prepare_bind(struct sqlbox *, size_t,
@@ -216,31 +217,10 @@ int		 sqlbox_trans_commit(struct sqlbox *, size_t, size_t);
 int		 sqlbox_trans_rollback(struct sqlbox *, size_t, size_t);
 
 #if 0
-enum ksqlc	 ksql_bind_blob(struct ksqlstmt *, 
-			size_t, const void *, size_t);
-enum ksqlc	 ksql_bind_double(struct ksqlstmt *, size_t, double);
-enum ksqlc	 ksql_bind_int(struct ksqlstmt *, size_t, int64_t);
-enum ksqlc	 ksql_bind_null(struct ksqlstmt *, size_t);
-enum ksqlc	 ksql_bind_str(struct ksqlstmt *, size_t, const char *);
 enum ksqlc	 ksql_bind_zblob(struct ksqlstmt *, size_t, size_t);
 enum ksqlc	 ksql_exec(struct ksql *, const char *, size_t);
-enum ksqlc	 ksql_lastid(struct ksql *, int64_t *);
-enum ksqlc	 ksql_result_blob(struct ksqlstmt *, const void **, size_t *, size_t);
-enum ksqlc	 ksql_result_blob_alloc(struct ksqlstmt *, void **, size_t *, size_t);
-enum ksqlc	 ksql_result_bytes(struct ksqlstmt *, size_t *, size_t);
-enum ksqlc	 ksql_result_double(struct ksqlstmt *, double *, size_t);
-enum ksqlc	 ksql_result_int(struct ksqlstmt *, int64_t *, size_t);
-enum ksqlc	 ksql_result_isnull(struct ksqlstmt *, int *, size_t);
-enum ksqlc	 ksql_result_str(struct ksqlstmt *, const char **, size_t);
-enum ksqlc	 ksql_result_str_alloc(struct ksqlstmt *, char **, size_t);
-void		 ksql_role(struct ksql *, size_t);
-enum ksqlc	 ksql_stmt_alloc(struct ksql *, 
-			struct ksqlstmt **, const char *, size_t);
 
-enum ksqlc	 ksql_stmt_step(struct ksqlstmt *);
-enum ksqlc	 ksql_stmt_cstep(struct ksqlstmt *);
 enum ksqlc	 ksql_stmt_reset(struct ksqlstmt *);
-enum ksqlc	 ksql_stmt_free(struct ksqlstmt *);
 
 enum ksqlc	 ksql_trace(struct ksql *);
 enum ksqlc	 ksql_untrace(struct ksql *);

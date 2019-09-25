@@ -46,6 +46,7 @@ typedef	int (*sqlbox_op)(struct sqlbox *, const char *, size_t);
 static	const sqlbox_op ops[SQLBOX_OP__MAX] = {
 	sqlbox_op_close, /* SQLBOX_OP_CLOSE */
 	sqlbox_op_finalise, /* SQLBOX_OP_FINAL */
+	sqlbox_op_lastid, /* SQLBOX_OP_LASTID */
 	sqlbox_op_open, /* SQLBOX_OP_OPEN */
 	sqlbox_op_ping, /* SQLBOX_OP_PING */
 	sqlbox_op_prepare_bind, /* SQLBOX_OP_PREPARE_BIND */

@@ -77,6 +77,7 @@ OBJS	  = alloc.o \
 	    close.o \
 	    finalise.o \
 	    io.o \
+	    lastid.o \
 	    main.o \
 	    open.o \
 	    parm.o \
@@ -87,6 +88,8 @@ OBJS	  = alloc.o \
 	    step.o \
 	    transaction.o \
 	    warn.o
+PERFDATS  = perf-prep-insert-final.dat \
+	    perf-rebind.dat
 PERFS	  = perf-prep-insert-final-ksql \
 	    perf-prep-insert-final-sqlbox \
 	    perf-prep-insert-final-sqlite3 \
@@ -98,7 +101,7 @@ CPPFLAGS += -I/usr/local/include
 
 all: libsqlbox.a
 
-perf: perf-prep-insert-final.dat perf-rebind.dat
+perf: $(PERFDATS)
 
 libsqlbox.a: $(OBJS) compats.o
 	$(AR) rs $@ $(OBJS) compats.o
@@ -130,7 +133,7 @@ ${perf}-sqlite3: perf/${perf}-sqlite3.c
 
 clean:
 	rm -f libsqlbox.a compats.o $(OBJS) $(TESTS) $(PERFS)
-	rm -f $(PERFS) perf-prep-insert-final.dat
+	rm -f $(PERFS) $(PERFDATS)
 
 distclean: clean
 	rm -f config.h config.log Makefile.configure
