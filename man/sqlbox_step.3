@@ -18,6 +18,7 @@
 .Dt SQLBOX_STEP 3
 .Os
 .Sh NAME
+.Nm sqlbox_cstep ,
 .Nm sqlbox_step
 .Nd execute a prepared statement
 .Sh LIBRARY
@@ -26,16 +27,21 @@
 .In stddef.h
 .In sqlbox.h
 .Ft const struct sqlbox_parmset *
+.Fo sqlbox_cstep
+.Fa "struct sqlbox *box"
+.Fa "size_t id"
+.Fc
+.Ft const struct sqlbox_parmset *
 .Fo sqlbox_step
 .Fa "struct sqlbox *box"
 .Fa "size_t id"
 .Fc
 .Sh DESCRIPTION
-Executes a statement
+These functions execute a statement
 .Fa id
-prepared with
+as returned by a successful call to
 .Xr sqlbox_prepare_bind 3 .
-It returns a result set:
+They return a result set:
 .Bd -literal
 struct sqlbox_parm {
   union {
@@ -51,10 +57,28 @@ struct sqlbox_parm {
 struct sqlbox_parmset {
   struct sqlbox_parm *ps;
   size_t psz;
+  enum sqlbox_code code;
 };
 .Ed
 .Pp
-The set consists of values from each column of the returned data in the
+Both
+.Fn sqlbox_step
+and
+.Fn sqlbox_cstep
+are identical except in that
+.Fn sqlbox_step
+will fail on constraint violations while
+.Fn sqlbox_cstep
+will set the
+.Dv SQLBOX_CODE_CONSTRAINT
+in
+.Va code
+if constraints are violated, where it's otherwise
+.Dv SQLBOX_CODE_OK .
+.Pp
+The result set
+.Fa ps
+consists of values from each column of the returned data in the
 underlying type of the value.
 If the statement does not return any column (such as a
 .Li CREATE TABLE
@@ -70,7 +94,8 @@ The result set as a whole, including the memory allocated for each
 and
 .Va bparm
 column, is only valid until the next
-.Fn sqlbox_step
+.Fn sqlbox_step ,
+.Fn sqlbox_cstep ,
 or
 .Xr sqlbox_finalise 3 .
 .Pp
@@ -94,14 +119,29 @@ and failing if not returning
 .Dv SQLITE_DONE
 or
 .Dv SQLITE_ROW .
+Handling of
+.Dv SQLITE_CONSTRAINT
+depends upon whether
+.Fn sqlbox_step
+or
+.Fn sqlbox_cstep
+were used.
 .Sh RETURN VALUES
 Returns the results of the query or
 .Dv NULL
 on failure.
 Failure covers situations like failure to communicate with the box,
 stepping after the last result has been returned, or database error.
+Constraint violations are errors with
+.Fn sqlbox_step ,
+but allowed (with the appropriate
+.Va code
+set) with
+.Fn sqlbox_cstep .
 .Pp
 If
+.Fn sqlbox_cstep
+or
 .Fn sqlbox_step
 fails,
 .Fa box

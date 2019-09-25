@@ -18,6 +18,7 @@ TESTS	 = test-alloc-bad-defrole \
 	    test-close-bad-role \
 	    test-close-twice \
 	    test-close-zero-id \
+	    test-cstep \
 	    test-finalise \
 	    test-finalise-bad-stmt \
 	    test-finalise-twice \
@@ -44,6 +45,8 @@ TESTS	 = test-alloc-bad-defrole \
 	    test-role-transition-self \
 	    test-step-bad-stmt \
 	    test-step-double-exec \
+	    test-step-constraint \
+	    test-step-constraint-code \
 	    test-step-create \
 	    test-step-create-insert-select \
 	    test-step-create-insert-selectmulti \

@@ -31,10 +31,11 @@
 #include "sqlbox.h"
 #include "extern.h"
 
-const struct sqlbox_parmset *
-sqlbox_step(struct sqlbox *box, size_t stmtid)
+static const struct sqlbox_parmset *
+sqlbox_step_inner(struct sqlbox *box, int constraint, size_t stmtid)
 {
-	uint32_t		 v = htole32(stmtid);
+	uint32_t		 val;
+	char			 buf[sizeof(uint32_t) * 2];
 	const char		*frame;
 	size_t			 framesz;
 	struct sqlbox_stmt 	*st;
@@ -44,8 +45,16 @@ sqlbox_step(struct sqlbox *box, size_t stmtid)
 		return NULL;
 	}
 
+	/* Write id and whether we accept constraint violations. */
+
+	val = htole32(stmtid);
+	memcpy(buf, (char *)&val, sizeof(uint32_t));
+
+	val = htole32(constraint);
+	memcpy(buf + sizeof(uint32_t), (char *)&val, sizeof(uint32_t));
+
 	if (!sqlbox_write_frame
-	    (box, SQLBOX_OP_STEP, (char *)&v, sizeof(uint32_t))) {
+	    (box, SQLBOX_OP_STEP, buf, sizeof(buf))) {
 		sqlbox_warnx(&box->cfg, "step: sqlbox_write_frame");
 		return NULL;
 	}
@@ -62,6 +71,18 @@ sqlbox_step(struct sqlbox *box, size_t stmtid)
 		sqlbox_warnx(&box->cfg, "step: sqlbox_read_frame");
 		return NULL;
 	}
+
+	if (framesz < sizeof(uint32_t)) {
+		sqlbox_warnx(&box->cfg, "step: "
+			"bad frame size: %zu", framesz);
+		return NULL;
+	}
+
+	/* Extract the return code. */
+
+	st->res.set.code = le32toh(*(uint32_t *)frame);
+	frame += sizeof(uint32_t);
+	framesz -= sizeof(uint32_t);
 
 	/* 
 	 * Next, extract the parsed parameters from the frame.
@@ -82,6 +103,20 @@ sqlbox_step(struct sqlbox *box, size_t stmtid)
 	return &st->res.set;
 }
 
+const struct sqlbox_parmset *
+sqlbox_step(struct sqlbox *box, size_t stmtid)
+{
+
+	return sqlbox_step_inner(box, 0, stmtid);
+}
+
+const struct sqlbox_parmset *
+sqlbox_cstep(struct sqlbox *box, size_t stmtid)
+{
+
+	return sqlbox_step_inner(box, 1, stmtid);
+}
+
 /*
  * Step through zero or more results to a prepared statement.
  * We do not allow constraint violations.
@@ -92,12 +127,12 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 {
 	struct sqlbox_stmt	*st;
 	size_t			 pos, id, attempt = 0, i, cols = 0;
-	int			 ccount;
+	int			 ccount, has_cstep = 0, allow_cstep;
 	uint32_t		 val;
 
 	/* Look up the statement in our global list. */
 
-	if (sz != sizeof(uint32_t)) {
+	if (sz != sizeof(uint32_t) * 2) {
 		sqlbox_warnx(&box->cfg, "step: "
 			"bad frame size: %zu", sz);
 		return 0;
@@ -107,6 +142,7 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 		sqlbox_warnx(&box->cfg, "step: bad stmt: %zu", id);
 		return 0;
 	}
+	allow_cstep = le32toh(*(uint32_t *)(buf + sizeof(uint32_t)));
 
 	/* 
 	 * Did we already run this to completion?
@@ -151,6 +187,12 @@ again:
 		sqlbox_warnx(&box->cfg, "%s: step: statement: "
 			"%s", st->db->src->fname, st->pstmt->stmt);
 		break;
+	case SQLITE_CONSTRAINT:
+		if (allow_cstep) {
+			has_cstep = 1;
+			break;
+		}
+		/* FALLTHROUGH */
 	default:
 		sqlbox_warnx(&box->cfg, "%s: step: %s", 
 			st->db->src->fname, 
@@ -247,9 +289,16 @@ again:
 	}
 	assert(st->res.bufsz >= SQLBOX_FRAME);
 
-	/* Skip the frame size til we get the packed parms. */
+	/* 
+	 * Write our return code (whether we had a constraint violation)
+	 * then the results, if any.  Make room for the size at the
+	 * beginning of the buffer.
+	 */
 
-	pos = sizeof(uint32_t);
+	val = htole32(has_cstep);
+	memcpy(st->res.buf + sizeof(uint32_t), 
+		(char *)&val, sizeof(uint32_t));
+	pos = sizeof(uint32_t) * 2;
 
 	if (!sqlbox_parm_pack(box, st->res.set.psz, st->res.set.ps, 
 	    &st->res.buf, &pos, &st->res.bufsz)) {
@@ -259,11 +308,12 @@ again:
 
 	/* Now write our frame size. */
 
-	val = htole32(pos - 4);
+	val = htole32(pos - sizeof(uint32_t));
 	memcpy(st->res.buf, (char *)&val, sizeof(uint32_t));
 
-	pos = pos > SQLBOX_FRAME ? pos : SQLBOX_FRAME;
+	/* The frame will be at least SQLBOX_FRAME long. */
 
+	pos = pos > SQLBOX_FRAME ? pos : SQLBOX_FRAME;
 	if (!sqlbox_write(box, st->res.buf, pos)) {
 		sqlbox_warnx(&box->cfg, "step: sqlbox_write");
 		return 0;

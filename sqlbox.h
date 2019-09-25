@@ -174,6 +174,11 @@ struct	sqlbox_parm {
 	size_t			 sz; /* data length (bytes) */
 };
 
+enum	sqlbox_code {
+	SQLBOX_CODE_OK = 0, /* success */
+	SQLBOX_CODE_CONSTRAINT = 1 /* constraint violation */
+};
+
 /*
  * A possibly-empty result ("row") from stepping a prepared statement.
  * A result with zero columns indicates no more data will follow by
@@ -182,6 +187,7 @@ struct	sqlbox_parm {
 struct	sqlbox_parmset {
 	struct sqlbox_parm 	*ps; /* columns of the resulting row */
 	size_t		 	 psz; /* number of columns or zero */
+	enum sqlbox_code	 code; /* return type */
 };
 
 struct	sqlbox;
@@ -190,6 +196,8 @@ __BEGIN_DECLS
 
 struct sqlbox	*sqlbox_alloc(struct sqlbox_cfg *);
 int		 sqlbox_close(struct sqlbox *, size_t);
+const struct sqlbox_parmset
+		*sqlbox_cstep(struct sqlbox *, size_t);
 int		 sqlbox_finalise(struct sqlbox *, size_t);
 void		 sqlbox_free(struct sqlbox *);
 size_t		 sqlbox_open(struct sqlbox *, size_t);

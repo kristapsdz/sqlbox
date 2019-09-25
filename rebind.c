@@ -137,15 +137,13 @@ sqlbox_op_rebind(struct sqlbox *box, const char *buf, size_t sz)
 	buf += sizeof(uint32_t);
 	sz -= sizeof(uint32_t);
 
+	/* 
+	 * Don't check the return code, as this just returns whatever
+	 * was there last.
+	 */
 	sqlbox_debug(&box->cfg, "sqlite3_reset: %s, %s",
 		st->db->src->fname, st->pstmt->stmt);
-	if (sqlite3_reset(st->stmt) != SQLITE_OK) {
-		sqlbox_warnx(&box->cfg, "%s: sqlite3_reset: %s", 
-			st->db->src->fname, sqlite3_errmsg(st->db->db));
-		sqlbox_warnx(&box->cfg, "%s: rebind statement: %s", 
-			st->db->src->fname, st->pstmt->stmt);
-		return 0;
-	}
+	sqlite3_reset(st->stmt);
 
 	sqlbox_debug(&box->cfg, "sqlite3_clear_bindings: %s, %s",
 		st->db->src->fname, st->pstmt->stmt);
