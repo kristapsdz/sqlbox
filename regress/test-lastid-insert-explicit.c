@@ -32,11 +32,21 @@ main(int argc, char *argv[])
 	struct sqlbox		*p;
 	struct sqlbox_cfg	 cfg;
 	struct sqlbox_src	 srcs[] = {
-		{ .fname = (char *)":memory:" }
+		{ .fname = (char *)":memory:",
+		  .mode = SQLBOX_SRC_RW }
 	};
 	struct sqlbox_pstmt	 pstmts[] = {
-		{ .stmt = (char *)"CREATE TABLE foo (foo INTEGER)" }
+		{ .stmt = (char *)"CREATE TABLE foo "
+			"(bar INT, id INTEGER PRIMARY KEY AUTOINCREMENT)" },
+		{ .stmt = (char *)"INSERT INTO foo (bar, id) VALUES (?, ?)" },
 	};
+	struct sqlbox_parm	 parms1[] = {
+		{ .iparm = 20,
+		  .type = SQLBOX_PARM_INT },
+		{ .iparm = 4,
+		  .type = SQLBOX_PARM_INT },
+	};
+	int64_t			 lastid;
 
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 	cfg.msg.func_short = warnx;
@@ -50,16 +60,26 @@ main(int argc, char *argv[])
 		errx(EXIT_FAILURE, "sqlbox_alloc");
 	if (!(dbid = sqlbox_open(p, 0)))
 		errx(EXIT_FAILURE, "sqlbox_open");
-	if (!sqlbox_ping(p))
-		errx(EXIT_FAILURE, "sqlbox_ping");
+
 	if (!(stmtid = sqlbox_prepare_bind(p, dbid, 0, 0, NULL)))
 		errx(EXIT_FAILURE, "sqlbox_prepare_bind");
-	if (!sqlbox_ping(p))
-		errx(EXIT_FAILURE, "sqlbox_ping");
+	if (sqlbox_step(p, stmtid) == NULL)
+		errx(EXIT_FAILURE, "sqlbox_step");
 	if (!sqlbox_finalise(p, stmtid))
 		errx(EXIT_FAILURE, "sqlbox_finalise");
-	if (!sqlbox_ping(p))
-		errx(EXIT_FAILURE, "sqlbox_ping");
+
+	if (!(stmtid = sqlbox_prepare_bind
+	      (p, dbid, 1, nitems(parms1), parms1)))
+		errx(EXIT_FAILURE, "sqlbox_prepare_bind");
+	if (sqlbox_step(p, stmtid) == NULL)
+		errx(EXIT_FAILURE, "sqlbox_step");
+	if (!sqlbox_finalise(p, stmtid))
+		errx(EXIT_FAILURE, "sqlbox_finalise");
+
+	if (!sqlbox_lastid(p, dbid, &lastid))
+		errx(EXIT_FAILURE, "sqlbox_lastid");
+	if (lastid != 4)
+		errx(EXIT_FAILURE, "lastid != 4");
 
 	sqlbox_free(p);
 	return EXIT_SUCCESS;

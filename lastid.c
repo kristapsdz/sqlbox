@@ -29,8 +29,8 @@
 #include "sqlbox.h"
 #include "extern.h"
 
-int64_t
-sqlbox_lastid(struct sqlbox *box, size_t id)
+int
+sqlbox_lastid(struct sqlbox *box, size_t id, int64_t *res)
 {
 	uint32_t	 v = htole32(id);
 	int64_t		 ack;
@@ -44,7 +44,8 @@ sqlbox_lastid(struct sqlbox *box, size_t id)
 		sqlbox_warnx(&box->cfg, "lastid: sqlbox_read");
 		return 0;
 	}
-	return le64toh(ack);
+	*res = le64toh(ack);
+	return 1;
 }
 
 int
@@ -71,7 +72,7 @@ sqlbox_op_lastid(struct sqlbox *box, const char *buf, size_t sz)
 		db->src->fname);
 	ack = htole64(sqlite3_last_insert_rowid(db->db));
 
-	if (!sqlbox_write(box, (char *)ack, sizeof(int64_t))) {
+	if (!sqlbox_write(box, (char *)&ack, sizeof(int64_t))) {
 		sqlbox_warnx(&box->cfg, "lastid: sqlbox_write");
 		return 0;
 	}

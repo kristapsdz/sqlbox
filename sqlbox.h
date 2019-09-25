@@ -200,7 +200,7 @@ const struct sqlbox_parmset
 		*sqlbox_cstep(struct sqlbox *, size_t);
 int		 sqlbox_finalise(struct sqlbox *, size_t);
 void		 sqlbox_free(struct sqlbox *);
-int64_t		 sqlbox_lastid(struct sqlbox *, size_t);
+int		 sqlbox_lastid(struct sqlbox *, size_t, int64_t *);
 size_t		 sqlbox_open(struct sqlbox *, size_t);
 int		 sqlbox_ping(struct sqlbox *);
 size_t		 sqlbox_prepare_bind(struct sqlbox *, size_t,

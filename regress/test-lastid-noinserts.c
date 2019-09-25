@@ -31,6 +31,7 @@ main(int argc, char *argv[])
 	size_t		 	 dbid, stmtid;
 	struct sqlbox		*p;
 	struct sqlbox_cfg	 cfg;
+	int64_t		 	 lastid;
 	struct sqlbox_src	 srcs[] = {
 		{ .fname = (char *)":memory:" }
 	};
@@ -50,16 +51,17 @@ main(int argc, char *argv[])
 		errx(EXIT_FAILURE, "sqlbox_alloc");
 	if (!(dbid = sqlbox_open(p, 0)))
 		errx(EXIT_FAILURE, "sqlbox_open");
-	if (!sqlbox_ping(p))
-		errx(EXIT_FAILURE, "sqlbox_ping");
+
 	if (!(stmtid = sqlbox_prepare_bind(p, dbid, 0, 0, NULL)))
 		errx(EXIT_FAILURE, "sqlbox_prepare_bind");
-	if (!sqlbox_ping(p))
-		errx(EXIT_FAILURE, "sqlbox_ping");
 	if (!sqlbox_finalise(p, stmtid))
 		errx(EXIT_FAILURE, "sqlbox_finalise");
+	if (!sqlbox_lastid(p, dbid, &lastid))
+		errx(EXIT_FAILURE, "sqlbox_lastid");
 	if (!sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping");
+	if (lastid != 0)
+		errx(EXIT_FAILURE, "lastid != 0");
 
 	sqlbox_free(p);
 	return EXIT_SUCCESS;

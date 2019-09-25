@@ -22,6 +22,10 @@ TESTS	 = test-alloc-bad-defrole \
 	    test-finalise \
 	    test-finalise-bad-stmt \
 	    test-finalise-twice \
+	    test-lastid-bad-src \
+	    test-lastid-insert-explicit \
+	    test-lastid-insert-implicit \
+	    test-lastid-noinserts \
 	    test-open-bad-not-exist \
 	    test-open-bad-role \
 	    test-open-bad-src \
