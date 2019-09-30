@@ -47,10 +47,13 @@ functions close a transaction identified as non-zero
 .Fa id
 previously opened with the
 .Xr sqlbox_trans_immediate 3
-family on non-zero source index
+family on source
 .Fa srcid
 as returned by
 .Xr sqlbox_open 3 .
+If
+.Fa srcid
+is zero, the last-opened database is used.
 .Pp
 These functions differ in that
 .Fn sqlbox_trans_commit

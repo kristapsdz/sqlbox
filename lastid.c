@@ -52,7 +52,6 @@ int
 sqlbox_op_lastid(struct sqlbox *box, const char *buf, size_t sz)
 {
 	struct sqlbox_db	*db;
-	size_t			 id;
 	int64_t			 ack;
 
 	/* Look up the statement in our global list. */
@@ -62,9 +61,9 @@ sqlbox_op_lastid(struct sqlbox *box, const char *buf, size_t sz)
 			"bad frame size: %zu", sz);
 		return 0;
 	}
-	id = le32toh(*(uint32_t *)buf);
-	if ((db = sqlbox_db_find(box, id)) == NULL) {
-		sqlbox_warnx(&box->cfg, "lastid: bad src: %zu", id);
+	if ((db = sqlbox_db_find
+	    (box, le32toh(*(uint32_t *)buf))) == NULL) {
+		sqlbox_warnx(&box->cfg, "lastid: sqlbox_db_find");
 		return 0;
 	}
 

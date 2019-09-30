@@ -37,7 +37,7 @@ main(int argc, char *argv[])
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_alloc");
-	if (sqlbox_lastid(p, 1, &test))
+	if (sqlbox_lastid(p, 0, &test))
 		errx(EXIT_FAILURE, "sqlbox_lastid should fail");
 
 	sqlbox_free(p);

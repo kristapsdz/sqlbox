@@ -30,15 +30,22 @@ main(int argc, char *argv[])
 {
 	struct sqlbox		*p;
 	struct sqlbox_cfg	 cfg;
-	int64_t			 test;
+	struct sqlbox_src	 srcs[] = {
+		{ .fname = (char *)":memory:",
+		  .mode = SQLBOX_SRC_RWC }
+	};
 
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));
+	cfg.srcs.srcs = srcs;
+	cfg.srcs.srcsz = nitems(srcs);
 	cfg.msg.func_short = warnx;
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_alloc");
-	if (sqlbox_lastid(p, 1, &test))
-		errx(EXIT_FAILURE, "sqlbox_lastid should fail");
+	if (!sqlbox_trans_deferred(p, 0, 1))
+		errx(EXIT_FAILURE, "sqlbox_trans_deferred");
+	if (sqlbox_ping(p))
+		errx(EXIT_FAILURE, "sqlbox_ping should fail");
 
 	sqlbox_free(p);
 	return EXIT_SUCCESS;

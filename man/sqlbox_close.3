@@ -31,10 +31,13 @@
 .Fa "size_t id"
 .Fc
 .Sh DESCRIPTION
-Close a database with the non-zero
+Close a database with the database
 .Fa id
 as returned from
 .Xr sqlbox_open 3 .
+If
+.Fa id
+is zero, the last-opened database is used.
 The caller must have a role capable of opening and closing the given
 database source.
 Once closed, subsequent calls to
@@ -43,7 +46,7 @@ with the same identifier will fail.
 .Pp
 If
 .Fn sqlbox_close
-is not called, the database will automatically be closed with
+is not explicitly called, the database will be implicitly closed at
 .Xr sqlbox_free 3 .
 This is not considered an error, as a common usage pattern is a role
 with permission opening the database, shedding its role, then the close
@@ -52,10 +55,11 @@ being relegated to the full destruction of the box.
 The database is closed with
 .Xr sqlite3_close 3 .
 .Sh RETURN VALUES
-Returns zero if communication with
+.Fn sqlbox_close
+is an asynchronous function: it returns zero only if communication with
 .Fa box
 fails.
-Otherwise, returns non-zero.
+Otherwise, it returns non-zero on success.
 .Pp
 If closing the database fails (not open or does not exist, statements
 not finalised, a transaction still open), subsequent

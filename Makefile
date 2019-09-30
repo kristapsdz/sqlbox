@@ -19,16 +19,20 @@ TESTS	 = test-alloc-bad-defrole \
 	   test-close \
 	   test-close-bad-id \
 	   test-close-bad-role \
+	   test-close-bad-zero-id \
 	   test-close-twice \
+	   test-close-twice-zero-id \
 	   test-close-zero-id \
 	   test-cstep \
 	   test-finalise \
 	   test-finalise-bad-stmt \
 	   test-finalise-twice \
 	   test-lastid-bad-src \
+	   test-lastid-bad-zero-id \
 	   test-lastid-insert-explicit \
 	   test-lastid-insert-implicit \
 	   test-lastid-noinserts \
+	   test-lastid-zero-id \
 	   test-open-bad-not-exist \
 	   test-open-bad-role \
 	   test-open-bad-src \
@@ -41,7 +45,9 @@ TESTS	 = test-alloc-bad-defrole \
 	   test-ping-fail \
 	   test-prepare_bind-bad-src \
 	   test-prepare_bind-bad-stmt \
+	   test-prepare_bind-bad-zero-id \
 	   test-prepare_bind-noparms \
+	   test-prepare_bind-zero-id \
 	   test-rebind \
 	   test-rebind-after-finalise \
 	   test-rebind-bad-id \
@@ -76,9 +82,11 @@ TESTS	 = test-alloc-bad-defrole \
 	   test-trans-close-reopen \
 	   test-trans-close-twice \
 	   test-trans-open \
+	   test-trans-open-zero-id \
 	   test-trans-open-bad-close \
 	   test-trans-open-bad-id \
 	   test-trans-open-bad-src \
+	   test-trans-open-bad-zero-id \
 	   test-trans-open-nested \
 	   test-trans-open-same-id-diff-src
 OBJS	 = alloc.o \

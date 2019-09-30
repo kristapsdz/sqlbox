@@ -30,15 +30,19 @@ main(int argc, char *argv[])
 {
 	struct sqlbox		*p;
 	struct sqlbox_cfg	 cfg;
-	int64_t			 test;
 
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 	cfg.msg.func_short = warnx;
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_alloc");
-	if (sqlbox_lastid(p, 1, &test))
-		errx(EXIT_FAILURE, "sqlbox_lastid should fail");
+
+	/* Fail: no database open yet. */
+
+	if (!sqlbox_close(p, 0))
+		errx(EXIT_FAILURE, "sqlbox_close");
+	if (sqlbox_ping(p))
+		errx(EXIT_FAILURE, "sqlbox_ping should fail");
 
 	sqlbox_free(p);
 	return EXIT_SUCCESS;

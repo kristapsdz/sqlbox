@@ -93,6 +93,13 @@ sqlbox_db_find(struct sqlbox *box, size_t id)
 {
 	struct sqlbox_db	*db;
 
+	if (id == 0 && TAILQ_EMPTY(&box->dbq)) {
+		sqlbox_warnx(&box->cfg, "requesting "
+			"last database with no databases");
+		return 0;
+	} else if (id == 0)
+		return TAILQ_FIRST(&box->dbq);
+
 	TAILQ_FOREACH(db, &box->dbq, entries)
 		if (db->id == id)
 			return db;

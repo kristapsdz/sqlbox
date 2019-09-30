@@ -41,10 +41,13 @@ is the statement index in the
 .Vt struct sqlbox_pstmt
 array given to
 .Xr sqlbox_alloc 3 .
-The non-zero
+The
 .Fa src
 is the database source as returned by
 .Xr sqlbox_open 3 .
+If
+.Fa src
+is zero, the last-opened database is used.
 The number of parameters
 .Fa psz
 must match the prepared statement parameters given in the SQL or be
@@ -101,10 +104,8 @@ Parameters are bound with the
 .Xr sqlite3_bind_blob 3
 family.
 .Sh RETURN VALUES
-Returns zero if
-.Fa src
-is zero, strings are not NUL-terminated at their size (if non-zero),
-memory allocation fails, communication with
+Returns zero if strings are not NUL-terminated at their size (if
+non-zero), memory allocation fails, communication with
 .Fa box
 fails, the statement could not be prepared due to an illegal statement
 or database value, the current role cannot prepare the given statement,

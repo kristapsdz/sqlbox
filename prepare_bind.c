@@ -59,14 +59,9 @@ sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 	char			*buf;
 	struct sqlbox_stmt	*st;
 
-	if (srcid == 0) {
-		sqlbox_warnx(&box->cfg, "prepare-bind: source is zero");
-		return 0;
-	}
-
 	/* 
 	 * Make sure explicit-sized strings are NUL terminated.
-	 * FIXME: kill server on error;
+	 * FIXME: kill server on error.
 	 */
 
 	for (i = 0; i < psz; i++) 

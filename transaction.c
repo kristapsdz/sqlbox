@@ -168,10 +168,9 @@ sqlbox_op_trans_open(struct sqlbox *box, const char *buf, size_t sz)
 
 	/* Look up database and check no pending transaction. */
 
-	id = le32toh(*(uint32_t *)buf);
-	if ((db = sqlbox_db_find(box, id)) == NULL) {
-		sqlbox_warnx(&box->cfg, "trans-open: "
-			"bad source: %zu", id);
+	if ((db = sqlbox_db_find
+	    (box, le32toh(*(uint32_t *)buf))) == NULL) {
+		sqlbox_warnx(&box->cfg, "trans-open: sqlbox_db_find");
 		return 0;
 	} else if (db->trans) {
 		sqlbox_warnx(&box->cfg, "%s: trans-open: "
@@ -234,10 +233,9 @@ sqlbox_op_trans_close(struct sqlbox *box, const char *buf, size_t sz)
 
 	/* Look up database and check no pending transaction. */
 
-	id = le32toh(*(uint32_t *)buf);
-	if ((db = sqlbox_db_find(box, id)) == NULL) {
-		sqlbox_warnx(&box->cfg, "trans-close: "
-			"bad source: %zu", id);
+	if ((db = sqlbox_db_find
+	    (box, le32toh(*(uint32_t *)buf))) == NULL) {
+		sqlbox_warnx(&box->cfg, "trans-close: sqlbox_db_find");
 		return 0;
 	} else if (db->trans == 0) {
 		sqlbox_warnx(&box->cfg, "%s: trans-close: "

@@ -30,15 +30,28 @@ main(int argc, char *argv[])
 {
 	struct sqlbox		*p;
 	struct sqlbox_cfg	 cfg;
-	int64_t			 test;
+	struct sqlbox_src	 srcs[] = {
+		{ .fname = (char *)":memory:" }
+	};
+	struct sqlbox_pstmt	 pstmts[] = {
+		{ .stmt = (char *)"create table foo (foo INTEGER)" }
+	};
 
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 	cfg.msg.func_short = warnx;
 
+	cfg.srcs.srcsz = nitems(srcs);
+	cfg.srcs.srcs = srcs;
+	cfg.stmts.stmtsz = nitems(pstmts);
+	cfg.stmts.stmts = pstmts;
+
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_alloc");
-	if (sqlbox_lastid(p, 1, &test))
-		errx(EXIT_FAILURE, "sqlbox_lastid should fail");
+
+	/* Fail: no database available. */
+
+	if (sqlbox_prepare_bind(p, 0, 0, 0, NULL))
+		errx(EXIT_FAILURE, "sqlbox_prepare_bind should fail");
 
 	sqlbox_free(p);
 	return EXIT_SUCCESS;
