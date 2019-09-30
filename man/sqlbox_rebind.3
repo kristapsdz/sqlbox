@@ -35,8 +35,11 @@
 .Sh DESCRIPTION
 Rebinds parameters to a statement
 .Fa id
-created with
+as returned by
 .Xr sqlbox_prepare_bind 3 .
+If
+.Fa id
+is zero, the last prepared statement is used.
 This resets the statement and removes any previously-bound parameters.
 The number of parameters
 .Fa psz

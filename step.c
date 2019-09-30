@@ -47,7 +47,7 @@ sqlbox_step_inner(struct sqlbox *box, int constraint, size_t stmtid)
 	struct sqlbox_stmt 	*st;
 
 	if ((st = sqlbox_stmt_find(box, stmtid)) == NULL) {
-		sqlbox_warnx(&box->cfg, "step: bad stmt %zu", stmtid);
+		sqlbox_warnx(&box->cfg, "step: sqlbox_stmt_find");
 		return NULL;
 	}
 
@@ -132,7 +132,7 @@ int
 sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 {
 	struct sqlbox_stmt	*st;
-	size_t			 pos, id, attempt = 0, i, cols = 0;
+	size_t			 pos, attempt = 0, i, cols = 0;
 	int			 ccount, has_cstep = 0, allow_cstep, 
 				 rc = 0;
 	uint32_t		 val;
@@ -150,9 +150,9 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 			"bad frame size: %zu", sz);
 		return 0;
 	}
-	id = le32toh(*(uint32_t *)buf);
-	if ((st = sqlbox_stmt_find(box, id)) == NULL) {
-		sqlbox_warnx(&box->cfg, "step: bad stmt: %zu", id);
+	if ((st = sqlbox_stmt_find
+	    (box, le32toh(*(uint32_t *)buf))) == NULL) {
+		sqlbox_warnx(&box->cfg, "step: sqlbox_stmt_find");
 		return 0;
 	}
 	allow_cstep = le32toh(*(uint32_t *)(buf + sizeof(uint32_t)));

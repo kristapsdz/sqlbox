@@ -28,17 +28,44 @@
 int
 main(int argc, char *argv[])
 {
+	size_t		 	 dbid, stmtid;
 	struct sqlbox		*p;
 	struct sqlbox_cfg	 cfg;
+	struct sqlbox_src	 srcs[] = {
+		{ .fname = (char *)":memory:",
+		  .mode = SQLBOX_SRC_RW }
+	};
+	struct sqlbox_pstmt	 pstmts[] = {
+		{ .stmt = (char *)"CREATE TABLE foo (bar INTEGER)" }
+	};
 	const struct sqlbox_parmset *res;
 
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 	cfg.msg.func_short = warnx;
 
+	cfg.srcs.srcsz = nitems(srcs);
+	cfg.srcs.srcs = srcs;
+	cfg.stmts.stmtsz = nitems(pstmts);
+	cfg.stmts.stmts = pstmts;
+
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_alloc");
-	if ((res = sqlbox_step(p, 1)) != NULL)
-		errx(EXIT_FAILURE, "sqlbox_step should fail");
+	if (!(dbid = sqlbox_open(p, 0)))
+		errx(EXIT_FAILURE, "sqlbox_open");
+	if (!sqlbox_ping(p))
+		errx(EXIT_FAILURE, "sqlbox_ping");
+	if (!(stmtid = sqlbox_prepare_bind(p, dbid, 0, 0, NULL)))
+		errx(EXIT_FAILURE, "sqlbox_prepare_bind");
+	if (!sqlbox_ping(p))
+		errx(EXIT_FAILURE, "sqlbox_ping");
+	if ((res = sqlbox_step(p, 0)) == NULL)
+		errx(EXIT_FAILURE, "sqlbox_step");
+	if (res->psz != 0)
+		errx(EXIT_FAILURE, "res->psz != 0");
+	if (!sqlbox_finalise(p, stmtid))
+		errx(EXIT_FAILURE, "sqlbox_finalise");
+	if (!sqlbox_ping(p))
+		errx(EXIT_FAILURE, "sqlbox_ping");
 
 	sqlbox_free(p);
 	return EXIT_SUCCESS;

@@ -30,15 +30,19 @@ main(int argc, char *argv[])
 {
 	struct sqlbox		*p;
 	struct sqlbox_cfg	 cfg;
-	const struct sqlbox_parmset *res;
+	struct sqlbox_src	 srcs[] = {
+		{ .fname = (char *)":memory:" }
+	};
 
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 	cfg.msg.func_short = warnx;
+	cfg.srcs.srcsz = nitems(srcs);
+	cfg.srcs.srcs = srcs;
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_alloc");
-	if ((res = sqlbox_step(p, 1)) != NULL)
-		errx(EXIT_FAILURE, "sqlbox_step should fail");
+	if (sqlbox_rebind(p, 0, 0, NULL))
+		errx(EXIT_FAILURE, "sqlbox_rebind should fail");
 
 	sqlbox_free(p);
 	return EXIT_SUCCESS;

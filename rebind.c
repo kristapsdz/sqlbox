@@ -60,7 +60,7 @@ sqlbox_rebind(struct sqlbox *box, size_t id,
 	 */
 
 	if ((st = sqlbox_stmt_find(box, id)) == NULL) {
-		sqlbox_warnx(&box->cfg, "rebind: bad stmt %zu", id);
+		sqlbox_warnx(&box->cfg, "rebind: sqlbox_stmt_find");
 		return 0;
 	} else if ((buf = calloc(bufsz, 1)) == NULL) {
 		sqlbox_warn(&box->cfg, "rebind: calloc");
@@ -129,8 +129,8 @@ sqlbox_op_rebind(struct sqlbox *box, const char *buf, size_t sz)
 			"bad frame size: %zu", sz);
 		return 0;
 	}
-	st = sqlbox_stmt_find(box, le32toh(*(uint32_t *)buf));
-	if (st == NULL) {
+	if ((st = sqlbox_stmt_find
+	    (box, le32toh(*(uint32_t *)buf))) == NULL) {
 		sqlbox_warnx(&box->cfg, "rebind: sqlbox_stmt_find");
 		return 0;
 	}

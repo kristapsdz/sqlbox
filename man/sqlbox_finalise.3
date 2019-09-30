@@ -31,10 +31,13 @@
 .Fa "size_t id"
 .Fc
 .Sh DESCRIPTION
-Finalise (close and free resources) the non-zero statement
+Finalise (close and free resources) the statement
 .Fa id
 as returned by
 .Xr sqlbox_prepare_bind 3 .
+If
+.Fa id
+is zero, the last prepared statement is used.
 After being called, the statement may no longer be used.
 .Ss SQLite3 Implementation
 Invokes

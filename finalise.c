@@ -44,7 +44,7 @@ sqlbox_finalise(struct sqlbox *box, size_t id)
 	 */
 
 	if ((st = sqlbox_stmt_find(box, id)) == NULL) {
-		sqlbox_warnx(&box->cfg, "finalise: bad stmt %zu", id);
+		sqlbox_warnx(&box->cfg, "finalise: sqlbox_stmt_find");
 		return 0;
 	}
 	TAILQ_REMOVE(&box->stmtq, st, gentries);
@@ -65,7 +65,6 @@ int
 sqlbox_op_finalise(struct sqlbox *box, const char *buf, size_t sz)
 {
 	struct sqlbox_stmt	*st;
-	size_t			 id;
 
 	/* Look up the statement in our global list. */
 
@@ -74,9 +73,9 @@ sqlbox_op_finalise(struct sqlbox *box, const char *buf, size_t sz)
 			"bad frame size: %zu", sz);
 		return 0;
 	}
-	id = le32toh(*(uint32_t *)buf);
-	if ((st = sqlbox_stmt_find(box, id)) == NULL) {
-		sqlbox_warnx(&box->cfg, "finalise: bad stmt: %zu", id);
+	if ((st = sqlbox_stmt_find
+	    (box, le32toh(*(uint32_t *)buf))) == NULL) {
+		sqlbox_warnx(&box->cfg, "finalise: sqlbox_stmt_find");
 		return 0;
 	}
 	TAILQ_REMOVE(&box->stmtq, st, gentries);

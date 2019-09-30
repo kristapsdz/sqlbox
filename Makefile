@@ -26,7 +26,10 @@ TESTS	 = test-alloc-bad-defrole \
 	   test-cstep \
 	   test-finalise \
 	   test-finalise-bad-stmt \
+	   test-finalise-bad-zero-id \
 	   test-finalise-twice \
+	   test-finalise-twice-zero-id \
+	   test-finalise-zero-id \
 	   test-lastid-bad-src \
 	   test-lastid-bad-zero-id \
 	   test-lastid-insert-explicit \
@@ -51,6 +54,8 @@ TESTS	 = test-alloc-bad-defrole \
 	   test-rebind \
 	   test-rebind-after-finalise \
 	   test-rebind-bad-id \
+	   test-rebind-bad-zero-id \
+	   test-rebind-zero-id \
 	   test-role-bad-role \
 	   test-role-bad-transition \
 	   test-role-norole \
@@ -77,6 +82,7 @@ TESTS	 = test-alloc-bad-defrole \
 	   test-step-string-long \
 	   test-step-string-long-implicit \
 	   test-step-string-long-multi \
+	   test-step-zero-id \
 	   test-trans-close-bad-id \
 	   test-trans-close-bad-src \
 	   test-trans-close-reopen \

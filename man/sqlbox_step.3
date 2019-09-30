@@ -39,8 +39,11 @@
 .Sh DESCRIPTION
 These functions execute a statement
 .Fa id
-as returned by a successful call to
+as returned by
 .Xr sqlbox_prepare_bind 3 .
+If
+.Fa id
+is zero, the last prepared statement is used.
 They return a result set:
 .Bd -literal
 struct sqlbox_parm {

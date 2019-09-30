@@ -41,7 +41,7 @@ main(int argc, char *argv[])
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_alloc");
-	if (sqlbox_rebind(p, 0, 0, NULL))
+	if (sqlbox_rebind(p, 1, 0, NULL))
 		errx(EXIT_FAILURE, "sqlbox_rebind should fail");
 
 	sqlbox_free(p);

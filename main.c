@@ -79,6 +79,13 @@ sqlbox_stmt_find(struct sqlbox *box, size_t id)
 {
 	struct sqlbox_stmt	*stmt;
 
+	if (id == 0 && TAILQ_EMPTY(&box->stmtq)) {
+		sqlbox_warnx(&box->cfg, "requesting "
+			"last statement with no statements");
+		return 0;
+	} else if (id == 0)
+		return TAILQ_FIRST(&box->stmtq);
+
 	TAILQ_FOREACH(stmt, &box->stmtq, gentries)
 		if (stmt->id == id)
 			return stmt;

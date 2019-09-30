@@ -37,7 +37,7 @@ main(int argc, char *argv[])
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_alloc");
-	if ((res = sqlbox_step(p, 1)) != NULL)
+	if ((res = sqlbox_step(p, 0)) != NULL)
 		errx(EXIT_FAILURE, "sqlbox_step should fail");
 
 	sqlbox_free(p);
