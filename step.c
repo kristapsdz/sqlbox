@@ -31,6 +31,12 @@
 #include "sqlbox.h"
 #include "extern.h"
 
+struct	freen {
+	void			 *dat;
+	void			(*fp)(void *);
+	TAILQ_ENTRY(freen)	 entries;
+};
+
 static const struct sqlbox_parmset *
 sqlbox_step_inner(struct sqlbox *box, int constraint, size_t stmtid)
 {
@@ -127,8 +133,15 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 {
 	struct sqlbox_stmt	*st;
 	size_t			 pos, id, attempt = 0, i, cols = 0;
-	int			 ccount, has_cstep = 0, allow_cstep;
+	int			 ccount, has_cstep = 0, allow_cstep, 
+				 rc = 0;
 	uint32_t		 val;
+#if 0
+	size_t			 j;
+	void			*arg;
+#endif
+	struct freen		*fn;
+	TAILQ_HEAD(freeq, freen) fq;
 
 	/* Look up the statement in our global list. */
 
@@ -210,6 +223,8 @@ again:
 		sqlbox_warnx(&box->cfg, "%s: step: result length "
 			"mismatch (have %zd, %zu in results)",
 			st->db->src->fname, st->res.psz, cols);
+		sqlbox_warnx(&box->cfg, "%s: step: statement: "
+			"%s", st->db->src->fname, st->pstmt->stmt);
 		return 0;
 	} else if (cols && st->res.psz < 0) {
 		st->res.set.ps = calloc
@@ -229,9 +244,49 @@ again:
 	/*
 	 * Text and blob pointers are immediately serialised, so we
 	 * don't need to worry about the return pointers going stale.
+	 * Frome now on we need to use the "out" label in case something
+	 * goes wrong to free up from the freeq.
 	 */
 
+	TAILQ_INIT(&fq);
+
 	for (i = 0; i < st->res.set.psz; i++) {
+#if 0
+		/*
+		 * See if we have a filter for the data we just
+		 * extracted; and if so, 
+		 */
+
+		for (j = 0; j < box->cfg.filts.filtsz; j++) 
+			if (box->cfg.filts.filts[j].stmt == st->idx &&
+			    box->cfg.filts.filts[j].type == 
+			      SQLBOX_FILT_OUT &&
+			    box->cfg.filts.filts[j].col == i &&
+			    box->cfg.filts.filts[j].filt != NULL)
+				break;
+		if (j < box->cfg.filts.filtsz) {
+			arg = NULL;
+			if (!(*box->cfg.filts.filts[j].filt)
+			     (&st->res.set.ps[i], &arg)) {
+				sqlbox_warn(&box->cfg, "%s: step: "
+					"filter: position %zu",
+					st->db->src->fname, i);
+				sqlbox_warnx(&box->cfg, "%s: step: "
+					"statement: %s", 
+					st->db->src->fname, 
+					st->pstmt->stmt);
+				goto out;
+			}
+			if (box->cfg.filts.filts[j].free != NULL) {
+				fn = calloc(1, sizeof(struct freen));
+				fn->dat = arg;
+				fn->fp = box->cfg.filts.filts[j].free;
+				TAILQ_INSERT_TAIL(&fq, fn, entries);
+			}
+			continue;
+		}
+#endif
+
 		switch (sqlite3_column_type(st->stmt, i)) {
 		case SQLITE_BLOB:
 			st->res.set.ps[i].type = SQLBOX_PARM_BLOB;
@@ -266,13 +321,15 @@ again:
 		default:
 			sqlbox_warnx(&box->cfg, "%s: step: "
 				"unknown column type: %d "
-				"(position %zu)",
-				st->db->src->fname,
-				sqlite3_column_type(st->stmt, i),
-				i);
-			return 0;
+				"(position %zu)", st->db->src->fname,
+				sqlite3_column_type(st->stmt, i), i);
+			sqlbox_warnx(&box->cfg, "%s: step: "
+				"statement: %s", st->db->src->fname, 
+				st->pstmt->stmt);
+			goto out;
 		}
 	}
+
 
 	/* 
 	 * We now serialise our results over the wire.
@@ -284,7 +341,7 @@ again:
 		st->res.buf = calloc(1, st->res.bufsz);
 		if (st->res.buf == NULL) {
 			sqlbox_warn(&box->cfg, "step: malloc");
-			return 0;
+			goto out;
 		}
 	}
 	assert(st->res.bufsz >= SQLBOX_FRAME);
@@ -303,7 +360,7 @@ again:
 	if (!sqlbox_parm_pack(box, st->res.set.psz, st->res.set.ps, 
 	    &st->res.buf, &pos, &st->res.bufsz)) {
 		sqlbox_warnx(&box->cfg, "step: sqlbox_parm_pack");
-		return 0;
+		goto out;
 	}
 
 	/* Now write our frame size. */
@@ -316,7 +373,20 @@ again:
 	pos = pos > SQLBOX_FRAME ? pos : SQLBOX_FRAME;
 	if (!sqlbox_write(box, st->res.buf, pos)) {
 		sqlbox_warnx(&box->cfg, "step: sqlbox_write");
-		return 0;
+		goto out;
 	}
-	return 1;
+
+	rc = 1;
+out:
+	/*
+	 * If we allocated any filter memory, then release it here after
+	 * we've serialised.
+	 */
+
+	while ((fn = TAILQ_FIRST(&fq)) != NULL) {
+		TAILQ_REMOVE(&fq, fn, entries);
+		(*fn->fp)(fn->dat);
+		free(fn);
+	}
+	return rc;
 }

@@ -144,16 +144,6 @@ struct	sqlbox_msg {
 };
 
 /*
- * Contains all data required for an sqlbox configuration.
- */
-struct	sqlbox_cfg {
-	struct sqlbox_pstmts	stmts; /* statements */
-	struct sqlbox_roles	roles; /* RBAC roles */
-	struct sqlbox_srcs	srcs; /* databases */
-	struct sqlbox_msg	msg; /* message system */
-};
-
-/*
  * A single column either for setting parameters to bind or reading
  * results from stepping.
  * Data is all associated with a type and a length.
@@ -172,6 +162,45 @@ struct	sqlbox_parm {
 	};
 	enum sqlbox_parmt	 type;
 	size_t			 sz; /* data length (bytes) */
+};
+
+enum	sqlbox_filtt {
+	SQLBOX_FILT_IN,
+	SQLBOX_FILT_OUT
+};
+
+/*
+ * A filter for a particular prepared statement's return value.
+ * The "filt" function accepts actual data from the database and in
+ * some way filters it.
+ * If it needs to allocate memory on the way, it's given a pointer into
+ * which it can stash the data and a "free" function to free it up.
+ */
+struct	sqlbox_filt {
+	size_t		  col; /* applicable columns */
+	size_t		  stmt; /* applicable statement */
+	enum sqlbox_filtt type; /* data in or data out */
+	int 		(*filt)(struct sqlbox_parm *, void **);
+	void 		(*free)(void *);
+};
+
+/*
+ * A list of statement/return index scrambling functions.
+ */
+struct	sqlbox_filts {
+	struct sqlbox_filt	*filts;
+	size_t		 	 filtsz;
+};
+
+/*
+ * Contains all data required for an sqlbox configuration.
+ */
+struct	sqlbox_cfg {
+	struct sqlbox_pstmts	stmts; /* statements */
+	struct sqlbox_roles	roles; /* RBAC roles */
+	struct sqlbox_srcs	srcs; /* databases */
+	struct sqlbox_filts	filts; /* filters */
+	struct sqlbox_msg	msg; /* message system */
 };
 
 enum	sqlbox_code {
