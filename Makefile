@@ -114,9 +114,13 @@ OBJS	 = alloc.o \
 	   step.o \
 	   transaction.o \
 	   warn.o
-PERFDATS = perf-prep-insert-final.dat \
+PERFDATS = perf-full-cycle.dat \
+	   perf-prep-insert-final.dat \
 	   perf-rebind.dat
-PERFS	 = perf-prep-insert-final-ksql \
+PERFS	 = perf-full-cycle-ksql \
+	   perf-full-cycle-sqlbox \
+	   perf-full-cycle-sqlite3 \
+	   perf-prep-insert-final-ksql \
 	   perf-prep-insert-final-sqlbox \
 	   perf-prep-insert-final-sqlite3 \
 	   perf-rebind-ksql \
@@ -143,7 +147,7 @@ $(TESTS): libsqlbox.a regress/regress.h
 ${test}: regress/${test}.c
 .endfor
 
-.for perf in perf-prep-insert-final perf-rebind
+.for perf in perf-prep-insert-final perf-rebind perf-full-cycle
 ${perf}.dat: ${perf}-ksql ${perf}-sqlbox ${perf}-sqlite3 perf.sh
 	sh ./perf.sh ${perf} >$@
 
