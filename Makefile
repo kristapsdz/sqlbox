@@ -48,6 +48,8 @@ TESTS	 = test-alloc-bad-defrole \
 	   test-open-twice \
 	   test-ping \
 	   test-ping-fail \
+	   test-prepare_bind-async \
+	   test-prepare_bind-async-bad-src \
 	   test-prepare_bind-bad-src \
 	   test-prepare_bind-bad-stmt \
 	   test-prepare_bind-bad-zero-id \
