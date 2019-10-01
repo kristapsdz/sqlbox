@@ -50,8 +50,14 @@ sqlbox_rolecheck_stmt(struct sqlbox *box, size_t idx)
 	return 0;
 }
 
-size_t
-sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
+/*
+ * Shared by both asynchronous and synchronous version.
+ * Sends the prepare-bind instruction to the server.
+ * The caller should handle any possible synchrony.
+ * Returns the allocated statement or NULL on failure.
+ */
+static struct sqlbox_stmt *
+sqlbox_pbind(struct sqlbox *box, enum sqlbox_op op, size_t srcid, 
 	size_t pstmt, size_t psz, const struct sqlbox_parm *ps)
 {
 	size_t			 pos = 0, bufsz = SQLBOX_FRAME, i;
@@ -70,18 +76,18 @@ sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 		    ps[i].sparm[ps[i].sz - 1] != '\0') {
 			sqlbox_warnx(&box->cfg, "prepare-bind: "
 				"parameter %zu is malformed", i);
-			return 0;
+			return NULL;
 		}
 
 	/* Initialise our result set holder and frame. */
 
 	if ((st = calloc(1, sizeof(struct sqlbox_stmt))) == NULL) {
 		sqlbox_warn(&box->cfg, "prepare-bind: calloc");
-		return 0;
+		return NULL;
 	} else if ((buf = calloc(bufsz, 1)) == NULL) {
 		sqlbox_warn(&box->cfg, "prepare-bind: calloc");
 		free(st);
-		return 0;
+		return NULL;
 	}
 	st->res.psz = -1;
 
@@ -91,7 +97,7 @@ sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 
 	/* Pack operation, source, statement, and parameters. */
 
-	val = htole32(SQLBOX_OP_PREPARE_BIND);
+	val = htole32(op);
 	memcpy(buf + pos, (char *)&val, sizeof(uint32_t));
 	pos += sizeof(uint32_t);
 
@@ -108,7 +114,7 @@ sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 			"prepare-bind: sqlbox_parm_pack");
 		free(buf);
 		free(st);
-		return 0;
+		return NULL;
 	}
 
 	/* Go back and do the frame size. */
@@ -122,11 +128,45 @@ sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 		sqlbox_warnx(&box->cfg, "prepare-bind: sqlbox_write");
 		free(buf);
 		free(st);
-		return 0;
+		return NULL;
 	}
 	free(buf);
+	return st;
+}
 
-	/* Read the statement identifier. */
+int
+sqlbox_prepare_bind_async(struct sqlbox *box, size_t srcid,
+	size_t pstmt, size_t psz, const struct sqlbox_parm *ps)
+{
+	struct sqlbox_stmt	*st;
+
+	if ((st = sqlbox_pbind(box, SQLBOX_OP_PREPARE_BIND_ASYNC, 
+	    srcid, pstmt, psz, ps)) == NULL) {
+		sqlbox_warnx(&box->cfg, 
+			"prepare-bind-async: sqlbox_pbind");
+		return 0;
+	}
+
+	/* Use zero for this implicit case. */
+
+	st->id = 0;
+	TAILQ_INSERT_TAIL(&box->stmtq, st, gentries);
+	return 1;
+}
+
+size_t
+sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
+	size_t pstmt, size_t psz, const struct sqlbox_parm *ps)
+{
+	struct sqlbox_stmt	*st;
+	uint32_t		 val;
+
+	if ((st = sqlbox_pbind(box, SQLBOX_OP_PREPARE_BIND_SYNC,
+	    srcid, pstmt, psz, ps)) == NULL) {
+		sqlbox_warnx(&box->cfg, 
+			"prepare-bind-sync: sqlbox_pbind");
+		return 0;
+	}
 
 	if (!sqlbox_read(box, (char *)&val, sizeof(uint32_t))) {
 		sqlbox_warnx(&box->cfg, "prepare-bind: sqlbox_read");
@@ -134,23 +174,26 @@ sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 		return 0;
 	}
 
-	/*
-	 * We maintain a list of active statements where we'll store
-	 * results while they're being processed.
-	 * These are freed in sqlbox_finalise() or when the system is
-	 * exiting.
-	 */
+	/* Use the server's identifier for this explicit case. */
 
-	st->id = le32toh(val);
+	if ((st->id = le32toh(val)) == 0) {
+		sqlbox_warnx(&box->cfg, "prepare-bind: server "
+			"wrote back identifier of zero");
+		free(st);
+		return 0;
+	}
+
 	TAILQ_INSERT_TAIL(&box->stmtq, st, gentries);
 	return st->id;
 }
 
 /*
  * Prepare and bind parameters to a statement in one step.
- * Return TRUE on success, FALSE on failure (nothing is allocated).
+ * Do not send anything back to the client: this is done by the caller
+ * depending upon the mode.
+ * Return the allocated statement on success, NULL on failure.
  */
-int
+static struct sqlbox_stmt *
 sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 {
 	size_t	 		 i, idx, attempt = 0;
@@ -160,7 +203,6 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 	struct sqlbox_stmt	*st;
 	struct sqlbox_pstmt	*pst = NULL;
 	int			 c;
-	uint32_t		 ack;
 	struct sqlbox_parm	*parms = NULL;
 
 	/* Read the source identifier. */
@@ -170,7 +212,7 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 	db = sqlbox_db_find(box, le32toh(*(uint32_t *)buf));
 	if (db == NULL) {
 		sqlbox_warnx(&box->cfg, "prepare-bind: sqlbox_db_find");
-		return 0;
+		return NULL;
 	}
 	buf += sizeof(uint32_t);
 	sz -= sizeof(uint32_t);
@@ -186,11 +228,11 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 	if (idx >= box->cfg.stmts.stmtsz) {
 		sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
 			"bad statement %zu", db->src->fname, idx);
-		return 0;
+		return NULL;
 	} else if (!sqlbox_rolecheck_stmt(box, idx)) {
 		sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
 			"sqlbox_rolecheck_stmt", db->src->fname);
-		return 0;
+		return NULL;
 	}
 	pst = &box->cfg.stmts.stmts[idx];
 
@@ -205,7 +247,7 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 		sqlbox_warnx(&box->cfg, "%s: prepare-bind "
 			"statement: %s", db->src->fname, pst->stmt);
 		free(parms);
-		return 0;
+		return NULL;
 	}
 
 	/* 
@@ -239,7 +281,7 @@ again:
 			sqlite3_finalize(stmt);
 		}
 		free(parms);
-		return 0;
+		return NULL;
 	}
 
 	/* 
@@ -296,7 +338,7 @@ again:
 				"%s, %s", db->src->fname, pst->stmt);
 			sqlite3_finalize(stmt);
 			free(parms);
-			return 0;
+			return NULL;
 		}
 		if (c != SQLITE_OK) {
 			sqlbox_warnx(&box->cfg, "%s: prepare-bind: %s", 
@@ -308,15 +350,12 @@ again:
 				"%s, %s", db->src->fname, pst->stmt);
 			sqlite3_finalize(stmt);
 			free(parms);
-			return 0;
+			return NULL;
 		}
 	}
 	free(parms);
 
-	/* 
-	 * Allocate and queue up, then send our identifier back to the
-	 * client just as with the open.
-	 */
+	/* Success!  Assuming the allocation works, we're done. */
 
 	if ((st = calloc(1, sizeof(struct sqlbox_stmt))) == NULL) {
 		sqlbox_warn(&box->cfg, "%s: prepare-bind: "
@@ -326,7 +365,7 @@ again:
 		sqlbox_debug(&box->cfg, "sqlite3_finalize: "
 			"%s, %s", db->src->fname, pst->stmt);
 		sqlite3_finalize(stmt);
-		return 0;
+		return NULL;
 	}
 
 	st->res.psz = -1;
@@ -337,23 +376,7 @@ again:
 	st->id = ++box->lastid;
 	TAILQ_INSERT_TAIL(&db->stmtq, st, entries);
 	TAILQ_INSERT_TAIL(&box->stmtq, st, gentries);
-
-	ack = htole32(st->id);
-
-	if (!sqlbox_write(box, (char *)&ack, sizeof(uint32_t))) {
-		sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
-			"sqlbox_write", db->src->fname);
-		sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
-			"statement: %s", db->src->fname, pst->stmt);
-		TAILQ_REMOVE(&db->stmtq, st, entries);
-		TAILQ_REMOVE(&box->stmtq, st, gentries);
-		sqlbox_debug(&box->cfg, "sqlite3_finalize: "
-			"%s, %s", db->src->fname, pst->stmt);
-		sqlite3_finalize(stmt);
-		free(st);
-		return 0;
-	}
-	return 1;
+	return st;
 
 badframe:
 	sqlbox_warnx(&box->cfg, "prepare-bind: "
@@ -366,6 +389,43 @@ badframe:
 			"%s, %s", db->src->fname, pst->stmt);
 		sqlite3_finalize(stmt);
 	}
+	return NULL;
+}
+
+int
+sqlbox_op_prepare_bind_sync(struct sqlbox *box, const char *buf, size_t sz)
+{
+	struct sqlbox_stmt	*st;
+	uint32_t		 ack;
+
+	if ((st = sqlbox_op_prepare_bind(box, buf, sz)) == NULL)
+		return 0;
+
+	/* Synchronous version writes back the identifier. */
+
+	assert(st->id != 0);
+	ack = htole32(st->id);
+	if (sqlbox_write(box, (char *)&ack, sizeof(uint32_t)))
+		return 1;
+
+	sqlbox_warnx(&box->cfg, "%s: prepare-bind-async: "
+		"sqlbox_write", st->db->src->fname);
+	sqlbox_warnx(&box->cfg, "%s: prepare-bind-async: "
+		"statement: %s", st->db->src->fname, st->pstmt->stmt);
+	TAILQ_REMOVE(&st->db->stmtq, st, entries);
+	TAILQ_REMOVE(&box->stmtq, st, gentries);
+	sqlbox_debug(&box->cfg, "sqlite3_finalize: "
+		"%s, %s", st->db->src->fname, st->pstmt->stmt);
+	sqlite3_finalize(st->stmt);
+	free(st);
 	return 0;
 }
 
+int
+sqlbox_op_prepare_bind_async(struct sqlbox *box, const char *buf, size_t sz)
+{
+	struct sqlbox_stmt	*st;
+
+	st = sqlbox_op_prepare_bind(box, buf, sz);
+	return st != NULL;
+}

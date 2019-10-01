@@ -36,6 +36,8 @@ TESTS	 = test-alloc-bad-defrole \
 	   test-lastid-insert-implicit \
 	   test-lastid-noinserts \
 	   test-lastid-zero-id \
+	   test-open-async-bad-src \
+	   test-open-async-memory \
 	   test-open-bad-not-exist \
 	   test-open-bad-role \
 	   test-open-bad-src \

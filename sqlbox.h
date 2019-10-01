@@ -231,8 +231,11 @@ int		 sqlbox_finalise(struct sqlbox *, size_t);
 void		 sqlbox_free(struct sqlbox *);
 int		 sqlbox_lastid(struct sqlbox *, size_t, int64_t *);
 size_t		 sqlbox_open(struct sqlbox *, size_t);
+int		 sqlbox_open_async(struct sqlbox *, size_t);
 int		 sqlbox_ping(struct sqlbox *);
 size_t		 sqlbox_prepare_bind(struct sqlbox *, size_t,
+			size_t, size_t, const struct sqlbox_parm *);
+int		 sqlbox_prepare_bind_async(struct sqlbox *, size_t,
 			size_t, size_t, const struct sqlbox_parm *);
 int		 sqlbox_rebind(struct sqlbox *, size_t,
 			size_t, const struct sqlbox_parm *);

@@ -18,7 +18,8 @@
 .Dt SQLBOX_OPEN 3
 .Os
 .Sh NAME
-.Nm sqlbox_open
+.Nm sqlbox_open ,
+.Nm sqlbox_open_async
 .Nd open a database
 .Sh LIBRARY
 .Lb sqlbox
@@ -30,6 +31,11 @@
 .Fa "struct sqlbox *box"
 .Fa "size_t index"
 .Fc
+.Ft int
+.Fo sqlbox_open_async
+.Fa "struct sqlbox *box"
+.Fa "size_t index"
+.Fc
 .Sh DESCRIPTION
 Open the database passed in the
 .Vt struct sqlbox_src
@@ -37,6 +43,16 @@ array of
 .Xr sqlbox_alloc 3
 at
 .Fa index .
+.Pp
+The synchronous
+.Fn sqlbox_open
+returns the identifier while
+.Fn sqlbox_open_async
+only returns whether
+.Fa box
+was accessed.
+It is used for implicit identifiers (i.e., an identifier of zero) in
+subsequent operations on the source.
 .Pp
 The source has filename
 .Va fname
@@ -84,12 +100,20 @@ considers it a failed open.
 Possibly closes again on error with
 .Xr sqlite3_close 3 .
 .Sh RETURN VALUES
-Returns an identifier >0 if communication with the box works, zero
-otherwise (opening the source files, etc.).
+.Fn sqlbox_open
+returns an identifier >0 if communication with
+.Fa box
+works, zero otherwise (opening the source files, etc.).
+.fn sqlbox_open_async
+returns zero if communication with
+.Fa box
+failed, non-zero otherwise.
 .Pp
 If
 .Fn sqlbox_open
-fails,
+or
+.Fn sqlbox_open_async
+fail,
 .Fa box
 is no longer accessible beyond
 .Xr sqlbox_ping 3
@@ -146,6 +170,29 @@ if (!(id = sqlbox_open(p, 0)))
   errx(EXIT_FAILURE, "sqlbox_open");
 /* Perform work... */
 if (!sqlbox_close(p, id))
+  errx(EXIT_FAILURE, "sqlbox_close");
+sqlbox_free(p);
+.Ed
+.Pp
+Performing the same with implicit identifiers:
+.Bd -literal
+struct sqlbox *p;
+struct sqlbox_src srcs[] = {
+  { .fname = (char *)"db.db",
+    .mode = SQLBOX_SRC_RWC },
+};
+struct sqlbox_cfg cfg;
+
+memset(&cfg, 0, sizeof(struct sqlbox_cfg));
+cfg.msg.func_short = warnx;
+cfg.srcs.srcsz = 1;
+cfg.srcs.srcs = srcs;
+if ((p = sqlbox_alloc(&cfg)) == NULL)
+  errx(EXIT_FAILURE, "sqlbox_alloc");
+if (!sqlbox_open_async(p, 0))
+  errx(EXIT_FAILURE, "sqlbox_open_async");
+/* Perform work... */
+if (!sqlbox_close(p, 0))
   errx(EXIT_FAILURE, "sqlbox_close");
 sqlbox_free(p);
 .Ed

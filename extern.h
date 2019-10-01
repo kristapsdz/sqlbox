@@ -30,9 +30,11 @@ enum	sqlbox_op {
 	SQLBOX_OP_CLOSE,
 	SQLBOX_OP_FINAL,
 	SQLBOX_OP_LASTID,
-	SQLBOX_OP_OPEN,
+	SQLBOX_OP_OPEN_ASYNC,
+	SQLBOX_OP_OPEN_SYNC,
 	SQLBOX_OP_PING,
-	SQLBOX_OP_PREPARE_BIND,
+	SQLBOX_OP_PREPARE_BIND_ASYNC,
+	SQLBOX_OP_PREPARE_BIND_SYNC,
 	SQLBOX_OP_REBIND,
 	SQLBOX_OP_ROLE,
 	SQLBOX_OP_STEP,
@@ -119,9 +121,11 @@ int	 sqlbox_parm_unpack(struct sqlbox *, struct sqlbox_parm **, ssize_t *, const
 int	 sqlbox_op_close(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_finalise(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_lastid(struct sqlbox *, const char *, size_t);
-int	 sqlbox_op_open(struct sqlbox *, const char *, size_t);
+int	 sqlbox_op_open_async(struct sqlbox *, const char *, size_t);
+int	 sqlbox_op_open_sync(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_ping(struct sqlbox *, const char *, size_t);
-int	 sqlbox_op_prepare_bind(struct sqlbox *, const char *, size_t);
+int	 sqlbox_op_prepare_bind_async(struct sqlbox *, const char *, size_t);
+int	 sqlbox_op_prepare_bind_sync(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_rebind(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_role(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_step(struct sqlbox *, const char *, size_t);

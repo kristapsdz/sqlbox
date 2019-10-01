@@ -18,7 +18,8 @@
 .Dt SQLBOX_PREPARE_BIND 3
 .Os
 .Sh NAME
-.Nm sqlbox_prepare_bind
+.Nm sqlbox_prepare_bind ,
+.Nm sqlbox_prepare_bind_async
 .Nd prepare a statement and bind parameters
 .Sh LIBRARY
 .Lb sqlbox
@@ -33,8 +34,31 @@
 .Fa "size_t psz"
 .Fa "const struct sqlbox_parm *ps"
 .Fc
+.Ft int
+.Fo sqlbox_prepare_bind_async
+.Fa "struct sqlbox *box"
+.Fa "size_t src"
+.Fa "size_t idx"
+.Fa "size_t psz"
+.Fa "const struct sqlbox_parm *ps"
+.Fc
 .Sh DESCRIPTION
-Prepares an SQL statement and binds parameters to it.
+Prepares an SQL statement
+.Fa idx
+and binds parameters
+.Fa ps
+to it.
+.Pp
+The synchronous
+.Fn sqlbox_prepare_bind
+returns the identifier while
+.Fn sqlbox_prepare_bind_async
+only returns whether
+.Fa box
+was accessed.
+It is used for implicit identifiers (i.e., an identifier of zero) in
+subsequent operations on the statement.
+.Pp
 The
 .Fa idx
 is the statement index in the

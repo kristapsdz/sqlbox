@@ -47,9 +47,11 @@ static	const sqlbox_op ops[SQLBOX_OP__MAX] = {
 	sqlbox_op_close, /* SQLBOX_OP_CLOSE */
 	sqlbox_op_finalise, /* SQLBOX_OP_FINAL */
 	sqlbox_op_lastid, /* SQLBOX_OP_LASTID */
-	sqlbox_op_open, /* SQLBOX_OP_OPEN */
+	sqlbox_op_open_async, /* SQLBOX_OP_OPEN_ASYNC */
+	sqlbox_op_open_sync, /* SQLBOX_OP_OPEN_SYNC */
 	sqlbox_op_ping, /* SQLBOX_OP_PING */
-	sqlbox_op_prepare_bind, /* SQLBOX_OP_PREPARE_BIND */
+	sqlbox_op_prepare_bind_async, /* SQLBOX_OP_PREPARE_BIND_ASYNC */
+	sqlbox_op_prepare_bind_sync, /* SQLBOX_OP_PREPARE_BIND_SYNC */
 	sqlbox_op_rebind, /* SQLBOX_OP_REBIND */
 	sqlbox_op_role, /* SQLBOX_OP_ROLE */
 	sqlbox_op_step, /* SQLBOX_OP_STEP */

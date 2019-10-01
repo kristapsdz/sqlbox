@@ -56,7 +56,7 @@ sqlbox_open(struct sqlbox *box, size_t src)
 	uint32_t	 v = htole32(src), ack;
 
 	if (!sqlbox_write_frame
-	    (box, SQLBOX_OP_OPEN, (char *)&v, sizeof(uint32_t))) {
+	    (box, SQLBOX_OP_OPEN_SYNC, (char *)&v, sizeof(uint32_t))) {
 		sqlbox_warnx(&box->cfg, "open: sqlbox_write_frame");
 		return 0;
 	}
@@ -67,6 +67,20 @@ sqlbox_open(struct sqlbox *box, size_t src)
 	return (size_t)le32toh(ack);
 }
 
+int
+sqlbox_open_async(struct sqlbox *box, size_t src)
+{
+	uint32_t	 v = htole32(src);
+
+	if (!sqlbox_write_frame
+	    (box, SQLBOX_OP_OPEN_ASYNC, (char *)&v, sizeof(uint32_t))) {
+		sqlbox_warnx(&box->cfg, "open: sqlbox_write_frame");
+		return 0;
+	}
+	return 1;
+}
+
+
 /*
  * Attempt to open a database.
  * First check if the index is valid, then whether our role permits
@@ -75,8 +89,8 @@ sqlbox_open(struct sqlbox *box, size_t src)
  * On success, writes back the unique identifier of the database.
  * Returns TRUE on success, FALSE on failure (nothing is allocated).
  */
-int
-sqlbox_op_open(struct sqlbox *box, const char *buf, size_t sz)
+static int
+sqlbox_op_open(struct sqlbox *box, const char *buf, size_t sz, int sync)
 {
 	size_t		  idx, attempt = 0;
 	int		  fl;
@@ -163,7 +177,7 @@ again:
 	TAILQ_INSERT_TAIL(&box->dbq, db, entries);
 	ack = htole32(db->id);
 
-	if (!sqlbox_write(box, (char *)&ack, sizeof(uint32_t))) {
+	if (sync && !sqlbox_write(box, (char *)&ack, sizeof(uint32_t))) {
 		sqlbox_warnx(&box->cfg, "%s: open: sqlbox_write", fn);
 		TAILQ_REMOVE(&box->dbq, db, entries);
 		sqlbox_debug(&box->cfg, "sqlite3_close: %s", fn);
@@ -174,3 +188,16 @@ again:
 	return 1;
 }
 
+int
+sqlbox_op_open_sync(struct sqlbox *box, const char *buf, size_t sz)
+{
+
+	return sqlbox_op_open(box, buf, sz, 1);
+}
+
+int
+sqlbox_op_open_async(struct sqlbox *box, const char *buf, size_t sz)
+{
+
+	return sqlbox_op_open(box, buf, sz, 0);
+}
