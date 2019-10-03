@@ -398,8 +398,11 @@ sqlbox_op_prepare_bind_sync(struct sqlbox *box, const char *buf, size_t sz)
 	struct sqlbox_stmt	*st;
 	uint32_t		 ack;
 
-	if ((st = sqlbox_op_prepare_bind(box, buf, sz)) == NULL)
+	if ((st = sqlbox_op_prepare_bind(box, buf, sz)) == NULL) {
+		sqlbox_warnx(&box->cfg, "prepare-bind-sync: "
+			"sqlbox_op_prepare_bind");
 		return 0;
+	}
 
 	/* Synchronous version writes back the identifier. */
 
@@ -408,9 +411,9 @@ sqlbox_op_prepare_bind_sync(struct sqlbox *box, const char *buf, size_t sz)
 	if (sqlbox_write(box, (char *)&ack, sizeof(uint32_t)))
 		return 1;
 
-	sqlbox_warnx(&box->cfg, "%s: prepare-bind-async: "
+	sqlbox_warnx(&box->cfg, "%s: prepare-bind-sync: "
 		"sqlbox_write", st->db->src->fname);
-	sqlbox_warnx(&box->cfg, "%s: prepare-bind-async: "
+	sqlbox_warnx(&box->cfg, "%s: prepare-bind-sync: "
 		"statement: %s", st->db->src->fname, st->pstmt->stmt);
 	TAILQ_REMOVE(&st->db->stmtq, st, entries);
 	TAILQ_REMOVE(&box->stmtq, st, gentries);
@@ -426,6 +429,10 @@ sqlbox_op_prepare_bind_async(struct sqlbox *box, const char *buf, size_t sz)
 {
 	struct sqlbox_stmt	*st;
 
-	st = sqlbox_op_prepare_bind(box, buf, sz);
-	return st != NULL;
+	if ((st = sqlbox_op_prepare_bind(box, buf, sz)) == NULL) {
+		sqlbox_warnx(&box->cfg, "prepare-bind-async: "
+			"sqlbox_op_prepare_bind");
+		return 0;
+	}
+	return 1;
 }
