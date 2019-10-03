@@ -28,7 +28,6 @@
 int
 main(int argc, char *argv[])
 {
-	size_t		 	 dbid, stmtid;
 	struct sqlbox		*p;
 	struct sqlbox_cfg	 cfg;
 	struct sqlbox_src	 srcs[] = {
