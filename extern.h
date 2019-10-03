@@ -28,6 +28,8 @@
 
 enum	sqlbox_op {
 	SQLBOX_OP_CLOSE,
+	SQLBOX_OP_EXEC_ASYNC,
+	SQLBOX_OP_EXEC_SYNC,
 	SQLBOX_OP_FINAL,
 	SQLBOX_OP_LASTID,
 	SQLBOX_OP_OPEN_ASYNC,
@@ -119,6 +121,8 @@ int	 sqlbox_parm_pack(struct sqlbox *, size_t, const struct sqlbox_parm *, char 
 int	 sqlbox_parm_unpack(struct sqlbox *, struct sqlbox_parm **, ssize_t *, const char *, size_t);
 
 int	 sqlbox_op_close(struct sqlbox *, const char *, size_t);
+int	 sqlbox_op_exec_async(struct sqlbox *, const char *, size_t);
+int	 sqlbox_op_exec_sync(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_finalise(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_lastid(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_open_async(struct sqlbox *, const char *, size_t);

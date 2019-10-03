@@ -1,0 +1,201 @@
+.\"	$Id$
+.\"
+.\" Copyright (c) 2019 Kristaps Dzonsons <kristaps@bsd.lv>
+.\"
+.\" Permission to use, copy, modify, and distribute this software for any
+.\" purpose with or without fee is hereby granted, provided that the above
+.\" copyright notice and this permission notice appear in all copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\" WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\" ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\" WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+.\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+.\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd $Mdocdate$
+.Dt SQLBOX_EXEC 3
+.Os
+.Sh NAME
+.Nm sqlbox_exec ,
+.Nm sqlbox_exec_async
+.Nd execute a statement with bound parameters
+.Sh LIBRARY
+.Lb sqlbox
+.Sh SYNOPSIS
+.In stddef.h
+.In sqlbox.h
+.Ft enum sqlbox_code
+.Fo sqlbox_exec
+.Fa "struct sqlbox *box"
+.Fa "size_t src"
+.Fa "size_t idx"
+.Fa "size_t psz"
+.Fa "const struct sqlbox_parm *ps"
+.Fc
+.Ft int
+.Fo sqlbox_exec_async
+.Fa "struct sqlbox *box"
+.Fa "size_t src"
+.Fa "size_t idx"
+.Fa "size_t psz"
+.Fa "const struct sqlbox_parm *ps"
+.Fc
+.Sh DESCRIPTION
+Executes an SQL statement
+.Fa idx
+with bound parameters
+.Fa ps .
+This should not be used to process any rows: if the SQL statement
+returns rows, they are discarded and the operation is considered as a
+success.
+.Pp
+The synchronous
+.Fn sqlbox_exec
+returns whether the operation succeeded while
+.Fn sqlbox_exec_async
+only returns whether
+.Fa box
+was accessed, leaving an explicit check to
+.Xr sqlbox_ping 3
+or implicit with the next
+.Fa box
+operation.
+.Pp
+The
+.Fa idx
+is the statement index in the
+.Vt struct sqlbox_pstmt
+array given to
+.Xr sqlbox_alloc 3 .
+The
+.Fa src
+is the database source as returned by
+.Xr sqlbox_open 3 .
+If
+.Fa src
+is zero, the last-opened database is used.
+The number of parameters
+.Fa psz
+must match the statement parameters given in the SQL or be zero.
+.Pp
+The
+.Fa ps
+array, if
+.Fa psz
+is non-zero, consists of typed values bound to those parameters.
+Types must correspond to typed values, for example, floats of type
+.Dv SQLBOX_PARM_FLOAT
+must be set in the
+.Va fparm
+of
+.Vt struct sqlbox_parm .
+.Pp
+The
+.Va sz
+of
+.Vt struct sqlbox_parm
+is ignored for floats and integers, but must be provided for blobs and
+optionally for strings.
+For strings, a zero indicates it should be computed using
+.Xr strlen 3 .
+Otherwise, it should be the full string length including the NUL
+terminator.
+If the string is shorter than the given length (i.e., contains an
+embedded NUL terminator), the database will still return the full given
+length of the original size (terminating NUL inclusive).
+.Ss SQLite3 Implementation
+.Sh RETURN VALUES
+.Fn sqlbox_exec
+returns
+.Dv SQLBOX_CODE_ERROR
+if strings are not NUL-terminated at their size (if non-zero), memory
+allocation fails, communication with
+.Fa box
+fails, the statement could not be prepared, the current role cannot
+access the given statement, the statement violated the constraint, the
+statement could not be executed, or the database raises errors.
+Otherwise it returns
+.Dv SQLBOX_CODE_OK ,
+including if the statement returns rows (which are discarded).
+.Pp
+.Fn sqlbox_exec_async
+returns zero if strings are not NUL-terminated at their size (if
+non-zero), memory allocation fails, or communication with
+.Fa bo
+fails.
+Otherwise it returns the non-zero.
+.Pp
+Execution of
+.Fn sqlbox_exec_async
+is asynchronous: to check whether the operation succeeded, explicitly
+use
+.Xr sqlbox_ping 3 .
+If it fails, subsequent access to
+.Fa box
+will fail.
+.\" For sections 2, 3, and 9 function return values only.
+.\" .Sh ENVIRONMENT
+.\" For sections 1, 6, 7, and 8 only.
+.\" .Sh FILES
+.\" .Sh EXIT STATUS
+.\" For sections 1, 6, and 8 only.
+.Sh EXAMPLES
+The following opens a database
+.Pa db.db
+and inserts an integer value into it.
+It depends upon
+.Xr sqlbox_free 3
+to close out the database.
+.Bd -literal
+size_t dbid, stmtid;
+struct sqlbox *p;
+struct sqlbox_cfg cfg;
+struct sqlbox_src srcs[] = {
+  { .fname = (char *)"db.db",
+    .mode = SQLBOX_SRC_RW }
+};
+struct sqlbox_pstmt pstmts[] = {
+  { .stmt = (char *)"INSERT INTO foo (bar) VALUES (?)" },
+};
+struct sqlbox_parm parms[] = {
+  { .iparm = 10,
+    .type = SQLBOX_PARM_INT },
+};
+const struct sqlbox_parmset *res;
+
+memset(&cfg, 0, sizeof(struct sqlbox_cfg));
+cfg.msg.func_short = warnx;
+cfg.srcs.srcsz = 1;
+cfg.srcs.srcs = srcs;
+cfg.stmts.stmtsz = 1;
+cfg.stmts.stmts = pstmts;
+
+if ((p = sqlbox_alloc(&cfg)) == NULL)
+  errx(EXIT_FAILURE, "sqlbox_alloc");
+if (!(dbid = sqlbox_open(p, 0)))
+  errx(EXIT_FAILURE, "sqlbox_open");
+if (!(stmtid = sqlbox_prepare_bind(p, dbid, 1, 1, parms)))
+  errx(EXIT_FAILURE, "sqlbox_prepare_bind");
+if ((res = sqlbox_step(p, stmtid)) == NULL)
+  errx(EXIT_FAILURE, "sqlbox_step");
+if (!sqlbox_finalise(p, stmtid))
+  errx(EXIT_FAILURE, "sqlbox_finalise");
+
+sqlbox_free(p);
+.Ed
+.\" .Sh DIAGNOSTICS
+.\" For sections 1, 4, 6, 7, 8, and 9 printf/stderr messages only.
+.\" .Sh ERRORS
+.\" For sections 2, 3, 4, and 9 errno settings only.
+.Sh SEE ALSO
+.Xr sqlbox_finalise 3 ,
+.Xr sqlbox_open 3
+.\" .Sh STANDARDS
+.\" .Sh HISTORY
+.\" .Sh AUTHORS
+.\" .Sh CAVEATS
+.\" .Sh BUGS
+.\" .Sh SECURITY CONSIDERATIONS
+.\" Not used in OpenBSD.

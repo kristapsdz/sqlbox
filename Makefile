@@ -24,6 +24,17 @@ TESTS	 = test-alloc-bad-defrole \
 	   test-close-twice-zero-id \
 	   test-close-zero-id \
 	   test-cstep \
+	   test-exec-async-bad-id \
+	   test-exec-async-bad-src \
+	   test-exec-async-bad-zero-id \
+	   test-exec-async-constraint \
+	   test-exec-bad-id \
+	   test-exec-bad-src \
+	   test-exec-bad-zero-id \
+	   test-exec-constraint \
+	   test-exec-create-insert \
+	   test-exec-select \
+	   test-exec-zero-id \
 	   test-finalise \
 	   test-finalise-bad-stmt \
 	   test-finalise-bad-zero-id \
@@ -101,6 +112,7 @@ TESTS	 = test-alloc-bad-defrole \
 	   test-trans-open-same-id-diff-src
 OBJS	 = alloc.o \
 	   close.o \
+	   exec.o \
 	   finalise.o \
 	   io.o \
 	   lastid.o \
