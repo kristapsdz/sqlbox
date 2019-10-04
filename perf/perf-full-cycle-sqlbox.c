@@ -78,22 +78,16 @@ main(int argc, char *argv[])
 	for (i = 0; i < iters; i++) {
 		if (!sqlbox_open_async(p, 0))
 			errx(EXIT_FAILURE, "sqlbox_open_async");
-		if (!sqlbox_prepare_bind_async(p, 0, 0, 0, NULL))
-			errx(EXIT_FAILURE, "sqlbox_prepare_bind_async");
-		if (sqlbox_step(p, 0) == NULL)
-			errx(EXIT_FAILURE, "sqlbox_step");
-		if (!sqlbox_finalise(p, 0))
-			errx(EXIT_FAILURE, "sqlbox_finalise");
+		if (!sqlbox_exec_async(p, 0, 0, 0, NULL))
+			errx(EXIT_FAILURE, "sqlbox_exec_async");
+
 		parms[0].iparm = arc4random();
 		parms[1].iparm = arc4random();
 		parms[2].iparm = arc4random();
 		parms[3].iparm = arc4random();
-		if (!sqlbox_prepare_bind_async(p, 0, 1, 4, parms))
-			errx(EXIT_FAILURE, "sqlbox_prepare_bind_async");
-		if (sqlbox_step(p, 0) == NULL)
-			errx(EXIT_FAILURE, "sqlbox_step");
-		if (!sqlbox_finalise(p, 0))
-			errx(EXIT_FAILURE, "sqlbox_finalise");
+
+		if (!sqlbox_exec_async(p, 0, 1, 4, parms))
+			errx(EXIT_FAILURE, "sqlbox_exec_async");
 		if (!sqlbox_close(p, 0))
 			errx(EXIT_FAILURE, "sqlbox_close");
 	}
