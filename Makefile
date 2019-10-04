@@ -120,6 +120,7 @@ OBJS	 = alloc.o \
 	   open.o \
 	   parm.o \
 	   ping.o \
+	   prepare.o \
 	   prepare_bind.o \
 	   rebind.o \
 	   role.o \

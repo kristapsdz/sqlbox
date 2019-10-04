@@ -196,13 +196,12 @@ sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 static struct sqlbox_stmt *
 sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 {
-	size_t	 		 idx, attempt = 0;
+	size_t	 		 idx;
 	ssize_t			 parmsz = -1;
 	struct sqlbox_db	*db;
 	sqlite3_stmt		*stmt = NULL;
 	struct sqlbox_stmt	*st;
 	struct sqlbox_pstmt	*pst = NULL;
-	int			 c;
 	struct sqlbox_parm	*parms = NULL;
 
 	/* Read the source identifier. */
@@ -249,49 +248,19 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 		free(parms);
 		return NULL;
 	}
+	assert(parmsz >= 0);
 
-	/* 
-	 * Actually prepare the statement.
-	 * In the usual way we sleep if SQLite gives us a busy, locked,
-	 * or weird protocol error.
-	 * All other errors are real errorrs.
-	 */
-again:
-	stmt = NULL;
-	sqlbox_debug(&box->cfg, "sqlite3_prepare_v2: %s, %s",
-		db->src->fname, pst->stmt);
-	c = sqlite3_prepare_v2(db->db, pst->stmt, -1, &stmt, NULL);
+	/* Actually prepare the statement. */
 
-	switch (c) {
-	case SQLITE_BUSY:
-	case SQLITE_LOCKED:
-	case SQLITE_PROTOCOL:
-		sqlbox_sleep(attempt++);
-		goto again;
-	case SQLITE_OK:
-		break;
-	default:
-		sqlbox_warnx(&box->cfg, "%s: prepare-bind: %s", 
-			db->src->fname, sqlite3_errmsg(db->db));
-		sqlbox_warnx(&box->cfg, "%s: prepare-bind "
-			"statement: %s", db->src->fname, pst->stmt);
-		if (stmt != NULL) {
-			sqlbox_debug(&box->cfg, "sqlite3_finalize: "
-				"%s, %s", db->src->fname, pst->stmt);
-			sqlite3_finalize(stmt);
-		}
+	if ((stmt = sqlbox_prepare(box, db, pst)) == NULL) {
+		sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
+			"sqlbox_prepare", db->src->fname);
 		free(parms);
 		return NULL;
 	}
 
-	/* 
-	 * Now bind parameters.
-	 * Note that we mark the strings as SQLITE_TRANSIENT because
-	 * we're probably going to lose the buffer during the next read
-	 * and so it needs to be stored.
-	 */
+	/* Now bind parameters. */
 
-	assert(parmsz >= 0);
 	if (!sqlbox_parm_bind(box, db, pst, stmt, parms, parmsz)) {
 		sqlbox_debug(&box->cfg, "%s: sqlite3_finalize: %s", 
 			db->src->fname, pst->stmt);
