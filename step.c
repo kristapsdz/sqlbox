@@ -132,9 +132,8 @@ int
 sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 {
 	struct sqlbox_stmt	*st;
-	size_t			 pos, attempt = 0, i, cols = 0;
-	int			 ccount, has_cstep = 0, allow_cstep, 
-				 rc = 0;
+	size_t			 pos, i, cols = 0;
+	int			 has_cstep = 0, allow_cstep, rc = 0;
 	uint32_t		 val;
 #if 0
 	size_t			 j;
@@ -142,6 +141,7 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 #endif
 	struct freen		*fn;
 	TAILQ_HEAD(freeq, freen) fq;
+	enum sqlbox_code	 code;
 
 	/* Look up the statement in our global list. */
 
@@ -172,47 +172,16 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 	}
 
 	/* Now we run the database routine. */
-	
-again:
-	sqlbox_debug(&box->cfg, "sqlite3_step: %s, %s",
-		st->db->src->fname, st->pstmt->stmt);
-	switch (sqlite3_step(st->stmt)) {
-	case SQLITE_BUSY:
-		/*
-		 * FIXME: according to sqlite3_step(3), this
-		 * should return if we're in a transaction.
-		 */
-		sqlbox_sleep(attempt++);
-		goto again;
-	case SQLITE_LOCKED:
-	case SQLITE_PROTOCOL:
-		sqlbox_sleep(attempt++);
-		goto again;
-	case SQLITE_DONE:
-		break;
-	case SQLITE_ROW:
-		if ((ccount = sqlite3_column_count(st->stmt)) > 0) {
-			cols = (size_t)ccount;
-			break;
-		}
-		sqlbox_warnx(&box->cfg, "%s: step: row without "
-			"columns?", st->db->src->fname);
-		sqlbox_warnx(&box->cfg, "%s: step: statement: "
-			"%s", st->db->src->fname, st->pstmt->stmt);
-		break;
-	case SQLITE_CONSTRAINT:
-		if (allow_cstep) {
-			has_cstep = 1;
-			break;
-		}
-		/* FALLTHROUGH */
-	default:
-		sqlbox_warnx(&box->cfg, "%s: step: %s", 
-			st->db->src->fname, 
-			sqlite3_errmsg(st->db->db));
-		return 0;
-	}
 
+	code = sqlbox_wrap_step(box, st->db, 
+		st->pstmt, st->stmt, &cols, allow_cstep);
+	if (code == SQLBOX_CODE_ERROR) {
+		sqlbox_warnx(&box->cfg, "%s: step: "
+			"sqlbox_wrap_step", st->db->src->fname);
+		return 0;
+	} else if (code == SQLBOX_CODE_CONSTRAINT)
+		has_cstep = 1;
+	
 	/*
 	 * See if we need to prime our result set: if we have columns,
 	 * allocate results (make sure, with more results, that the

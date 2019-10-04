@@ -168,13 +168,13 @@ static enum sqlbox_code
 sqlbox_op_exec(struct sqlbox *box, int allow_cstep,
 	const char *buf, size_t sz)
 {
-	size_t	 		 idx, attempt = 0;
+	size_t	 		 idx, cols;
 	ssize_t			 parmsz = -1;
 	struct sqlbox_db	*db;
 	sqlite3_stmt		*stmt = NULL;
 	struct sqlbox_pstmt	*pst = NULL;
-	int			 has_cstep = 0;
 	struct sqlbox_parm	*parms = NULL;
+	enum sqlbox_code	 code;
 
 	/* Read the source identifier. */
 
@@ -247,46 +247,18 @@ sqlbox_op_exec(struct sqlbox *box, int allow_cstep,
 	 * it merges both into an ok.
 	 */
 
-	attempt = 0;
-again_step:
-	sqlbox_debug(&box->cfg, "sqlite3_step: %s, %s",
-		db->src->fname, pst->stmt);
-	switch (sqlite3_step(stmt)) {
-	case SQLITE_BUSY:
-		/*
-		 * FIXME: according to sqlite3_step(3), this
-		 * should return if we're in a transaction.
-		 */
-		sqlbox_sleep(attempt++);
-		goto again_step;
-	case SQLITE_LOCKED:
-	case SQLITE_PROTOCOL:
-		sqlbox_sleep(attempt++);
-		goto again_step;
-	case SQLITE_DONE:
-		break;
-	case SQLITE_ROW:
-		break;
-	case SQLITE_CONSTRAINT:
-		if (allow_cstep) {
-			has_cstep = 1;
-			break;
-		}
-		/* FALLTHROUGH */
-	default:
-		sqlbox_warnx(&box->cfg, "%s: step: %s", 
-			db->src->fname, 
-			sqlite3_errmsg(db->db));
-		sqlbox_debug(&box->cfg, "sqlite3_finalize: "
-			"%s, %s", db->src->fname, pst->stmt);
-		sqlite3_finalize(stmt);
-		return SQLBOX_CODE_ERROR;
-	}
+	code = sqlbox_wrap_step(box, db, pst, stmt, &cols, allow_cstep);
+	if (code == SQLBOX_CODE_ERROR)
+		sqlbox_warnx(&box->cfg, "%s: exec: "
+			"sqlbox_wrap_step", db->src->fname);
+	else if (cols > 0)
+		sqlbox_warnx(&box->cfg, "%s: exec: sqlbox_wrap_step: "
+			"ignoring %zu columns", db->src->fname, cols);
 
-	sqlbox_debug(&box->cfg, "sqlite3_finalize: "
-		"%s, %s", db->src->fname, pst->stmt);
+	sqlbox_debug(&box->cfg, "%s: sqlite3_finalize: %s",
+		db->src->fname, pst->stmt);
 	sqlite3_finalize(stmt);
-	return has_cstep ? SQLBOX_CODE_CONSTRAINT : SQLBOX_CODE_OK;
+	return code;
 
 badframe:
 	sqlbox_warnx(&box->cfg, "exec: bad frame size");

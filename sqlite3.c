@@ -44,33 +44,94 @@ sqlbox_wrap_prepare(struct sqlbox *box, struct sqlbox_db *db,
 	size_t		 attempt = 0;
 
 	assert(pst != NULL && pst->stmt != NULL);
-again:
-	stmt = NULL;
 	sqlbox_debug(&box->cfg, "%s: sqlite3_prepare_v2: %s",
 		db->src->fname, pst->stmt);
+
+again:
+	stmt = NULL;
 	c = sqlite3_prepare_v2(db->db, pst->stmt, -1, &stmt, NULL);
 
 	switch (c) {
 	case SQLITE_BUSY:
 	case SQLITE_LOCKED:
 	case SQLITE_PROTOCOL:
+		if (stmt != NULL) {
+			sqlbox_debug(&box->cfg, 
+				"%s: sqlite3_finalize: %s",
+				db->src->fname, pst->stmt);
+			sqlite3_finalize(stmt);
+		}
 		sqlbox_sleep(attempt++);
 		goto again;
 	case SQLITE_OK:
-		break;
+		assert(stmt != NULL);
+		return stmt;
 	default:
-		sqlbox_warnx(&box->cfg, "%s: sqlite3_prepare_v2: %s", 
-			db->src->fname, sqlite3_errmsg(db->db));
-		sqlbox_warnx(&box->cfg, "%s: statement: %s", 
-			db->src->fname, pst->stmt);
-		if (stmt == NULL)
-			return NULL;
-		sqlbox_debug(&box->cfg, "%s: sqlite3_finalize: %s",
-			db->src->fname, pst->stmt);
-		sqlite3_finalize(stmt);
-		return NULL;
+		break;
 	}
 
-	assert(stmt != NULL);
-	return stmt;
+	sqlbox_warnx(&box->cfg, "%s: sqlite3_prepare_v2: %s", 
+		db->src->fname, sqlite3_errmsg(db->db));
+	sqlbox_warnx(&box->cfg, "%s: statement: %s", 
+		db->src->fname, pst->stmt);
+
+	if (stmt == NULL)
+		return NULL;
+
+	sqlbox_debug(&box->cfg, "%s: sqlite3_finalize: %s",
+		db->src->fname, pst->stmt);
+	sqlite3_finalize(stmt);
+	return NULL;
+}
+
+enum sqlbox_code
+sqlbox_wrap_step(struct sqlbox *box, struct sqlbox_db *db,
+	const struct sqlbox_pstmt *pst, sqlite3_stmt *stmt,
+	size_t *cols, int cstep)
+{
+	size_t	 attempt = 0;
+	int	 ccount;
+
+	*cols = 0;
+
+	assert(pst != NULL && pst->stmt != NULL);
+	sqlbox_debug(&box->cfg, "%s: sqlite3_step: %s",
+		db->src->fname, pst->stmt);
+
+again_step:
+	switch (sqlite3_step(stmt)) {
+	case SQLITE_BUSY:
+		/*
+		 * FIXME: according to sqlite3_step(3), this
+		 * should return if we're in a transaction.
+		 */
+		sqlbox_sleep(attempt++);
+		goto again_step;
+	case SQLITE_LOCKED:
+	case SQLITE_PROTOCOL:
+		sqlbox_sleep(attempt++);
+		goto again_step;
+	case SQLITE_DONE:
+		return SQLBOX_CODE_OK;
+	case SQLITE_ROW:
+		if ((ccount = sqlite3_column_count(stmt)) > 0) {
+			*cols = (size_t)ccount;
+			return SQLBOX_CODE_OK;
+		}
+		sqlbox_warnx(&box->cfg, "%s: sqlbox_wrap_step: "
+			"row without columns", db->src->fname);
+		sqlbox_warnx(&box->cfg, "%s: statement: %s", 
+			db->src->fname, pst->stmt);
+		return SQLBOX_CODE_ERROR;
+	case SQLITE_CONSTRAINT:
+		if (cstep)
+			return SQLBOX_CODE_CONSTRAINT;
+		/* FALLTHROUGH */
+	default:
+		break;
+	}
+
+	sqlbox_warnx(&box->cfg, "%s: step: %s", 
+		db->src->fname, sqlite3_errmsg(db->db));
+	return SQLBOX_CODE_ERROR;
 }
