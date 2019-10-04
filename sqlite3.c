@@ -36,7 +36,7 @@
  * Returns the statement or NULL on failure.
  */
 sqlite3_stmt *
-sqlbox_prepare(struct sqlbox *box, struct sqlbox_db *db,
+sqlbox_wrap_prepare(struct sqlbox *box, struct sqlbox_db *db,
 	const struct sqlbox_pstmt *pst)
 {
 	sqlite3_stmt	*stmt;

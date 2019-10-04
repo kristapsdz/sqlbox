@@ -112,7 +112,7 @@ void	 sqlbox_debug(const struct sqlbox_cfg *, const char *, ...)
 int	 sqlbox_main_loop(struct sqlbox *);
 
 sqlite3_stmt
-	*sqlbox_prepare(struct sqlbox *, 
+	*sqlbox_wrap_prepare(struct sqlbox *, 
 		struct sqlbox_db *, const struct sqlbox_pstmt *);
 
 int	 sqlbox_read(struct sqlbox *, char *, size_t);

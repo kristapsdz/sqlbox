@@ -120,10 +120,10 @@ OBJS	 = alloc.o \
 	   open.o \
 	   parm.o \
 	   ping.o \
-	   prepare.o \
 	   prepare_bind.o \
 	   rebind.o \
 	   role.o \
+	   sqlite3.o \
 	   step.o \
 	   transaction.o \
 	   warn.o

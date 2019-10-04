@@ -252,9 +252,9 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 
 	/* Actually prepare the statement. */
 
-	if ((stmt = sqlbox_prepare(box, db, pst)) == NULL) {
+	if ((stmt = sqlbox_wrap_prepare(box, db, pst)) == NULL) {
 		sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
-			"sqlbox_prepare", db->src->fname);
+			"sqlbox_wrap_prepare", db->src->fname);
 		free(parms);
 		return NULL;
 	}

@@ -223,9 +223,9 @@ sqlbox_op_exec(struct sqlbox *box, int allow_cstep,
 
 	/* Prepare the statement. */
 
-	if ((stmt = sqlbox_prepare(box, db, pst)) == NULL) {
+	if ((stmt = sqlbox_wrap_prepare(box, db, pst)) == NULL) {
 		sqlbox_warnx(&box->cfg, "%s: exec: "
-			"sqlbox_prepare", db->src->fname);
+			"sqlbox_wrap_prepare", db->src->fname);
 		free(parms);
 		return SQLBOX_CODE_ERROR;
 	}
