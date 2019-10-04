@@ -136,6 +136,87 @@ sqlbox_parm_pack(struct sqlbox *box, size_t parmsz,
 	return 1;
 }
 
+/* 
+ * Bind parameters in "parms" to a statement "stmt".
+ * We mark the strings as SQLITE_TRANSIENT because we're probably going
+ * to lose the buffer during the next read and so it needs to be stored.
+ * Returns TRUE on success, FALSE on failure.
+ */
+int
+sqlbox_parm_bind(struct sqlbox *box, struct sqlbox_db *db,
+	const struct sqlbox_pstmt *pst, sqlite3_stmt *stmt, 
+	const struct sqlbox_parm *parms, size_t parmsz)
+{
+	size_t	 i;
+	int	 c;
+
+	for (i = 0; i < parmsz; i++) {
+		switch (parms[i].type) {
+		case SQLBOX_PARM_BLOB:
+			sqlbox_debug(&box->cfg, 
+				"%s: sqlite3_bind_blob[%zu]: "
+				"%s (%zu B)", db->src->fname,
+				i, pst->stmt, parms[i].sz);
+			c = sqlite3_bind_blob(stmt, i + 1,
+				parms[i].bparm, parms[i].sz, 
+				SQLITE_TRANSIENT);
+			break;
+		case SQLBOX_PARM_FLOAT:
+			sqlbox_debug(&box->cfg, 
+				"%s: sqlite3_bind_double[%zu]: "
+				"%s", db->src->fname, i, pst->stmt);
+			c = sqlite3_bind_double
+				(stmt, i + 1, parms[i].fparm);
+			break;
+		case SQLBOX_PARM_INT:
+			sqlbox_debug(&box->cfg, 
+				"%s: sqlite3_bind_int64[%zu]: "
+				"%s", db->src->fname, i, pst->stmt);
+			c = sqlite3_bind_int64
+				(stmt, i + 1, parms[i].iparm);
+			break;
+		case SQLBOX_PARM_NULL:
+			sqlbox_debug(&box->cfg, 
+				"%s: sqlite3_bind_null[%zu]: "
+				"%s", db->src->fname, i, pst->stmt);
+			c = sqlite3_bind_null(stmt, i + 1);
+			break;
+		case SQLBOX_PARM_STRING:
+			sqlbox_debug(&box->cfg, 
+				"%s: sqlite3_bind_text[%zu]: "
+				"%s (%zu B)", db->src->fname, i,
+				pst->stmt, parms[i].sz - 1);
+			c = sqlite3_bind_text(stmt, i + 1,
+				parms[i].sparm, parms[i].sz - 1, 
+				SQLITE_TRANSIENT);
+			break;
+		default:
+			sqlbox_warnx(&box->cfg, 
+				"%s: sqlbox_parm_bind[%zu]: "
+				"bad type: %d", db->src->fname, 
+				i, parms[i].type);
+			sqlbox_warnx(&box->cfg, 
+				"%s: sqlbox_parm_bind[%zu]: "
+				"statement: %s", db->src->fname, 
+				i, pst->stmt);
+			return 0;
+		}
+		if (c != SQLITE_OK) {
+			sqlbox_warnx(&box->cfg, 
+				"%s: sqlbox_parm_bind[%zu]: %s", 
+				db->src->fname, i, 
+				sqlite3_errmsg(db->db));
+			sqlbox_warnx(&box->cfg, 
+				"%s: sqlbox_parm_bind[%zu]: "
+				"statement: %s", db->src->fname, 
+				i, pst->stmt);
+			return 0;
+		}
+	}
+
+	return 1;
+}
+
 /*
  * Unpack a set of sqlbox_parm from the buffer.
  * Returns TRUE on success, FALSE on failure.

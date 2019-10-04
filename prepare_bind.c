@@ -196,7 +196,7 @@ sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 static struct sqlbox_stmt *
 sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 {
-	size_t	 		 i, idx, attempt = 0;
+	size_t	 		 idx, attempt = 0;
 	ssize_t			 parmsz = -1;
 	struct sqlbox_db	*db;
 	sqlite3_stmt		*stmt = NULL;
@@ -292,66 +292,12 @@ again:
 	 */
 
 	assert(parmsz >= 0);
-	for (i = 0; i < (size_t)parmsz; i++) {
-		switch (parms[i].type) {
-		case SQLBOX_PARM_BLOB:
-			c = sqlite3_bind_blob(stmt, i + 1,
-				parms[i].bparm, parms[i].sz, 
-				SQLITE_TRANSIENT);
-			sqlbox_debug(&box->cfg, "sqlite3_bind_blob[%zu]: "
-				"%s, %s (%zu bytes)", i, db->src->fname, 
-				pst->stmt, parms[i].sz - 1);
-			break;
-		case SQLBOX_PARM_FLOAT:
-			c = sqlite3_bind_double
-				(stmt, i + 1, parms[i].fparm);
-			sqlbox_debug(&box->cfg, "sqlite3_bind_double[%zu]: "
-				"%s, %s", i, db->src->fname, pst->stmt);
-			break;
-		case SQLBOX_PARM_INT:
-			c = sqlite3_bind_int64
-				(stmt, i + 1, parms[i].iparm);
-			sqlbox_debug(&box->cfg, "sqlite3_bind_int64[%zu]: "
-				"%s, %s", i, db->src->fname, pst->stmt);
-			break;
-		case SQLBOX_PARM_NULL:
-			c = sqlite3_bind_null(stmt, i + 1);
-			sqlbox_debug(&box->cfg, "sqlite3_bind_null[%zu]: "
-				"%s, %s", i, db->src->fname, pst->stmt);
-			break;
-		case SQLBOX_PARM_STRING:
-			c = sqlite3_bind_text(stmt, i + 1,
-				parms[i].sparm, parms[i].sz - 1, 
-				SQLITE_TRANSIENT);
-			sqlbox_debug(&box->cfg, "sqlite3_bind_text[%zu]: "
-				"%s, %s (%zu bytes)", i, db->src->fname, 
-				pst->stmt, parms[i].sz - 1);
-			break;
-		default:
-			sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
-				"bad type: %d", db->src->fname, 
-				parms[i].type);
-			sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
-				"statement: %s", db->src->fname, 
-				pst->stmt);
-			sqlbox_debug(&box->cfg, "sqlite3_finalize: "
-				"%s, %s", db->src->fname, pst->stmt);
-			sqlite3_finalize(stmt);
-			free(parms);
-			return NULL;
-		}
-		if (c != SQLITE_OK) {
-			sqlbox_warnx(&box->cfg, "%s: prepare-bind: %s", 
-				db->src->fname, sqlite3_errmsg(db->db));
-			sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
-				"statement: %s", db->src->fname, 
-				pst->stmt);
-			sqlbox_debug(&box->cfg, "sqlite3_finalize: "
-				"%s, %s", db->src->fname, pst->stmt);
-			sqlite3_finalize(stmt);
-			free(parms);
-			return NULL;
-		}
+	if (!sqlbox_parm_bind(box, db, pst, stmt, parms, parmsz)) {
+		sqlbox_debug(&box->cfg, "%s: sqlite3_finalize: %s", 
+			db->src->fname, pst->stmt);
+		sqlite3_finalize(stmt);
+		free(parms);
+		return NULL;
 	}
 	free(parms);
 
