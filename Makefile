@@ -194,6 +194,20 @@ regress: $(TESTS)
 		./$$f 2>/dev/null; \
 		if [ $$? -ne 0 ]; then \
 			echo "\033[31mfail\033[0m"; \
+			break ; \
+		else \
+			echo "\033[32mok\033[0m"; \
+		fi; \
+		set -e ; \
+	done
+
+regress_all: $(TESTS)
+	@for f in $(TESTS) ; do \
+		set +e ; \
+		echo -n "$$f... "; \
+		./$$f 2>/dev/null; \
+		if [ $$? -ne 0 ]; then \
+			echo "\033[31mfail\033[0m"; \
 		else \
 			echo "\033[32mok\033[0m"; \
 		fi; \
