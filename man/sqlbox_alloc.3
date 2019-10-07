@@ -41,9 +41,25 @@ The
 is inherited by the child process but never freed, so they may either be
 constructed statically or allocated and freed by the caller.
 .Pp
+The
+.Fa cfg
+has the following members:
+.Bl -tag -width Ds
+.It Vt stmts
+All SQL statements required by all sources.
+.It Vt roles
+Roles and role assignment to statements, sources, and role transition.
+.It Vt srcs
+Database sources (in-memory and on-disc).
+.It Vt msg
+Error and debug logging.
+.El
+.Pp
+A common idiom is to fill the entire structure with
+.Li 0
+then assign only applicable members.
 .Fn sqlbox_alloc
-performs the following checks on
-.Fa cfg ,
+performs the following validity checks on this structure,
 if not
 .Dv NULL ,
 before forking:
@@ -54,6 +70,7 @@ source filenames may not be
 .It
 statements may not be
 .Dv NULL
+or empty strings
 .It
 the default role must be zero or a valid role index
 .It
@@ -63,8 +80,16 @@ each role transition role must be a valid index
 .It
 each role database must be a valid index
 .El
+.Pp
+After successful return, a common idiom is for callers to reduce system
+resources to just the communciation socket with the context.
+This may be affected with
+.Xr pledge 2 ,
+if on
+.Ox ,
+or similar.
 .Sh RETURN VALUES
-Returns the allocated database handle or
+Returns the allocated context or
 .Dv NULL
 if
 .Fa cfg
@@ -74,7 +99,7 @@ or
 .Xr socketpair 2
 functions failed.
 .Pp
-On success, the pointer should be freed with
+On success, the pointer must be freed with
 .Xr sqlbox_free 3 .
 .\" For sections 2, 3, and 9 function return values only.
 .\" .Sh ENVIRONMENT
@@ -93,10 +118,12 @@ struct sqlbox_src srcs[] = {
   { .fname = (char *)":memory:",
     .mode = SQLBOX_MODE_RWC }
 };
+
 memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 cfg.msg.func_short = warnx;
 cfg.srcs.srcs = srcs;
 cfg.srcs.srcsz = 1;
+
 if ((p = sqlbox_alloc(&cfg)) == NULL)
   errx(EXIT_FAILURE, "sqlbox_alloc");
 .Ed
@@ -121,12 +148,14 @@ struct sqlbox_src srcs[] = {
   { .fname = (char *)":memory:",
     .mode = SQLBOX_MODE_RWC }
 };
+
 memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 cfg.srcs.srcs = srcs;
 cfg.srcs.srcsz = 1;
 cfg.roles.roles = roles;
 cfg.roles.rolesz = 1;
 cfg.roles.defrole = 0;
+
 if ((p = sqlbox_alloc(&cfg)) == NULL)
   errx(EXIT_FAILURE, "sqlbox_alloc");
 .Ed
