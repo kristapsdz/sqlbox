@@ -11,7 +11,7 @@ set -e
 
 echo '# n ksql sqlbox sqlite3'
 
-for f in 500 1000 5000 10000 20000
+for f in 500 1000 2000 4000 8000 16000
 do
 	i=0
 	cat /dev/null >$TMPFILE
