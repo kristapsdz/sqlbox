@@ -233,9 +233,9 @@ sqlbox_op_exec(struct sqlbox *box, int allow_cstep,
 	/* Now bind parameters. */
 
 	if (!sqlbox_parm_bind(box, db, pst, stmt, parms, parmsz)) {
-		sqlbox_debug(&box->cfg, "%s: sqlite3_finalize: %s", 
-			db->src->fname, pst->stmt);
-		sqlite3_finalize(stmt);
+		sqlbox_warnx(&box->cfg, "%s: sqlbox_parm_bind",
+			db->src->fname);
+		sqlbox_wrap_finalise(box, db, pst, stmt);
 		free(parms);
 		return SQLBOX_CODE_ERROR;
 	}
@@ -247,7 +247,9 @@ sqlbox_op_exec(struct sqlbox *box, int allow_cstep,
 	 * it merges both into an ok.
 	 */
 
-	code = sqlbox_wrap_step(box, db, pst, stmt, &cols, allow_cstep);
+	code = sqlbox_wrap_step
+		(box, db, pst, stmt, &cols, allow_cstep);
+
 	if (code == SQLBOX_CODE_ERROR)
 		sqlbox_warnx(&box->cfg, "%s: exec: "
 			"sqlbox_wrap_step", db->src->fname);
@@ -255,9 +257,9 @@ sqlbox_op_exec(struct sqlbox *box, int allow_cstep,
 		sqlbox_warnx(&box->cfg, "%s: exec: sqlbox_wrap_step: "
 			"ignoring %zu columns", db->src->fname, cols);
 
-	sqlbox_debug(&box->cfg, "%s: sqlite3_finalize: %s",
-		db->src->fname, pst->stmt);
-	sqlite3_finalize(stmt);
+	/* Finally, finalise the statement. */
+
+	sqlbox_wrap_finalise(box, db, pst, stmt);
 	return code;
 
 badframe:

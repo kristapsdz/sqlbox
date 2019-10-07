@@ -69,8 +69,7 @@ sqlbox_op_finalise(struct sqlbox *box, const char *buf, size_t sz)
 	/* Look up the statement in our global list. */
 
 	if (sz != sizeof(uint32_t)) {
-		sqlbox_warnx(&box->cfg, "finalise: "
-			"bad frame size: %zu", sz);
+		sqlbox_warnx(&box->cfg, "finalise: bad frame size");
 		return 0;
 	}
 	if ((st = sqlbox_stmt_find
@@ -80,9 +79,7 @@ sqlbox_op_finalise(struct sqlbox *box, const char *buf, size_t sz)
 	}
 	TAILQ_REMOVE(&box->stmtq, st, gentries);
 	TAILQ_REMOVE(&st->db->stmtq, st, entries);
-	sqlbox_debug(&box->cfg, "sqlite3_finalize: %s, %s",
-		st->db->src->fname, st->pstmt->stmt);
-	sqlite3_finalize(st->stmt);
+	sqlbox_wrap_finalise(box, st->db, st->pstmt, st->stmt);
 	sqlbox_stmt_free(st);
 	return 1;
 }

@@ -111,6 +111,10 @@ void	 sqlbox_debug(const struct sqlbox_cfg *, const char *, ...)
 		__attribute__((format(printf, 2, 3)));
 int	 sqlbox_main_loop(struct sqlbox *);
 
+void			 sqlbox_wrap_finalise(struct sqlbox *, 
+				struct sqlbox_db *, 
+				const struct sqlbox_pstmt *, 
+				sqlite3_stmt *);
 sqlite3_stmt		*sqlbox_wrap_prepare(struct sqlbox *, 
 				struct sqlbox_db *, 
 				const struct sqlbox_pstmt *);

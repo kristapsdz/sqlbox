@@ -55,12 +55,7 @@ again:
 	case SQLITE_BUSY:
 	case SQLITE_LOCKED:
 	case SQLITE_PROTOCOL:
-		if (stmt != NULL) {
-			sqlbox_debug(&box->cfg, 
-				"%s: sqlite3_finalize: %s",
-				db->src->fname, pst->stmt);
-			sqlite3_finalize(stmt);
-		}
+		sqlbox_wrap_finalise(box, db, pst, stmt);
 		sqlbox_sleep(attempt++);
 		goto again;
 	case SQLITE_OK:
@@ -75,12 +70,7 @@ again:
 	sqlbox_warnx(&box->cfg, "%s: statement: %s", 
 		db->src->fname, pst->stmt);
 
-	if (stmt == NULL)
-		return NULL;
-
-	sqlbox_debug(&box->cfg, "%s: sqlite3_finalize: %s",
-		db->src->fname, pst->stmt);
-	sqlite3_finalize(stmt);
+	sqlbox_wrap_finalise(box, db, pst, stmt);
 	return NULL;
 }
 
@@ -118,7 +108,7 @@ again_step:
 			*cols = (size_t)ccount;
 			return SQLBOX_CODE_OK;
 		}
-		sqlbox_warnx(&box->cfg, "%s: sqlbox_wrap_step: "
+		sqlbox_warnx(&box->cfg, "%s: sqlite3_step: "
 			"row without columns", db->src->fname);
 		sqlbox_warnx(&box->cfg, "%s: statement: %s", 
 			db->src->fname, pst->stmt);
@@ -131,7 +121,31 @@ again_step:
 		break;
 	}
 
-	sqlbox_warnx(&box->cfg, "%s: step: %s", 
+	sqlbox_warnx(&box->cfg, "%s: sqlite3_step: %s", 
 		db->src->fname, sqlite3_errmsg(db->db));
+	sqlbox_warnx(&box->cfg, "%s: statement: %s", 
+		db->src->fname, pst->stmt);
 	return SQLBOX_CODE_ERROR;
+}
+
+/*
+ * Log about and finalise the statement.
+ * Does nothing if statement is NULL.
+ */
+void
+sqlbox_wrap_finalise(struct sqlbox *box, struct sqlbox_db *db,
+	const struct sqlbox_pstmt *pst, sqlite3_stmt *stmt)
+{
+
+	if (stmt == NULL)
+		return;
+
+	/* 
+	 * This returns the last operation's error code, so we ignore it
+	 * as it may have failed.
+	 */
+
+	sqlbox_debug(&box->cfg, "%s: sqlite3_finalize: %s",
+		db->src->fname, pst->stmt);
+	(void)sqlite3_finalize(stmt);
 }

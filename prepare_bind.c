@@ -262,9 +262,9 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 	/* Now bind parameters. */
 
 	if (!sqlbox_parm_bind(box, db, pst, stmt, parms, parmsz)) {
-		sqlbox_debug(&box->cfg, "%s: sqlite3_finalize: %s", 
-			db->src->fname, pst->stmt);
-		sqlite3_finalize(stmt);
+		sqlbox_warnx(&box->cfg, "%s: sqlbox_parm_bind",
+			db->src->fname);
+		sqlbox_wrap_finalise(box, db, pst, stmt);
 		free(parms);
 		return NULL;
 	}
@@ -277,9 +277,7 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 			"calloc", db->src->fname);
 		sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
 			"statement: %s", db->src->fname, pst->stmt);
-		sqlbox_debug(&box->cfg, "sqlite3_finalize: "
-			"%s, %s", db->src->fname, pst->stmt);
-		sqlite3_finalize(stmt);
+		sqlbox_wrap_finalise(box, db, pst, stmt);
 		return NULL;
 	}
 
@@ -294,16 +292,7 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 	return st;
 
 badframe:
-	sqlbox_warnx(&box->cfg, "prepare-bind: "
-		"bad frame size: %zu", sz);
-	if (pst != NULL && db != NULL) 
-		sqlbox_warnx(&box->cfg, "%s: prepare-bind: statement: "
-			"%s", db->src->fname, pst->stmt);
-	if (stmt != NULL) {
-		sqlbox_debug(&box->cfg, "sqlite3_finalize: "
-			"%s, %s", db->src->fname, pst->stmt);
-		sqlite3_finalize(stmt);
-	}
+	sqlbox_warnx(&box->cfg, "prepare-bind: bad frame size");
 	return NULL;
 }
 
@@ -332,9 +321,7 @@ sqlbox_op_prepare_bind_sync(struct sqlbox *box, const char *buf, size_t sz)
 		"statement: %s", st->db->src->fname, st->pstmt->stmt);
 	TAILQ_REMOVE(&st->db->stmtq, st, entries);
 	TAILQ_REMOVE(&box->stmtq, st, gentries);
-	sqlbox_debug(&box->cfg, "sqlite3_finalize: "
-		"%s, %s", st->db->src->fname, st->pstmt->stmt);
-	sqlite3_finalize(st->stmt);
+	sqlbox_wrap_finalise(box, st->db, st->pstmt, st->stmt);
 	free(st);
 	return 0;
 }
