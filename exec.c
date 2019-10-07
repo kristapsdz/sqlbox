@@ -57,8 +57,9 @@ sqlbox_rolecheck_stmt(struct sqlbox *box, size_t idx)
  * Returns TRUE on success, FALSE on failure.
  */
 static int
-sqlbox_exec_inner(struct sqlbox *box, enum sqlbox_op op, size_t srcid, 
-	size_t pstmt, size_t psz, const struct sqlbox_parm *ps)
+sqlbox_exec_inner(struct sqlbox *box, int allow_cstep, 
+	enum sqlbox_op op, size_t srcid, size_t pstmt, size_t psz, 
+	const struct sqlbox_parm *ps)
 {
 	size_t		 pos = 0, bufsz = SQLBOX_FRAME, i;
 	uint32_t	 val;
@@ -97,6 +98,10 @@ sqlbox_exec_inner(struct sqlbox *box, enum sqlbox_op op, size_t srcid,
 	memcpy(buf + pos, (char *)&val, sizeof(uint32_t));
 	pos += sizeof(uint32_t);
 
+	val = htole32(allow_cstep);
+	memcpy(buf + pos, (char *)&val, sizeof(uint32_t));
+	pos += sizeof(uint32_t);
+
 	val = htole32(pstmt);
 	memcpy(buf + pos, (char *)&val, sizeof(uint32_t));
 	pos += sizeof(uint32_t);
@@ -129,7 +134,7 @@ sqlbox_exec_async(struct sqlbox *box, size_t srcid,
 	size_t pstmt, size_t psz, const struct sqlbox_parm *ps)
 {
 
-	if (!sqlbox_exec_inner(box,
+	if (!sqlbox_exec_inner(box, 0,
 	    SQLBOX_OP_EXEC_ASYNC, srcid, pstmt, psz, ps)) {
 		sqlbox_warnx(&box->cfg, "exec-async: sqlbox_exec_inner");
 		return 0;
@@ -139,12 +144,32 @@ sqlbox_exec_async(struct sqlbox *box, size_t srcid,
 }
 
 enum sqlbox_code
+sqlbox_cexec(struct sqlbox *box, size_t srcid,
+	size_t pstmt, size_t psz, const struct sqlbox_parm *ps)
+{
+	uint32_t	 val;
+
+	if (!sqlbox_exec_inner(box, 1,
+	    SQLBOX_OP_EXEC_SYNC, srcid, pstmt, psz, ps)) {
+		sqlbox_warnx(&box->cfg, "cexec: sqlbox_exec_inner");
+		return SQLBOX_CODE_ERROR;
+	}
+
+	if (!sqlbox_read(box, (char *)&val, sizeof(uint32_t))) {
+		sqlbox_warnx(&box->cfg, "exec-sync: sqlbox_read");
+		return SQLBOX_CODE_ERROR;
+	}
+
+	return (enum sqlbox_code)val;
+}
+
+enum sqlbox_code
 sqlbox_exec(struct sqlbox *box, size_t srcid,
 	size_t pstmt, size_t psz, const struct sqlbox_parm *ps)
 {
 	uint32_t	 val;
 
-	if (!sqlbox_exec_inner(box, 
+	if (!sqlbox_exec_inner(box, 0,
 	    SQLBOX_OP_EXEC_SYNC, srcid, pstmt, psz, ps)) {
 		sqlbox_warnx(&box->cfg, "exec-sync: sqlbox_exec_inner");
 		return SQLBOX_CODE_ERROR;
@@ -165,8 +190,7 @@ sqlbox_exec(struct sqlbox *box, size_t srcid,
  * Return the allocated statement on success, NULL on failure.
  */
 static enum sqlbox_code
-sqlbox_op_exec(struct sqlbox *box, int allow_cstep,
-	const char *buf, size_t sz)
+sqlbox_op_exec(struct sqlbox *box, const char *buf, size_t sz)
 {
 	size_t	 		 idx, cols;
 	ssize_t			 parmsz = -1;
@@ -175,11 +199,18 @@ sqlbox_op_exec(struct sqlbox *box, int allow_cstep,
 	struct sqlbox_pstmt	*pst = NULL;
 	struct sqlbox_parm	*parms = NULL;
 	enum sqlbox_code	 code;
+	int			 allow_cstep;
 
-	/* Read the source identifier. */
+	/* 
+	 * Read the source identifier, whether we can have constraints,
+	 * and the statement identifier. 
+	 */
 
-	if (sz < sizeof(uint32_t))
-		goto badframe;
+	if (sz < sizeof(uint32_t) * 3) {
+		sqlbox_warnx(&box->cfg, "exec: bad frame size");
+		return SQLBOX_CODE_ERROR;
+	}
+
 	db = sqlbox_db_find(box, le32toh(*(uint32_t *)buf));
 	if (db == NULL) {
 		sqlbox_warnx(&box->cfg, "exec: sqlbox_db_find");
@@ -188,10 +219,10 @@ sqlbox_op_exec(struct sqlbox *box, int allow_cstep,
 	buf += sizeof(uint32_t);
 	sz -= sizeof(uint32_t);
 
-	/* Read and validate the statement identifier. */
+	allow_cstep = le32toh(*(uint32_t *)buf);
+	buf += sizeof(uint32_t);
+	sz -= sizeof(uint32_t);
 
-	if (sz < sizeof(uint32_t))
-		goto badframe;
 	idx = le32toh(*(uint32_t *)buf);
 	buf += sizeof(uint32_t);
 	sz -= sizeof(uint32_t);
@@ -221,8 +252,15 @@ sqlbox_op_exec(struct sqlbox *box, int allow_cstep,
 	}
 	assert(parmsz >= 0);
 
+	/*
+	 * If we have no parameters, short-circuit into using sqlite3's
+	 * "exec" function instead of the whole cycle of preparation,
+	 * stepping, and freeing.
+	 */
+
 	if (parmsz == 0) {
-		code = sqlbox_wrap_exec(box, db, pst, allow_cstep);
+		code = sqlbox_wrap_exec
+			(box, db, pst, allow_cstep);
 		if (code == SQLBOX_CODE_ERROR)
 			sqlbox_warnx(&box->cfg, 
 				"%s: exec: sqlbox_wrap_exec", 
@@ -262,9 +300,6 @@ sqlbox_op_exec(struct sqlbox *box, int allow_cstep,
 	}
 
 	return code;
-badframe:
-	sqlbox_warnx(&box->cfg, "exec: bad frame size");
-	return SQLBOX_CODE_ERROR;
 }
 
 int
@@ -273,7 +308,7 @@ sqlbox_op_exec_sync(struct sqlbox *box, const char *buf, size_t sz)
 	enum sqlbox_code	 code;
 	uint32_t		 ack;
 
-	code = sqlbox_op_exec(box, 0, buf, sz);
+	code = sqlbox_op_exec(box, buf, sz);
 	if (code == SQLBOX_CODE_ERROR) {
 		sqlbox_warnx(&box->cfg, "exec-sync: sqlbox_op_exec");
 		return 0;
@@ -293,7 +328,7 @@ sqlbox_op_exec_async(struct sqlbox *box, const char *buf, size_t sz)
 {
 	enum sqlbox_code	 code;
 
-	code = sqlbox_op_exec(box, 0, buf, sz);
+	code = sqlbox_op_exec(box, buf, sz);
 	if (code == SQLBOX_CODE_ERROR) {
 		sqlbox_warnx(&box->cfg, "exec-async: sqlbox_op_exec");
 		return 0;

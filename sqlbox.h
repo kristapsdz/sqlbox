@@ -228,6 +228,8 @@ struct sqlbox	*sqlbox_alloc(struct sqlbox_cfg *);
 int		 sqlbox_close(struct sqlbox *, size_t);
 const struct sqlbox_parmset
 		*sqlbox_cstep(struct sqlbox *, size_t);
+enum sqlbox_code sqlbox_cexec(struct sqlbox *, size_t, size_t, 
+			size_t, const struct sqlbox_parm *);
 int		 sqlbox_exec_async(struct sqlbox *, size_t, size_t, 
 			size_t, const struct sqlbox_parm *);
 enum sqlbox_code sqlbox_exec(struct sqlbox *, size_t, size_t, 

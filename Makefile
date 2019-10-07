@@ -20,6 +20,8 @@ TESTS	 = test-alloc-bad-defrole \
 	   test-alloc-role \
 	   test-alloc-src \
 	   test-alloc-stmt \
+	   test-cexec \
+	   test-cexec-noparms \
 	   test-close \
 	   test-close-bad-id \
 	   test-close-bad-role \
@@ -36,7 +38,9 @@ TESTS	 = test-alloc-bad-defrole \
 	   test-exec-bad-src \
 	   test-exec-bad-zero-id \
 	   test-exec-constraint \
+	   test-exec-constraint-noparms \
 	   test-exec-create-insert \
+	   test-exec-create-insert-noparms \
 	   test-exec-select \
 	   test-exec-zero-id \
 	   test-finalise \

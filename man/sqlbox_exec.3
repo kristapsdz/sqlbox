@@ -18,6 +18,7 @@
 .Dt SQLBOX_EXEC 3
 .Os
 .Sh NAME
+.Nm sqlbox_cexec ,
 .Nm sqlbox_exec ,
 .Nm sqlbox_exec_async
 .Nd execute a statement with bound parameters
@@ -26,6 +27,14 @@
 .Sh SYNOPSIS
 .In stddef.h
 .In sqlbox.h
+.Ft enum sqlbox_code
+.Fo sqlbox_cexec
+.Fa "struct sqlbox *box"
+.Fa "size_t src"
+.Fa "size_t idx"
+.Fa "size_t psz"
+.Fa "const struct sqlbox_parm *ps"
+.Fc
 .Ft enum sqlbox_code
 .Fo sqlbox_exec
 .Fa "struct sqlbox *box"
@@ -62,6 +71,11 @@ was accessed, leaving an explicit check to
 or implicit with the next
 .Fa box
 operation.
+In the synchronous case,
+.Fn sqlbox_cexc
+additionally allows for constraint violations, which are otherwise
+considered an error.
+There is no asynchronous version of this function.
 .Pp
 The
 .Fa idx
@@ -131,6 +145,11 @@ statement could not be executed, or the database raises errors.
 Otherwise it returns
 .Dv SQLBOX_CODE_OK ,
 including if the statement returns rows (which are discarded).
+In addition to these,
+.Fn sqlbox_cexec
+will also return
+.Dv SQLBOX_CODE_CONSTRAINT
+on constraint violation, which does not signify an error.
 .Pp
 .Fn sqlbox_exec_async
 returns zero if strings are not NUL-terminated at their size (if
