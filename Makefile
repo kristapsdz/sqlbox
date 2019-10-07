@@ -1,3 +1,5 @@
+.SUFFIXES: .png .dat
+
 include Makefile.configure
 
 VMAJOR	!= grep 'define	SQLBOX_VMAJOR' sqlbox.h | cut -f3
@@ -12,7 +14,9 @@ TESTS	 = test-alloc-bad-defrole \
 	   test-alloc-bad-src \
 	   test-alloc-bad-stmt \
 	   test-alloc-defrole \
+	   test-alloc-empty-stmt \
 	   test-alloc-null-source \
+	   test-alloc-null-stmt \
 	   test-alloc-role \
 	   test-alloc-src \
 	   test-alloc-stmt \
@@ -127,9 +131,9 @@ OBJS	 = alloc.o \
 	   step.o \
 	   transaction.o \
 	   warn.o
-PERFDATS = perf-full-cycle.dat \
-	   perf-prep-insert-final.dat \
-	   perf-rebind.dat
+PERFPNGS = perf-full-cycle.png \
+	   perf-prep-insert-final.png \
+	   perf-rebind.png
 PERFS	 = perf-full-cycle-ksql \
 	   perf-full-cycle-sqlbox \
 	   perf-full-cycle-sqlite3 \
@@ -144,7 +148,7 @@ CPPFLAGS += -I/usr/local/include
 
 all: libsqlbox.a
 
-perf: $(PERFDATS)
+perf: $(PERFPNGS)
 
 libsqlbox.a: $(OBJS) compats.o
 	$(AR) rs $@ $(OBJS) compats.o
@@ -155,6 +159,8 @@ $(OBJS): sqlbox.h extern.h
 
 $(TESTS): libsqlbox.a regress/regress.h
 	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ regress/$*.c compats.o $(LDFLAGS) libsqlbox.a -lsqlite3 -lm
+
+$(PERFPNGS): perf.gnuplot
 
 .for test in $(TESTS)
 ${test}: regress/${test}.c
@@ -176,7 +182,7 @@ ${perf}-sqlite3: perf/${perf}-sqlite3.c
 
 clean:
 	rm -f libsqlbox.a compats.o $(OBJS) $(TESTS) $(PERFS)
-	rm -f $(PERFS) $(PERFDATS)
+	rm -f $(PERFS) $(PERFPNGS) *.dat
 
 distclean: clean
 	rm -f config.h config.log Makefile.configure
@@ -193,3 +199,6 @@ regress: $(TESTS)
 		fi; \
 		set -e ; \
 	done
+
+.dat.png:
+	gnuplot -c perf.gnuplot $< $@

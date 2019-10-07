@@ -152,8 +152,12 @@ sqlbox_cfg_vrfy(const struct sqlbox_cfg *cfg)
 
 	for (i = 0; i < cfg->stmts.stmtsz; i++)
 		if (cfg->stmts.stmts[i].stmt == NULL) {
-			sqlbox_warnx(cfg, "statement %zu "
-				"has NULL statement", i);
+			sqlbox_warnx(cfg, 
+				"statement %zu is NULL", i);
+			return 0;
+		} else if (cfg->stmts.stmts[i].stmt[0] == '\0') {
+			sqlbox_warnx(cfg, 
+				"statement %zu is empty", i);
 			return 0;
 		}
 
