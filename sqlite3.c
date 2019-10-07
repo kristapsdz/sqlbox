@@ -36,7 +36,7 @@
  * Returns the statement or NULL on failure.
  */
 sqlite3_stmt *
-sqlbox_wrap_prepare(struct sqlbox *box, struct sqlbox_db *db,
+sqlbox_wrap_prep(struct sqlbox *box, struct sqlbox_db *db,
 	const struct sqlbox_pstmt *pst)
 {
 	sqlite3_stmt	*stmt;
@@ -74,6 +74,14 @@ again:
 	return NULL;
 }
 
+/*
+ * Step through statement.
+ * Returns SQLBOX_CODE_OK on success, SQLBOX_CODE_CONSTRAINT if cstep is
+ * non-zero and there's a constraint violation, or SQLBOX_CODE_ERROR
+ * otherwise.
+ * If there are columns in the return of the SQL statement, this sets
+ * "cols" but otherwise returns SQLBOX_CODE_OK.
+ */
 enum sqlbox_code
 sqlbox_wrap_step(struct sqlbox *box, struct sqlbox_db *db,
 	const struct sqlbox_pstmt *pst, sqlite3_stmt *stmt,
@@ -148,4 +156,44 @@ sqlbox_wrap_finalise(struct sqlbox *box, struct sqlbox_db *db,
 	sqlbox_debug(&box->cfg, "%s: sqlite3_finalize: %s",
 		db->src->fname, pst->stmt);
 	(void)sqlite3_finalize(stmt);
+}
+
+enum sqlbox_code
+sqlbox_wrap_exec(struct sqlbox *box, struct sqlbox_db *db,
+	const struct sqlbox_pstmt *pst, int cstep)
+{
+	size_t	 attempt = 0;
+
+	assert(pst != NULL && pst->stmt != NULL);
+	sqlbox_debug(&box->cfg, "%s: sqlite3_exec: %s",
+		db->src->fname, pst->stmt);
+
+again_step:
+	switch (sqlite3_exec(db->db, pst->stmt, NULL, NULL, NULL)) {
+	case SQLITE_BUSY:
+		/*
+		 * FIXME: according to sqlite3_step(3), this
+		 * should return if we're in a transaction.
+		 */
+		sqlbox_sleep(attempt++);
+		goto again_step;
+	case SQLITE_LOCKED:
+	case SQLITE_PROTOCOL:
+		sqlbox_sleep(attempt++);
+		goto again_step;
+	case SQLITE_OK:
+		return SQLBOX_CODE_OK;
+	case SQLITE_CONSTRAINT:
+		if (cstep)
+			return SQLBOX_CODE_CONSTRAINT;
+		/* FALLTHROUGH */
+	default:
+		break;
+	}
+
+	sqlbox_warnx(&box->cfg, "%s: sqlite3_exec: %s", 
+		db->src->fname, sqlite3_errmsg(db->db));
+	sqlbox_warnx(&box->cfg, "%s: statement: %s", 
+		db->src->fname, pst->stmt);
+	return SQLBOX_CODE_ERROR;
 }

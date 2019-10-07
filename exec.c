@@ -221,47 +221,47 @@ sqlbox_op_exec(struct sqlbox *box, int allow_cstep,
 	}
 	assert(parmsz >= 0);
 
-	/* Prepare the statement. */
+	if (parmsz == 0) {
+		code = sqlbox_wrap_exec(box, db, pst, allow_cstep);
+		if (code == SQLBOX_CODE_ERROR)
+			sqlbox_warnx(&box->cfg, 
+				"%s: exec: sqlbox_wrap_exec", 
+				db->src->fname);
+	} else {
+		if ((stmt = sqlbox_wrap_prep(box, db, pst)) == NULL) {
+			sqlbox_warnx(&box->cfg, 
+				"%s: exec: sqlbox_wrap_prep", 
+				db->src->fname);
+			free(parms);
+			return SQLBOX_CODE_ERROR;
+		}
 
-	if ((stmt = sqlbox_wrap_prepare(box, db, pst)) == NULL) {
-		sqlbox_warnx(&box->cfg, "%s: exec: "
-			"sqlbox_wrap_prepare", db->src->fname);
+		if (!sqlbox_parm_bind
+		    (box, db, pst, stmt, parms, parmsz)) {
+			sqlbox_warnx(&box->cfg, 
+				"%s: sqlbox_parm_bind",
+				db->src->fname);
+			sqlbox_wrap_finalise(box, db, pst, stmt);
+			free(parms);
+			return SQLBOX_CODE_ERROR;
+		}
 		free(parms);
-		return SQLBOX_CODE_ERROR;
-	}
 
-	/* Now bind parameters. */
-
-	if (!sqlbox_parm_bind(box, db, pst, stmt, parms, parmsz)) {
-		sqlbox_warnx(&box->cfg, "%s: sqlbox_parm_bind",
-			db->src->fname);
+		code = sqlbox_wrap_step(box, db, 
+			pst, stmt, &cols, allow_cstep);
+		if (code == SQLBOX_CODE_ERROR)
+			sqlbox_warnx(&box->cfg, 
+				"%s: exec: sqlbox_wrap_step", 
+				db->src->fname);
+		else if (cols > 0)
+			sqlbox_warnx(&box->cfg, 
+				"%s: exec: sqlbox_wrap_step: "
+				"ignoring %zu columns", 
+				db->src->fname, cols);
 		sqlbox_wrap_finalise(box, db, pst, stmt);
-		free(parms);
-		return SQLBOX_CODE_ERROR;
 	}
-	free(parms);
 
-	/*
-	 * Now step through the statement.
-	 * Only accept the constraint (conditionally) and ok/row, which
-	 * it merges both into an ok.
-	 */
-
-	code = sqlbox_wrap_step
-		(box, db, pst, stmt, &cols, allow_cstep);
-
-	if (code == SQLBOX_CODE_ERROR)
-		sqlbox_warnx(&box->cfg, "%s: exec: "
-			"sqlbox_wrap_step", db->src->fname);
-	else if (cols > 0)
-		sqlbox_warnx(&box->cfg, "%s: exec: sqlbox_wrap_step: "
-			"ignoring %zu columns", db->src->fname, cols);
-
-	/* Finally, finalise the statement. */
-
-	sqlbox_wrap_finalise(box, db, pst, stmt);
 	return code;
-
 badframe:
 	sqlbox_warnx(&box->cfg, "exec: bad frame size");
 	return SQLBOX_CODE_ERROR;

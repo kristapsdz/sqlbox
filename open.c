@@ -54,17 +54,21 @@ size_t
 sqlbox_open(struct sqlbox *box, size_t src)
 {
 	uint32_t	 v = htole32(src), ack;
+	size_t		 id;
 
 	if (!sqlbox_write_frame
 	    (box, SQLBOX_OP_OPEN_SYNC, (char *)&v, sizeof(uint32_t))) {
 		sqlbox_warnx(&box->cfg, "open: sqlbox_write_frame");
 		return 0;
-	}
-	if (!sqlbox_read(box, (char *)&ack, sizeof(uint32_t))) {
+	} else if (!sqlbox_read(box, (char *)&ack, sizeof(uint32_t))) {
 		sqlbox_warnx(&box->cfg, "open: sqlbox_read");
 		return 0;
+	} else if ((id = le32toh(ack)) == 0) {
+		sqlbox_warnx(&box->cfg, "open: identifier is zero!?");
+		return 0;
 	}
-	return (size_t)le32toh(ack);
+
+	return id;
 }
 
 int
@@ -79,7 +83,6 @@ sqlbox_open_async(struct sqlbox *box, size_t src)
 	}
 	return 1;
 }
-
 
 /*
  * Attempt to open a database.
@@ -128,6 +131,7 @@ sqlbox_op_open(struct sqlbox *box, const char *buf, size_t sz, int sync)
 
 	TAILQ_INIT(&db->stmtq);
 	db->id = ++box->lastid;
+	assert(db->id != 0);
 	db->src = &box->cfg.srcs.srcs[idx];
 	db->idx = idx;
 
