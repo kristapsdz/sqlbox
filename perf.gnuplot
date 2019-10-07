@@ -27,7 +27,9 @@ set tics out nomirror
 set style line 12 lc rgb '#808080' lt 0 lw 1
 set grid back ls 12
 set key left top
-set xlabel 'time'
-set ylabel 'iterations'
+set xlabel 'iterations'
+set ylabel 'time'
+
+set yrange [0:*]
 
 plot ARG1 u 1:2 w lp ls 1 ti 'ksql', '' u 1:4 w lp ls 2 ti 'sqlbox', '' u 1:6 w lp ls 3 ti 'sqlite3', '' u 1:2:3 w yerrorbars ls 1 notitle, '' u 1:4:5 w yerrorbars ls 2 notitle, '' u 1:6:7 w yerrorbars ls 3 notitle

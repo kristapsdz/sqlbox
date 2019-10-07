@@ -90,11 +90,11 @@ main(int argc, char *argv[])
 		parms[1].iparm = arc4random();
 		parms[2].iparm = arc4random();
 		parms[3].iparm = arc4random();
-		if (!(stmtid = sqlbox_prepare_bind(p, dbid, 1, 4, parms)))
+		if (!sqlbox_prepare_bind_async(p, dbid, 1, 4, parms))
 			errx(EXIT_FAILURE, "sqlbox_prepare_bind");
-		if (sqlbox_step(p, stmtid) == NULL)
+		if (sqlbox_step(p, 0) == NULL)
 			errx(EXIT_FAILURE, "sqlbox_step");
-		if (!sqlbox_finalise(p, stmtid))
+		if (!sqlbox_finalise(p, 0))
 			errx(EXIT_FAILURE, "sqlbox_finalise");
 	}
 

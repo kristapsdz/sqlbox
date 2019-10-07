@@ -1,0 +1,21 @@
+body				{ font-family: 'Alegreya Sans', sans-serif; }
+figcaption			{ font-size: smaller;
+				  line-height: 1.3em;
+				  color: #666; }
+h2				{ text-align: center;
+			  	  font-weight: normal;
+				  font-size: 120%;
+				  font-variant: small-caps; }
+img				{ margin: 0 auto;
+				  display: block; }
+.perf img			{ width: 100%;
+				  max-width: 640px; }
+.intro img			{ width: 100%;
+				  max-width: 300px; }
+figure				{ margin-left: 0;
+				  margin-right: 0; }
+.nm				{ color: #000;
+				  font-weight: 500; }
+nav				{ text-align: center;
+				  font-size: smaller;
+				  margin-bottom: 1rem; }

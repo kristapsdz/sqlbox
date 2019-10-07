@@ -1,0 +1,26 @@
+strict digraph G {
+	rankdir="LR";
+	splines="line";
+	edge[arrowsize=0.75];
+
+	{ rank=same;
+	  node[style=filled, fillcolor=lightgrey];
+	  a0[label="sqlbox_alloc"];
+	  a1[label="pledge", color=red];
+	  a2[label="sqlbox_open", color=red];
+	  a3[label="sqlite3_open", color=red]; }
+
+	{ rank=same;
+	  c0[label="sqlbox_op_alloc"];
+	  c2[label="sqlbox_op_open"];
+	  c3[label="sqlite3_open"];
+	  c4[label="database"]; }
+
+	a0 -> a1 -> a2 -> a3;
+	c0 -> c2 -> c3 -> c4;
+
+	a0 -> c0;
+	a2 -> c2[color=green];
+	a3 -> c4[color=red];
+}
+

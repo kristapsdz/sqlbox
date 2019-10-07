@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" prefix="og: http://ogp.me/ns#">
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta charset="utf-8" /> 
+		<title>SQLbox: yet another SQLite wrapper</title>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" />
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Alegreya+Sans:400,400italic,500" />
+		<link rel="stylesheet" href="https://bsd.lv/css/style.css" />
+		<link rel="stylesheet" href="index.css" />
+	</head>
+	<body itemscope="itemscope" itemtype="http://schema.org/SoftwareApplication">
+		<nav>
+			BSD.lv tools for BCHS: 
+			<a href="https://kristaps.bsd.lv/kcgi">kcgi</a>, 
+			<a href="https://kristaps.bsd.lv/sqlbox">sqlbox</a>, 
+			<a href="https://kristaps.bsd.lv/openradtool">openradtool</a>
+		</nav>
+		<article class="text">
+			<section>
+				<h2>
+					introduction
+				</h2>
+				<figure class="intro">
+					<img src="index.svg" />
+				</figure>
+				<p>
+					<span class="nm">sqlbox</span> is an 
+					<a href="http://opensource.org/licenses/ISC" rel="license">open source</a> C/C++ database access library
+					at this time limited to <a href="https://www.sqlite.org">sqlite3</a> databases.
+					It features considerable security benefits over sqlite3's 
+					<a href="https://sqlite.org/c3ref/intro.html">C/C++ API</a>
+					at a slight cost of performance.
+					The library is well-documented and has all of its behaviour checked with a large set of regression
+					tests.
+					It exists to replace
+					<a href="https://kristaps.bsd.lv">ksql</a>
+					with a higher-performance and simpler implementation, and like ksql, is designed for use with
+					<a href="https://man.openbsd.org/pledge.2">pledge</a>.
+				</p>
+				<p>
+					Some features&#8230;
+				</p>
+				<ul>
+					<li>
+						databases managed in a secure child process over IPC: application crashes won't create
+						inconsistent state, nor will application exploits allow direct manipulation of database
+					</li>
+					<li>
+						role-based access control on a per-statement and per-source (opening and closing) basis enforced
+						in child process, limiting application database access to role purview
+					</li>
+					<li>
+						in-child filter capabilities allowing for selective scrambling or anonymisation of queries,
+						allowing specific roles (or access in general) to filtered data
+					</li>
+					<li>
+						high-speed <q>asynchronous mode</q> allows all the security benefits with only the slightest
+						performance penalty in occassional interprocess communication
+					</li>
+				</ul>
+				<p>
+					The library guarantees data security when used with OpenBSD's pledge (and/or unveil) in the calling
+					application.
+				</p>
+			</section>
+			<section>
+				<h2>
+					performance
+				</h2>
+				<p>
+					The following are a series of performance measurements between raw 
+					<a href="https://www.sqlite.org">sqlite3</a> databases.
+					using the 
+					<a href="https://sqlite.org/c3ref/intro.html">C/C++ API</a>,
+					<a href="https://kristaps.bsd.lv/ksql">ksql</a>,
+					and <span class="nm">sqlbox</span>.
+				</p>
+				<figure class="perf">
+					<img src="perf-full-cycle.png" />
+					<figcaption>
+						A full cycle of opening a database, creating a table, and inserting a single row of data (four
+						integers, to be precise).
+						This is re-run for the number of iterations on the x-axis.
+						Since these operations use asynchronous <span class="nm">sqlbox</span>, the performance penalty
+						is only for interprocess communication.
+					</figcaption>
+				</figure>
+				<figure class="perf">
+					<img src="perf-prep-insert-final.png" />
+					<figcaption>
+						A series of statement preparations, binding parameters to the query, and executing the query.
+						The step function is synchronous and constitutes the majority of the delay in the 
+						<span class="nm">sqlbox</span> case.
+					</figcaption>
+				</figure>
+				<figure class="perf">
+					<img src="perf-rebind.png" />
+					<figcaption>
+						This prepares then, in a loop, rebinds and steps a statement.
+						The step function, again, is synchronous and constitutes the majority of overhead.
+					</figcaption>
+				</figure>
+				<p>
+					In general, the slowness of <a href="https://kristaps.bsd.lv/ksql">ksql</a> is that each operation
+					involves a synchronous read and write between server and client.
+					In <span class="nm">sqlbox</span>, there are asynchronous versions of most functions to significantly
+					reduce contention.
+					Moreover, the wire format is optimised for one unfragmented read (or write) in the general case.
+
+				</p>
+			</section>
+		</article>
+	</body>
+</html>

@@ -1,4 +1,4 @@
-.SUFFIXES: .png .dat
+.SUFFIXES: .png .dat .xml .html .dot .svg
 
 include Makefile.configure
 
@@ -152,6 +152,8 @@ CPPFLAGS += -I/usr/local/include
 
 all: libsqlbox.a
 
+www: index.html perf index.svg
+
 perf: $(PERFPNGS)
 
 libsqlbox.a: $(OBJS) compats.o
@@ -186,7 +188,7 @@ ${perf}-sqlite3: perf/${perf}-sqlite3.c
 
 clean:
 	rm -f libsqlbox.a compats.o $(OBJS) $(TESTS) $(PERFS)
-	rm -f $(PERFS) $(PERFPNGS) *.dat
+	rm -f $(PERFS) $(PERFPNGS) index.html index.svg
 
 distclean: clean
 	rm -f config.h config.log Makefile.configure
@@ -220,3 +222,9 @@ regress_all: $(TESTS)
 
 .dat.png:
 	gnuplot -c perf.gnuplot $< $@
+	
+.xml.html:
+	cp -f $< $@
+
+.dot.svg:
+	dot -Tsvg $< | xsltproc --novalid notugly.xsl - >$@
