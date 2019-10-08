@@ -43,6 +43,27 @@ array of
 .Xr sqlbox_alloc 3
 at
 .Fa index .
+This structure has the following members:
+.Bl -tag -width Ds
+.It Va fname
+The database filename,
+.Qq :memory:\& ,
+for an in-memory database, or the empty string for a private on-disc
+database.
+May not be
+.Dv NULL .
+The latter are only available until the database is closed.
+Remote databases are not supported.
+.It Va mode
+One of
+.Dv SQLBOX_SRC_RO
+for a readonly source,
+.Dv SQLBOX_SRC_RW
+for readable and writable, and
+.Dv SQLBOX_SRC_RWC
+to also be created.
+In-memory databases need not provide the creation bit.
+.El
 .Pp
 The synchronous
 .Fn sqlbox_open
@@ -53,28 +74,6 @@ only returns whether
 was accessed.
 It is used for implicit identifiers (i.e., an identifier of zero) in
 subsequent operations on the source.
-.Pp
-The source has filename
-.Va fname
-and an open mode
-.Va mode .
-The filename may be
-.Qq :memory:\& ,
-for an in-memory database or the empty string for a private on-disc
-database.
-Both of these designations are available until the database is closed.
-Remote databases documented in
-.Xr sqlite3_open16 3
-are not currently supported.
-.Pp
-The mode may be
-.Dv SQLBOX_SRC_RO
-for a readonly source,
-.Dv SQLBOX_SRC_RW
-for readable and writable, and
-.Dv SQLBOX_SRC_RWC
-to also be created.
-Note that in-memory databases need not provide the creation bit.
 .Pp
 If the source is not closed with
 .Xr sqlbox_close 3 ,

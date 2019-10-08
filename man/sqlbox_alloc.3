@@ -49,10 +49,16 @@ has the following members:
 All SQL statements required by all sources.
 .It Vt roles
 Roles and role assignment to statements, sources, and role transition.
+Described in
+.Xr sqlbox_role 3 .
 .It Vt srcs
 Database sources (in-memory and on-disc).
+Described in
+.Xr sqlbox_open 3 .
 .It Vt msg
 Error and debug logging.
+Described in
+.Xr sqlbox_msg_set_dat 3 .
 .El
 .Pp
 A common idiom is to fill the entire structure with

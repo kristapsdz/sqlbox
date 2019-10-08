@@ -1,0 +1,137 @@
+.\"	$Id$
+.\"
+.\" Copyright (c) 2019 Kristaps Dzonsons <kristaps@bsd.lv>
+.\"
+.\" Permission to use, copy, modify, and distribute this software for any
+.\" purpose with or without fee is hereby granted, provided that the above
+.\" copyright notice and this permission notice appear in all copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\" WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\" ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\" WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+.\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+.\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd $Mdocdate$
+.Dt SQLBOX_MSG_SET_DAT 3
+.Os
+.Sh NAME
+.Nm sqlbox_msg_set_dat
+.Nd set message private data
+.Sh LIBRARY
+.Lb sqlbox
+.Sh SYNOPSIS
+.In stddef.h
+.In sqlbox.h
+.Ft void
+.Fo sqlbox_msg_set_dat
+.Fa "struct sqlbox *box"
+.Fa "const void *dat"
+.Fa "size_t sz"
+.Fc
+.Sh DESCRIPTION
+Sets the ancillary data
+.Va dat
+of size
+.Va sz
+used by the logging functions assigned in
+.Vt struct sqlbox_msg ,
+replacing whatever was passed to
+.Xr sqlbox_alloc 3 .
+The fields of
+.Vt struct sqlbox_msg
+are as follows:
+.Bl -tag -width Ds
+.It Va func
+Passed the message and
+.Va dat .
+Messages are NUL-terminated but not newline terminated.
+The callbacks are run within the protected child process, so they should
+.Em not
+include any side effects that might affect the database.
+Functions may not assume to have any network or file-system resources
+available.
+.It Va func_short
+A short version of
+.Va func
+useful for passing
+.Xr warnx 3
+directly.
+.It Va dat
+Auxiliary data passed to
+.Va func .
+.El
+.Pp
+The given binary data
+.Va dat
+is of size
+.Va sz .
+If passing strings,
+.Va sz
+must include the NUL terminator.
+.Pa
+Passing a size of 0 sets
+.Va dat
+to
+.Dv NULL .
+.Sh RETURN VALUES
+Returns non-zero on success or zero if communication with
+.Fa box
+fails.
+.Pp
+If
+.Fn sqlbox_msg_set_dat
+fails,
+.Fa box
+is no longer accessible beyond
+.Xr sqlbox_ping 3
+and
+.Xr sqlbox_free 3 .
+.\" For sections 2, 3, and 9 function return values only.
+.\" .Sh ENVIRONMENT
+.\" For sections 1, 6, 7, and 8 only.
+.\" .Sh FILES
+.\" .Sh EXIT STATUS
+.\" For sections 1, 6, and 8 only.
+.Sh EXAMPLES
+Let a long-form function be as follows:
+.Bd -literal
+static void
+func(const char *buf, void *arg)
+{
+  warnx("User %s: %s", (const char *)arg, buf);
+}
+.Ed
+.Pp
+This function may have its pointer manipulated as follows:
+.Bd -literal
+struct sqlbox *p;
+struct sqlbox_cfg cfg;
+const char *user;
+
+memset(&cfg, 0, sizeof(struct sqlbox_cfg));
+cfg.msg.func = func;
+cfg.msg.dat = (char *)"-";
+
+if ((p = sqlbox_alloc(&cfg)) == NULL)
+  errx(EXIT_FAILURE, "sqlbox_alloc");
+/* Now the prefix "-" is used. */
+/* Get the username from somewhere... */
+user = get_user();
+if (!sqlbox_msg_set_dat(p, user, strlen(user) + 1))
+  errx(EXIT_FAILURE, "sqlbox_msg_set_dat");
+.\" .Sh DIAGNOSTICS
+.\" For sections 1, 4, 6, 7, 8, and 9 printf/stderr messages only.
+.\" .Sh ERRORS
+.\" For sections 2, 3, 4, and 9 errno settings only.
+.\" .Sh SEE ALSO
+.\" .Xr sqlbox_alloc 3
+.\" .Sh STANDARDS
+.\" .Sh HISTORY
+.\" .Sh AUTHORS
+.\" .Sh CAVEATS
+.\" .Sh BUGS
+.\" .Sh SECURITY CONSIDERATIONS
+.\" Not used in OpenBSD.

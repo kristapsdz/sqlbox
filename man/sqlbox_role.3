@@ -34,17 +34,64 @@
 Change the active role of
 .Fa box
 to
-.Fa role ,
-.Pp
+.Fa role .
 Changing to the current role has no effect.
-Roles are given in
-.Vt struct sqlbox_role
-to
+Roles are defined in
+.Vt struct sqlbox_roles
+as passed to
 .Xr sqlbox_alloc 3 .
-Role transition is given in the
-.Va roles
-array indicating which roles may transition into which other roles.
-The value for self-transition is ignored: self-transition is a noop.
+It has the following members:
+.Bl -tag -width Ds
+.It Va roles
+An array of roles, each role being identified by its index.
+For example, if
+.Va rolesz
+is 2, the first role (index 0) is role 0, the second role (index 1) is
+role 1.
+.It Va rolesz
+The number of roles.
+If zero, there are no roles and
+.Va defrole
+is ignored.
+.It Va defrole
+The default role if and only if
+.Va rolesz
+is non-zero, in which case it must be less than
+.Va rolesz .
+.El
+.Pp
+The resources available to each role are defined in
+.Vt struct sqlbox_role ,
+which has the following members:
+.Bl -tag -width Ds
+.It Va roles
+Which roles the given role may transition into.
+For example, an array of size 2 with values 0 and 1 would mean that the
+current role may transition into roles 0 and 1.
+The value for self-transition is ignored: self-transition is always
+allowed.
+.It Va rolesz
+Number of elements in
+.Va roles .
+.It Va stmts
+Which statement indices the given role may execute or prepare with
+.Xr sqlbox_exec 3
+and
+.Xr sqlbox_prepare_bind 3 ,
+respectively.
+.It Va stmtsz
+Number of elements in
+.Va stmts .
+.It Va srcs
+Which source indices the given role may open or close with
+.Xr sqlbox_open 3
+and
+.Xr sqlbox_close 3 ,
+respectively.
+.It Va srcsz
+Number of elements in
+.Va srcs .
+.El
 .Sh RETURN VALUES
 Returns zero if communication with
 .Fa box
@@ -98,6 +145,7 @@ struct sqlbox_role roles[] = {
     .stmtsz = 0,
     .srcsz = 0 }
 };
+
 memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 cfg.msg.func_short = warnx;
 cfg.roles.rolesz = 2;
