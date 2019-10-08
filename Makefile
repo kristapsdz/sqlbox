@@ -173,8 +173,8 @@ ${test}: regress/${test}.c
 .endfor
 
 .for perf in perf-prep-insert-final perf-rebind perf-full-cycle
-${perf}.dat: ${perf}-ksql ${perf}-sqlbox ${perf}-sqlite3 perf.sh
-	sh ./perf.sh ${perf} >$@
+#${perf}.dat: ${perf}-ksql ${perf}-sqlbox ${perf}-sqlite3 perf.sh
+#	sh ./perf.sh ${perf} >$@
 
 ${perf}-ksql: perf/${perf}-ksql.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-ksql.c $(LDFLAGS) -lksql -lsqlite3 -lm

@@ -11,7 +11,7 @@ img				{ margin: 0 auto;
 .perf img			{ width: 100%;
 				  max-width: 640px; }
 .intro img			{ width: 100%;
-				  max-width: 300px; }
+				  max-width: 1128px; }
 figure				{ margin-left: 0;
 				  margin-right: 0; }
 .nm				{ color: #000;
@@ -19,3 +19,4 @@ figure				{ margin-left: 0;
 nav				{ text-align: center;
 				  font-size: smaller;
 				  margin-bottom: 1rem; }
+pre, code			{ font-size: smaller; }

@@ -21,30 +21,30 @@
 				<h2>
 					introduction
 				</h2>
-				<figure class="intro">
-					<img src="index.svg" />
-				</figure>
 				<p>
 					<span class="nm">sqlbox</span> is an 
-					<a href="http://opensource.org/licenses/ISC" rel="license">open source</a> C/C++ database access library
-					at this time limited to <a href="https://www.sqlite.org">sqlite3</a> databases.
-					It features considerable security benefits over sqlite3's 
-					<a href="https://sqlite.org/c3ref/intro.html">C/C++ API</a>
-					at a slight cost of performance.
-					The library is well-documented and has all of its behaviour checked with a large set of regression
-					tests.
-					It exists to replace
-					<a href="https://kristaps.bsd.lv">ksql</a>
-					with a higher-performance and simpler implementation, and like ksql, is designed for use with
-					<a href="https://man.openbsd.org/pledge.2">pledge</a>.
+					<a href="http://opensource.org/licenses/ISC" rel="license">open source</a> C/C++ secure database access
+					library at this time limited to <a href="https://www.sqlite.org">sqlite3</a> databases.
+					(<a href="https://www.postgresql.org">postgresql</a> is in the planning phase.)
+					Instead of operating databases in-process, <span class="nm">sqlbox</span> uses a split-process approach.
+					When the caller uses <a href="https://man.openbsd.org/pledge.2">pledge</a> or similar, this brings
+					considerable security benefits at an acceptable cost of performance.
 				</p>
+				<figure class="intro">
+					<img src="index.svg" alt="operation of sqlbox" />
+					<figcaption>
+						Not only does this protect the database itself, it also allows fine-grained access controls and
+						other operations opaque to the caller.
+					</figcaption>
+				</figure>
 				<p>
 					Some features&#8230;
 				</p>
 				<ul>
 					<li>
-						databases managed in a secure child process over IPC: application crashes won't create
-						inconsistent state, nor will application exploits allow direct manipulation of database
+						databases managed in a child process over IPC: application crashes won't create inconsistent
+						state, nor will application exploits (if correctly 
+						<a href="https://man.openbsd.org/pledge.2">pledged</a>) allow direct data access
 					</li>
 					<li>
 						role-based access control on a per-statement and per-source (opening and closing) basis enforced
@@ -56,12 +56,16 @@
 					</li>
 					<li>
 						high-speed <q>asynchronous mode</q> allows all the security benefits with only the slightest
-						performance penalty in occassional interprocess communication
+						performance penalty in one-way interprocess communication
 					</li>
 				</ul>
 				<p>
-					The library guarantees data security when used with OpenBSD's pledge (and/or unveil) in the calling
-					application.
+					<span class="nm">sqlbox</span> is designed to update <a href="https://kristaps.bsd.lv">ksql</a>
+					with higher performance and a simpler implementation.
+					The API is not compatible, hence a new library.
+					The library is well-documented and has all of its behaviour checked with a large set of regression
+					tests.
+					It is a <a href="https://www.bsd.lv">BSD.lv</a> project.
 				</p>
 			</section>
 			<section>
@@ -75,9 +79,10 @@
 					<a href="https://sqlite.org/c3ref/intro.html">C/C++ API</a>,
 					<a href="https://kristaps.bsd.lv/ksql">ksql</a>,
 					and <span class="nm">sqlbox</span>.
+					For consistency, all databases in the performance analysis are opened as <code>:memory:</code>.
 				</p>
 				<figure class="perf">
-					<img src="perf-full-cycle.png" />
+					<img src="perf-full-cycle.png" alt="performance metric 1" />
 					<figcaption>
 						A full cycle of opening a database, creating a table, and inserting a single row of data (four
 						integers, to be precise).
@@ -87,7 +92,7 @@
 					</figcaption>
 				</figure>
 				<figure class="perf">
-					<img src="perf-prep-insert-final.png" />
+					<img src="perf-prep-insert-final.png" alt="performance metric 2" />
 					<figcaption>
 						A series of statement preparations, binding parameters to the query, and executing the query.
 						The step function is synchronous and constitutes the majority of the delay in the 
@@ -95,7 +100,7 @@
 					</figcaption>
 				</figure>
 				<figure class="perf">
-					<img src="perf-rebind.png" />
+					<img src="perf-rebind.png" alt="performance metric 3" />
 					<figcaption>
 						This prepares then, in a loop, rebinds and steps a statement.
 						The step function, again, is synchronous and constitutes the majority of overhead.

@@ -1,26 +1,36 @@
 strict digraph G {
-	rankdir="LR";
 	splines="line";
+	rankdir="LR";
+	newrank=true;
 	edge[arrowsize=0.75];
 
-	{ rank=same;
-	  node[style=filled, fillcolor=lightgrey];
+	subgraph cluster_1 {
+	  style=invis;
 	  a0[label="sqlbox_alloc"];
 	  a1[label="pledge", color=red];
 	  a2[label="sqlbox_open", color=red];
 	  a3[label="sqlite3_open", color=red]; }
 
-	{ rank=same;
-	  c0[label="sqlbox_op_alloc"];
-	  c2[label="sqlbox_op_open"];
-	  c3[label="sqlite3_open"];
-	  c4[label="database"]; }
+	subgraph cluster_0 {
+	  bgcolor=lightgrey;
+	  label="child process with filesystem access";
+	  node[group=right];
+	  c0[label="fork"];
+	  c1[label="poll"];
+	  c2[label="wakeup"];
+	  c3[label="sqlite3_open"]; }
+
+	db[label="database"; style=filled; bgcolor=lightgrey];
 
 	a0 -> a1 -> a2 -> a3;
-	c0 -> c2 -> c3 -> c4;
+	c0 -> c1 -> c2 -> c3;
 
-	a0 -> c0;
+	c3 -> db[color=green; constraint=false];
+	a3 -> db[color=red];
+
+	a0 -> c0[constraint=false];
 	a2 -> c2[color=green];
-	a3 -> c4[color=red];
+
+	{ rank=same; a0; c0; }
 }
 
