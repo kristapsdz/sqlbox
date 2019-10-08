@@ -32,6 +32,7 @@ enum	sqlbox_op {
 	SQLBOX_OP_EXEC_SYNC,
 	SQLBOX_OP_FINAL,
 	SQLBOX_OP_LASTID,
+	SQLBOX_OP_MSG_SET_DAT,
 	SQLBOX_OP_OPEN_ASYNC,
 	SQLBOX_OP_OPEN_SYNC,
 	SQLBOX_OP_PING,
@@ -98,6 +99,7 @@ struct	sqlbox {
 	int		  	 fd; /* comm channel or -1 */
 	size_t			 lastid; /* last db id */
 	pid_t		  	 pid; /* child or (pid_t)-1 */
+	int			 free_msg_dat; /* free sqlbox_msg dat? */
 };
 
 void	 sqlbox_sleep(size_t);
@@ -145,6 +147,7 @@ int	 sqlbox_op_exec_async(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_exec_sync(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_finalise(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_lastid(struct sqlbox *, const char *, size_t);
+int	 sqlbox_op_msg_set_dat(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_open_async(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_open_sync(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_ping(struct sqlbox *, const char *, size_t);

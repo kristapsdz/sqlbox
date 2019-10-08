@@ -237,6 +237,8 @@ enum sqlbox_code sqlbox_exec(struct sqlbox *, size_t, size_t,
 int		 sqlbox_finalise(struct sqlbox *, size_t);
 void		 sqlbox_free(struct sqlbox *);
 int		 sqlbox_lastid(struct sqlbox *, size_t, int64_t *);
+int		 sqlbox_msg_set_dat(struct sqlbox *, 
+			const void *, size_t);
 size_t		 sqlbox_open(struct sqlbox *, size_t);
 int		 sqlbox_open_async(struct sqlbox *, size_t);
 int		 sqlbox_ping(struct sqlbox *);

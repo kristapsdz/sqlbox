@@ -115,6 +115,9 @@ sqlbox_clear(struct sqlbox *box)
 		TAILQ_REMOVE(&box->stmtq, stmt, gentries);
 		sqlbox_stmt_free(stmt);
 	}
+
+	if (box->free_msg_dat)
+		free(box->cfg.msg.dat);
 }
 
 void

@@ -55,6 +55,8 @@ TESTS	 = test-alloc-bad-defrole \
 	   test-lastid-insert-implicit \
 	   test-lastid-noinserts \
 	   test-lastid-zero-id \
+	   test-msg_set_dat \
+	   test-msg_set_dat-null \
 	   test-open-async-bad-src \
 	   test-open-async-memory \
 	   test-open-bad-not-exist \

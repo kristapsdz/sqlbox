@@ -102,3 +102,35 @@ sqlbox_warn(const struct sqlbox_cfg *cfg, const char *fmt, ...)
 		cfg->msg.func_short(buf);
 }
 
+int
+sqlbox_msg_set_dat(struct sqlbox *box, const void *dat, size_t sz)
+{
+
+	if (!sqlbox_write_frame(box, 
+	    SQLBOX_OP_MSG_SET_DAT, dat, sz)) {
+		sqlbox_warnx(&box->cfg, 
+			"msg-set-dat: sqlbox_write_frame");
+		return 0;
+	}
+	return 1;
+}
+
+int
+sqlbox_op_msg_set_dat(struct sqlbox *box, const char *buf, size_t sz)
+{
+
+	if (box->free_msg_dat) {
+		free(box->cfg.msg.dat);
+		box->cfg.msg.dat = NULL;
+	}
+
+	if (sz > 0) {
+		box->cfg.msg.dat = malloc(sz);
+		memcpy(box->cfg.msg.dat, buf, sz);
+	} else
+		box->cfg.msg.dat = NULL;
+
+	box->free_msg_dat = 1;
+	return 1;
+}
+
