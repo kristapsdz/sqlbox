@@ -13,7 +13,7 @@
 		<nav>
 			BSD.lv tools for BCHS: 
 			<a href="https://kristaps.bsd.lv/kcgi">kcgi</a>, 
-			<a href="https://kristaps.bsd.lv/sqlbox">sqlbox</a>, 
+			<strong><a href="https://kristaps.bsd.lv/sqlbox">sqlbox</a></strong>, 
 			<a href="https://kristaps.bsd.lv/openradtool">openradtool</a>
 		</nav>
 		<article class="text">
@@ -37,9 +37,9 @@
 						other operations opaque to the caller.
 					</figcaption>
 				</figure>
-				<p>
-					Some features&#8230;
-				</p>
+				<h3>
+					some features&#8230;
+				</h3>
 				<ul>
 					<li>
 						databases managed in a child process over IPC: application crashes won't create inconsistent
@@ -62,9 +62,10 @@
 				<p>
 					<span class="nm">sqlbox</span> is designed to update <a href="https://kristaps.bsd.lv">ksql</a>
 					with higher performance and a simpler implementation.
-					The API is not compatible, hence a new library.
 					The library is well-documented and has all of its behaviour checked with a large set of regression
 					tests.
+					It may be run on any modern UNIX, but <a href="https://www.openbsd.org">OpenBSD</a> is the focus due to
+					<a href="https://man.openbsd.org/pledge.2">pledge</a>.
 					It is a <a href="https://www.bsd.lv">BSD.lv</a> project.
 				</p>
 			</section>
@@ -116,5 +117,11 @@
 				</p>
 			</section>
 		</article>
+		<footer>
+			&#169; 2019, 
+			<a itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person" rel="author" href="https://github.com/kristapsdz">
+				<span itemprop="name">Kristaps Dz</span>
+			</a>
+		</footer>
 	</body>
 </html>

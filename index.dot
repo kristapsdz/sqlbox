@@ -5,7 +5,8 @@ strict digraph G {
 	edge[arrowsize=0.75];
 
 	subgraph cluster_1 {
-	  style=invis;
+	  label="calling process w/o filesystem access";
+	  color=lightgrey;
 	  a0[label="sqlbox_alloc"];
 	  a1[label="pledge", color=red];
 	  a2[label="sqlbox_open", color=red];
@@ -13,6 +14,7 @@ strict digraph G {
 
 	subgraph cluster_0 {
 	  bgcolor=lightgrey;
+	  color=grey;
 	  label="child process with filesystem access";
 	  node[group=right];
 	  c0[label="fork"];

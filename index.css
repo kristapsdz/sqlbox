@@ -1,11 +1,27 @@
-body				{ font-family: 'Alegreya Sans', sans-serif; }
+body				{ font-family: 'Alegreya Sans', sans-serif;
+				  color: #222; }
 figcaption			{ font-size: smaller;
 				  line-height: 1.3em;
+				  margin: 1.1rem 0;
+				  padding: 0.7rem 1.1rem;
+				  box-shadow: 0 0 4px #aaa;
+				  border-radius: 1rem;
+				  background-color: #fdfdfd;
 				  color: #666; }
+figcaption::before		{ content: 'Figure:';
+				  font-weight: 500;
+				  padding-right: 0.25em;
+				  color: #444; }
 h2				{ text-align: center;
-			  	  font-weight: normal;
-				  font-size: 120%;
+			  	  font-weight: 500;
+				  margin: 1.5em 0;
+				  font-size: 125%;
 				  font-variant: small-caps; }
+h3				{ font-weight: inherit;
+				  font-variant: small-caps;
+				  text-align: center;
+				  margin: 1.5em 0;
+				  font-size: inherit; }
 img				{ margin: 0 auto;
 				  display: block; }
 .perf img			{ width: 100%;
@@ -18,5 +34,13 @@ figure				{ margin-left: 0;
 				  font-weight: 500; }
 nav				{ text-align: center;
 				  font-size: smaller;
-				  margin-bottom: 1rem; }
+				  margin-bottom: 2rem; }
 pre, code			{ font-size: smaller; }
+footer				{ font-size: smaller;
+				  opacity: 0.8;
+				  text-align: center;
+				  margin-top: 2rem;
+				  padding-bottom: 1rem; }
+a				{ color: blue;
+				  text-decoration: none; }
+strong				{ font-weight: 500; }
