@@ -41,28 +41,69 @@ These functions execute a statement
 .Fa id
 as returned by
 .Xr sqlbox_prepare_bind 3 .
+They are typically run for returned rows in query statements.
 If
 .Fa id
 is zero, the last prepared statement is used.
-They return a result set:
-.Bd -literal
-struct sqlbox_parm {
-  union {
-    double fparm; /* SQLBOX_PARM_FLOAT */
-    int64_t iparm; /* SQLBOX_PARM_INT */
-    const char *sparm; /* SQLBOX_PARM_STRING */
-    const void *bparm; /* SQLBOX_PARM_BLOB */
-  };
-  enum sqlbox_parmt type;
-  size_t sz;
-};
-
-struct sqlbox_parmset {
-  struct sqlbox_parm *ps;
-  size_t psz;
-  enum sqlbox_code code;
-};
-.Ed
+They return a result set with the following fields:
+.Bl -tag -width Ds
+.It Va code
+Either
+.Dv SQLBOX_CODE_OK
+if the query executed or
+.Dv SQLBOX_CODE_CONSTRAINT
+on a constraint violation if
+.Fn sqlbox_cstep
+was used.
+.It Va ps
+The results (columns) themselves or
+.Dv NULL
+if there are no results.
+.It Va psz
+The number of columns in the results.
+If this is zero and
+.Va code
+is
+.Dv SQLBOX_CODE_OK ,
+this means that there are no more rows.
+This applies both to the last step of a
+.Li SELECT
+statement or any non-returning statements like
+.Li CREATE TABLE .
+.El
+.Pp
+Result columns consist of the following fields:
+.Bl -tag -width Ds
+.It Va sz
+The size of the data in bytes.
+For strings, this includes the NUL terminator.
+.It Va type
+May be one of
+.Dv SQLBOX_PARM_FLOAT
+for a double-precision floating point value,
+.Dv SQLBOX_PARM_INT
+for a signed 64-bit integer,
+.Dv SQLBOX_PARM_STRING
+for a NUL-terminated string,
+.Dv SQLBOX_PARM_BLOB
+for a binary array, or
+.Dv SQLBOX_PARM_NULL
+for a value-less
+.Qq null
+result.
+.It Va fparm, iparm, sparm, bparm
+Values corresponding to the float, integer, string, and binary types.
+.El
+.Pp
+The result set as a whole, including the memory allocated for each
+.Va sparm
+and
+.Va bparm
+column, is only valid until the next
+.Fn sqlbox_step ,
+.Fn sqlbox_cstep ,
+or
+.Xr sqlbox_finalise 3 .
 .Pp
 Both
 .Fn sqlbox_step
@@ -79,37 +120,49 @@ in
 if constraints are violated, where it's otherwise
 .Dv SQLBOX_CODE_OK .
 .Pp
-The result set
-.Fa ps
-consists of values from each column of the returned data in the
-underlying type of the value.
-If the statement does not return any column (such as a
-.Li CREATE TABLE
+When there are no more rows available,
+.Xr sqlbox_rebind 3
 or
-.Li UPDATE ,
-or if there are no more rows in a
-.Li SELECT
-statement), the result set will be empty: the
-.Va psz
-will be zero.
-The result set as a whole, including the memory allocated for each
-.Va sparm
-and
-.Va bparm
-column, is only valid until the next
-.Fn sqlbox_step ,
-.Fn sqlbox_cstep ,
-or
-.Xr sqlbox_finalise 3 .
+.Xr sqlbox_finalise 3
+are usually used.
+.Ss Filtering
+If the configuration passed to
+.Xr sqlbox_alloc 3
+has filters, they will be used prior to returning a value.
+The filter structure has the following fields:
+.Bl -tag -width Ds
+.It Va col
+Column in result set (starting from zero) to manipulate.
+If this does not refer to a valid column, it's silently ignored.
+.It Va filt
+Actual filter function.
+This function must set
+.Em all
+values, including the size.
+It may use any type.
+If the function returns zero, the system will exit.
+This may not be
+.Dv NULL .
+If the function needs to allocate memory, such as for setting a string
+or binary data, it should set the
+.Vt void
+pointer to what should be passed into the
+.Va free
+function.
+.It Va free
+An optional function for freeing memory given to the pointer of
+.Va filt .
+.It Va stmt
+The applicable statement index starting at zero.
+This must be a valid statement.
+.It Va type
+Currently only
+.Dv SQLBOX_FILT_GEN_OUT ,
+for a generative filter coming out of the database.
+.El
 .Pp
-For queries, the types set in
-.Va type
-are those set by the database schema, not the corresponding insertion
-statements.
-To convert between types (e.g., integers to strings), use the standard
-.Xr snprintf 3 ,
-.Xr strtonum 3 ,
-and so on.
+If a filter is defined for a statement's result column, it is run in
+lieu of database retrieval.
 .Ss SQLite3 Implementation
 Uses
 .Xr sqlite3_step 3
@@ -201,9 +254,133 @@ if (!(stmtid = sqlbox_prepare_bind(p, dbid, 1, 1, parms)))
   errx(EXIT_FAILURE, "sqlbox_prepare_bind");
 if ((res = sqlbox_step(p, stmtid)) == NULL)
   errx(EXIT_FAILURE, "sqlbox_step");
+
 /* The result will have zero columns. */
+
 if (!sqlbox_finalise(p, stmtid))
   errx(EXIT_FAILURE, "sqlbox_finalise");
+
+sqlbox_free(p);
+.Ed
+.Pp
+The following extracts and prints rows using a
+.Li SELECT
+statement.
+It assumes an existing database.
+.Bd -literal
+size_t dbid, stmtid;
+struct sqlbox *p;
+struct sqlbox_cfg cfg;
+struct sqlbox_src srcs[] = {
+  { .fname = (char *)"db.db",
+    .mode = SQLBOX_SRC_RW }
+};
+struct sqlbox_pstmt pstmts[] = {
+  { .stmt = (char *)"SELECT * FROM foo" }
+};
+const struct sqlbox_parmset *res;
+
+memset(&cfg, 0, sizeof(struct sqlbox_cfg));
+cfg.msg.func_short = warnx;
+cfg.srcs.srcsz = 1;
+cfg.srcs.srcs = srcs;
+cfg.stmts.stmtsz = 1;
+cfg.stmts.stmts = pstmts;
+
+if ((p = sqlbox_alloc(&cfg)) == NULL)
+  errx(EXIT_FAILURE, "sqlbox_alloc");
+if (!(dbid = sqlbox_open(p, 0)))
+  errx(EXIT_FAILURE, "sqlbox_open");
+if (!(stmtid = sqlbox_prepare_bind(p, dbid, 1, 1, parms)))
+  errx(EXIT_FAILURE, "sqlbox_prepare_bind");
+if ((res = sqlbox_step(p, stmtid)) == NULL)
+  errx(EXIT_FAILURE, "sqlbox_step");
+
+for (i = 0; i < res->psz; i++)
+  switch (res->ps[i].type) {
+    case SQLBOX_PARM_BLOB:
+      printf("Blob: %zu bytes\en", res->ps[i].sz);
+      break;
+    case SQLBOX_PARM_FLOAT:
+      printf("Float: %f\en", res->ps[i].fparm);
+      break;
+    case SQLBOX_PARM_INT:
+      printf("Blob: %" PRId64 "\en", res->ps[i].iparm);
+      break;
+    case SQLBOX_PARM_NULL:
+      printf("Null\en");
+      break;
+    case SQLBOX_PARM_STRING:
+      printf("String: %s\en", res->ps[i].sparm);
+      break;
+  }
+
+if (!sqlbox_finalise(p, stmtid))
+  errx(EXIT_FAILURE, "sqlbox_finalise");
+
+sqlbox_free(p);
+.Ed
+.Pp
+The following example shows how filters may be used to change the
+outcome of database queries.
+First, define a filter, in this one that generates an integer:
+.Bd -literal
+static int
+filter_int(struct sqlbox_parm *p, void **arg)
+{
+  p->type = SQLBOX_PARM_INT;
+  p->iparm = 20;
+  return 1;
+}
+.El
+.Pp
+Next, assign the filter for use.
+This uses the asynchronous versions of functions when possible.
+It also assumes that the database
+.Pa db.db
+is already populated with at least a single integer column.
+.Bd -literal
+struct sqlbox *p;
+struct sqlbox_cfg cfg;
+struct sqlbox_src srcs[] = {
+  { .fname = (char *)"db.db",
+    .mode = SQLBOX_SRC_RW }
+};
+struct sqlbox_pstmt	 pstmts[] = {
+  { .stmt = (char *)"SELECT * FROM foo" }
+};
+struct sqlbox_filt	 filts[] = {
+  { .col = 0,
+    .stmt = 0,
+    .type = SQLBOX_FILT_GEN_OUT,
+    .filt = filter_int,
+    .free = NULL }
+};
+const struct sqlbox_parmset *res;
+
+memset(&cfg, 0, sizeof(struct sqlbox_cfg));
+cfg.msg.func_short = warnx;
+cfg.srcs.srcsz = 1;
+cfg.srcs.srcs = srcs;
+cfg.stmts.stmtsz = 1;
+cfg.stmts.stmts = pstmts;
+cfg.filts.filtsz = 1;
+cfg.filts.filts = filts;
+
+if ((p = sqlbox_alloc(&cfg)) == NULL)
+  errx(EXIT_FAILURE, "sqlbox_alloc");
+if (sqlbox_open_async(p, 0)))
+  errx(EXIT_FAILURE, "sqlbox_open_async");
+if (sqlbox_prepare_bind_async(p, 0, 2, 0, NULL))
+  errx(EXIT_FAILURE, "sqlbox_prepare_bind_async");
+if ((res = sqlbox_step(p, 0)) == NULL)
+  errx(EXIT_FAILURE, "sqlbox_step");
+if (res->psz < 1)
+  errx(EXIT_FAILURE, "not enough columns");
+if (res->ps[0].type == SQLBOX_PARM_INT)
+  printf("Integer: %" PRId64 "\en", res->ps[i].iparm);
+
+/* That should have printed 20. */
 
 sqlbox_free(p);
 .Ed
@@ -213,7 +390,8 @@ sqlbox_free(p);
 .\" For sections 2, 3, 4, and 9 errno settings only.
 .Sh SEE ALSO
 .Xr sqlbox_finalise 3 ,
-.Xr sqlbox_open 3
+.Xr sqlbox_prepare_bind 3 ,
+.Xr sqlbox_rebind 3
 .\" .Sh STANDARDS
 .\" .Sh HISTORY
 .\" .Sh AUTHORS
