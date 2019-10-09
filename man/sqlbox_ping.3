@@ -73,6 +73,7 @@ memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 cfg.msg.func_short = warnx;
 cfg.srcs.srcsz = 1;
 cfg.srcs.srcs = srcs;
+
 if ((p = sqlbox_alloc(&cfg)) == NULL)
   errx(EXIT_FAILURE, "sqlbox_alloc");
 if (!(id = sqlbox_open(p, 0)))
@@ -81,7 +82,9 @@ if (!sqlbox_close(p, id))
   errx(EXIT_FAILURE, "sqlbox_close");
 if (!sqlbox_ping(p))
   errx(EXIT_FAILURE, "sqlbox_ping");
+
 /* Success! Do other stuff... */
+
 sqlbox_free(p);
 .Ed
 .\" .Sh DIAGNOSTICS

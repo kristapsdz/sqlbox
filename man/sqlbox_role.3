@@ -160,8 +160,10 @@ if (!(id = sqlbox_open(p, 0)))
   errx(EXIT_FAILURE, "sqlbox_open");
 if (!sqlbox_role(p, 1))
   errx(EXIT_FAILURE, "sqlbox_role");
+
 /* Now operate as the "unprivileged" role. */
 /* The database will be closed out automatically. */
+
 sqlbox_free(p);
 .Ed
 .\" .Sh DIAGNOSTICS

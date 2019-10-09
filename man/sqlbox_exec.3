@@ -52,13 +52,18 @@
 .Fa "const struct sqlbox_parm *ps"
 .Fc
 .Sh DESCRIPTION
-Executes an SQL statement
-.Fa idx
-with bound parameters
-.Fa ps .
+Executes an SQL statement.
+It is short-hand for
+.Xr sqlbox_prepare_bind 3 ,
+.Xr sqlbox_step 3 ,
+and
+.Xr sqlbox_free 3 ,
 This should not be used to process any rows: if the SQL statement
-returns rows, they are discarded and the operation is considered as a
+returns rows, they are discarded and the operation is considered a
 success.
+See
+.Xr sqlbox_prepare_bind 3
+for a description of the arguments.
 .Pp
 The synchronous
 .Fn sqlbox_exec
@@ -76,49 +81,6 @@ In the synchronous case,
 additionally allows for constraint violations, which are otherwise
 considered an error.
 There is no asynchronous version of this function.
-.Pp
-The
-.Fa idx
-is the statement index in the
-.Vt struct sqlbox_pstmt
-array given to
-.Xr sqlbox_alloc 3 .
-The
-.Fa src
-is the database source as returned by
-.Xr sqlbox_open 3 .
-If
-.Fa src
-is zero, the last-opened database is used.
-The number of parameters
-.Fa psz
-must match the statement parameters given in the SQL or be zero.
-.Pp
-The
-.Fa ps
-array, if
-.Fa psz
-is non-zero, consists of typed values bound to those parameters.
-Types must correspond to typed values, for example, floats of type
-.Dv SQLBOX_PARM_FLOAT
-must be set in the
-.Va fparm
-of
-.Vt struct sqlbox_parm .
-.Pp
-The
-.Va sz
-of
-.Vt struct sqlbox_parm
-is ignored for floats and integers, but must be provided for blobs and
-optionally for strings.
-For strings, a zero indicates it should be computed using
-.Xr strlen 3 .
-Otherwise, it should be the full string length including the NUL
-terminator.
-If the string is shorter than the given length (i.e., contains an
-embedded NUL terminator), the database will still return the full given
-length of the original size (terminating NUL inclusive).
 .Ss SQLite3 Implementation
 If passed a
 .Fa psz

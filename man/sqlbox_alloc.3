@@ -40,10 +40,7 @@ The
 .Fa cfg
 is inherited by the child process but never freed, so they may either be
 constructed statically or allocated and freed by the caller.
-.Pp
-The
-.Fa cfg
-has the following members:
+It has the following fields:
 .Bl -tag -width Ds
 .It Vt stmts
 All SQL statements required by all sources.
@@ -61,11 +58,9 @@ Described in
 .Xr sqlbox_msg_set_dat 3 .
 .El
 .Pp
-A common idiom is to fill the entire structure with
-.Li 0
-then assign only applicable members.
 .Fn sqlbox_alloc
-performs the following validity checks on this structure,
+performs the following validity checks on
+.Fa cfg ,
 if not
 .Dv NULL ,
 before forking:
@@ -92,8 +87,7 @@ resources to just the communciation socket with the context.
 This may be affected with
 .Xr pledge 2 ,
 if on
-.Ox ,
-or similar.
+.Ox .
 .Sh RETURN VALUES
 Returns the allocated context or
 .Dv NULL

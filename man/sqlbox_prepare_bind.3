@@ -45,9 +45,10 @@
 .Sh DESCRIPTION
 Prepares an SQL statement
 .Fa idx
-and binds parameters
+with bound parameters
 .Fa ps
-to it.
+for further execution by
+.Xr sqlbox_step 3 .
 .Pp
 The synchronous
 .Fn sqlbox_prepare_bind

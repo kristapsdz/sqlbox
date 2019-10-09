@@ -86,12 +86,14 @@ struct sqlbox_pstmt pstmts[] = {
   { .stmt = (char *)"CREATE TABLE foo (bar INTEGER)" }
 };
 const struct sqlbox_parmset *res;
+
 memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 cfg.msg.func_short = warnx;
 cfg.srcs.srcsz = 1;
 cfg.srcs.srcs = srcs;
 cfg.stmts.stmtsz = 1;
 cfg.stmts.stmts = pstmts;
+
 if ((p = sqlbox_alloc(&cfg)) == NULL)
   errx(EXIT_FAILURE, "sqlbox_alloc");
 if (!(dbid = sqlbox_open(p, 0)))
@@ -102,6 +104,7 @@ if ((res = sqlbox_step(p, stmtid)) == NULL)
   errx(EXIT_FAILURE, "sqlbox_step");
 if (!sqlbox_finalise(p, stmtid))
   errx(EXIT_FAILURE, "sqlbox_finalise");
+
 sqlbox_free(p);
 .Ed
 .\" .Sh DIAGNOSTICS

@@ -56,7 +56,7 @@ The database is closed with
 .Xr sqlite3_close 3 .
 .Sh RETURN VALUES
 .Fn sqlbox_close
-is an asynchronous function: it returns zero only if communication with
+returns zero if communication with
 .Fa box
 fails.
 Otherwise, it returns non-zero on success.
@@ -98,6 +98,7 @@ memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 cfg.msg.func_short = warnx;
 cfg.srcs.srcsz = 1;
 cfg.srcs.srcs = srcs;
+
 if ((p = sqlbox_alloc(&cfg)) == NULL)
   errx(EXIT_FAILURE, "sqlbox_alloc");
 if (!(id = sqlbox_open(p, 0)))
@@ -137,6 +138,7 @@ cfg.srcs.srcs = srcs;
 cfg.roles.roles = roles;
 cfg.roles.rolesz = 2;
 cfg.roles.defrole = 0;
+
 if ((p = sqlbox_alloc(&cfg)) == NULL)
   errx(EXIT_FAILURE, "sqlbox_alloc");
 if (!(id = sqlbox_open(p, 0)))
