@@ -30,32 +30,35 @@
 .Fa "struct sqlbox_cfg *cfg"
 .Fc
 .Sh DESCRIPTION
-Creates an sqlbox context.
-.Fn sqlbox_alloc
-first verifies
+Creates an sqlbox context: verifies
 .Fa cfg ,
-then forks a child process, then returns.
-The child process waits for instructions over a socket pair.
-The
+then forks a child
+.Qq database
+process, then returns.
 .Fa cfg
-is inherited by the child process but never freed, so they may either be
-constructed statically or allocated and freed by the caller.
+is inherited by the database process but never freed, so it may either
+be constructed statically or allocated and freed by the caller.
 It has the following fields:
 .Bl -tag -width Ds
-.It Vt stmts
-All SQL statements required by all sources.
-.It Vt roles
-Roles and role assignment to statements, sources, and role transition.
+.It Va filts
+Filters for opaquely generating or manipulating data instead of drawing
+directly from a database.
 Described in
-.Xr sqlbox_role 3 .
-.It Vt srcs
-Database sources (in-memory and on-disc).
-Described in
-.Xr sqlbox_open 3 .
-.It Vt msg
+.Xr sqlbox_step 3 .
+.It Va msg
 Error and debug logging.
 Described in
 .Xr sqlbox_msg_set_dat 3 .
+.It Va roles
+Roles and role assignment to statements, sources, and role transition.
+Described in
+.Xr sqlbox_role 3 .
+.It Va srcs
+Database sources (in-memory and on-disc).
+Described in
+.Xr sqlbox_open 3 .
+.It Va stmts
+All SQL statements required by all sources.
 .El
 .Pp
 .Fn sqlbox_alloc
@@ -80,14 +83,23 @@ each role statement must be a valid index
 each role transition role must be a valid index
 .It
 each role database must be a valid index
+.It
+filters refer to valid statements (since columns are not known
+beforehand, invalid columns are simply ignored)
+.It
+filter callback functions may not be
+.Dv NULL
 .El
 .Pp
-After successful return, a common idiom is for callers to reduce system
-resources to just the communciation socket with the context.
+After successful return, a suggested idiom is for callers to reduce
+system resources to just the communciation socket with the context.
 This may be affected with
-.Xr pledge 2 ,
+.Xr pledge 2
 if on
 .Ox .
+.Pp
+It is usually followed by calls to
+.Xr sqlbox_open 3 .
 .Sh RETURN VALUES
 Returns the allocated context or
 .Dv NULL
@@ -126,6 +138,10 @@ cfg.srcs.srcsz = 1;
 
 if ((p = sqlbox_alloc(&cfg)) == NULL)
   errx(EXIT_FAILURE, "sqlbox_alloc");
+
+/* Do work. */
+
+sqlbox_free(p);
 .Ed
 .Pp
 The following does the same, but with RBAC for the source.
@@ -158,13 +174,18 @@ cfg.roles.defrole = 0;
 
 if ((p = sqlbox_alloc(&cfg)) == NULL)
   errx(EXIT_FAILURE, "sqlbox_alloc");
+
+/* Do work. */
+
+sqlbox_free(p);
 .Ed
 .\" .Sh DIAGNOSTICS
 .\" For sections 1, 4, 6, 7, 8, and 9 printf/stderr messages only.
 .\" .Sh ERRORS
 .\" For sections 2, 3, 4, and 9 errno settings only.
 .Sh SEE ALSO
-.Xr sqlbox_free 3
+.Xr sqlbox_free 3 ,
+.Xr sqlbox_open 3
 .\" .Sh STANDARDS
 .\" .Sh HISTORY
 .\" .Sh AUTHORS

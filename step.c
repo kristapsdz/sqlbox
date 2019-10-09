@@ -132,13 +132,10 @@ int
 sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 {
 	struct sqlbox_stmt	*st;
-	size_t			 pos, i, cols = 0;
+	size_t			 pos, i, j, cols = 0;
 	int			 has_cstep = 0, allow_cstep, rc = 0;
 	uint32_t		 val;
-#if 0
-	size_t			 j;
 	void			*arg;
-#endif
 	struct freen		*fn;
 	TAILQ_HEAD(freeq, freen) fq;
 	enum sqlbox_code	 code;
@@ -220,18 +217,16 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 	TAILQ_INIT(&fq);
 
 	for (i = 0; i < st->res.set.psz; i++) {
-#if 0
 		/*
-		 * See if we have a filter for the data we just
-		 * extracted; and if so, 
+		 * See if we have a filter for generating data instead
+		 * of using the database.
 		 */
 
 		for (j = 0; j < box->cfg.filts.filtsz; j++) 
 			if (box->cfg.filts.filts[j].stmt == st->idx &&
 			    box->cfg.filts.filts[j].type == 
-			      SQLBOX_FILT_OUT &&
-			    box->cfg.filts.filts[j].col == i &&
-			    box->cfg.filts.filts[j].filt != NULL)
+			      SQLBOX_FILT_GEN_OUT &&
+			    box->cfg.filts.filts[j].col == i)
 				break;
 		if (j < box->cfg.filts.filtsz) {
 			arg = NULL;
@@ -246,15 +241,23 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 					st->pstmt->stmt);
 				goto out;
 			}
-			if (box->cfg.filts.filts[j].free != NULL) {
-				fn = calloc(1, sizeof(struct freen));
-				fn->dat = arg;
-				fn->fp = box->cfg.filts.filts[j].free;
-				TAILQ_INSERT_TAIL(&fq, fn, entries);
+			if (box->cfg.filts.filts[j].free == NULL) 
+				continue;
+
+			/* Create an exit hook for free. */
+
+			fn = calloc(1, sizeof(struct freen));
+			if (fn == NULL) {
+				sqlbox_warn(&box->cfg, 
+					"step: calloc");
+				(*box->cfg.filts.filts[j].free)(arg);
+				goto out;
 			}
+			fn->dat = arg;
+			fn->fp = box->cfg.filts.filts[j].free;
+			TAILQ_INSERT_TAIL(&fq, fn, entries);
 			continue;
 		}
-#endif
 
 		switch (sqlite3_column_type(st->stmt, i)) {
 		case SQLITE_BLOB:

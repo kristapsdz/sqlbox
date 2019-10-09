@@ -40,7 +40,7 @@ Roles are defined in
 .Vt struct sqlbox_roles
 as passed to
 .Xr sqlbox_alloc 3 .
-It has the following members:
+It has the following fields:
 .Bl -tag -width Ds
 .It Va roles
 An array of roles, each role being identified by its index.
@@ -62,7 +62,7 @@ is non-zero, in which case it must be less than
 .Pp
 The resources available to each role are defined in
 .Vt struct sqlbox_role ,
-which has the following members:
+which has the following fields:
 .Bl -tag -width Ds
 .It Va roles
 Which roles the given role may transition into.

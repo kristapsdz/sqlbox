@@ -211,6 +211,19 @@ sqlbox_cfg_vrfy(const struct sqlbox_cfg *cfg)
 			}
 	}
 
+	for (i = 0; i < cfg->filts.filtsz; i++)
+		if (cfg->filts.filts[i].stmt >= cfg->stmts.stmtsz) {
+			sqlbox_warnx(cfg,
+				"filter %zu references invalid "
+				"stmt %zu (have %zu)", i,
+				cfg->filts.filts[i].stmt,
+				cfg->stmts.stmtsz);
+			return 0;
+		} else if (cfg->filts.filts[i].filt == NULL) {
+			sqlbox_warnx(cfg, "filter %zu is NULL", i);
+			return 0;
+		}
+
 	return 1;
 }
 

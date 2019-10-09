@@ -165,8 +165,7 @@ struct	sqlbox_parm {
 };
 
 enum	sqlbox_filtt {
-	SQLBOX_FILT_IN,
-	SQLBOX_FILT_OUT
+	SQLBOX_FILT_GEN_OUT
 };
 
 /*
@@ -180,8 +179,8 @@ struct	sqlbox_filt {
 	size_t		  col; /* applicable columns */
 	size_t		  stmt; /* applicable statement */
 	enum sqlbox_filtt type; /* data in or data out */
-	int 		(*filt)(struct sqlbox_parm *, void **);
-	void 		(*free)(void *);
+	int 		(*filt)(struct sqlbox_parm *, void **); /* cb */
+	void 		(*free)(void *); /* optional free cb */
 };
 
 /*

@@ -6,15 +6,14 @@ VMAJOR	!= grep 'define	SQLBOX_VMAJOR' sqlbox.h | cut -f3
 VMINOR	!= grep 'define	SQLBOX_VMINOR' sqlbox.h | cut -f3
 VBUILD	!= grep 'define	SQLBOX_VBUILD' sqlbox.h | cut -f3
 VERSION	:= $(VMAJOR).$(VMINOR).$(VBUILD)
-#TESTS	 = test-filter-out-float \
-#	   test-filter-out-int \
-#	   test-filter-out-string
 TESTS	 = test-alloc-bad-defrole \
+	   test-alloc-bad-filt-stmt \
 	   test-alloc-bad-role \
 	   test-alloc-bad-src \
 	   test-alloc-bad-stmt \
 	   test-alloc-defrole \
 	   test-alloc-empty-stmt \
+	   test-alloc-null-filt \
 	   test-alloc-null-source \
 	   test-alloc-null-stmt \
 	   test-alloc-role \
@@ -43,6 +42,10 @@ TESTS	 = test-alloc-bad-defrole \
 	   test-exec-create-insert-noparms \
 	   test-exec-select \
 	   test-exec-zero-id \
+	   test-filter-gen-out-fail \
+	   test-filter-gen-out-float \
+	   test-filter-gen-out-int \
+	   test-filter-gen-out-string \
 	   test-finalise \
 	   test-finalise-bad-stmt \
 	   test-finalise-bad-zero-id \
