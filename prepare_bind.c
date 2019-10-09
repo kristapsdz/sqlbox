@@ -196,7 +196,7 @@ sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 static struct sqlbox_stmt *
 sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 {
-	size_t	 		 idx;
+	size_t	 		 idx, psz;
 	ssize_t			 parmsz = -1;
 	struct sqlbox_db	*db;
 	sqlite3_stmt		*stmt = NULL;
@@ -235,12 +235,10 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 	}
 	pst = &box->cfg.stmts.stmts[idx];
 
-	/* 
-	 * Now the number of parameters.
-	 * FIXME: we should have nothing left in the buffer after this.
-	 */
+	/* Now the parameters. */
 
-	if (!sqlbox_parm_unpack(box, &parms, &parmsz, buf, sz)) {
+	psz = sqlbox_parm_unpack(box, &parms, &parmsz, buf, sz);
+	if (psz == 0) {
 		sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
 			"sqlbox_parm_unpack", db->src->fname);
 		sqlbox_warnx(&box->cfg, "%s: prepare-bind "
@@ -249,6 +247,14 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 		return NULL;
 	}
 	assert(parmsz >= 0);
+	buf += psz;
+	sz -= psz;
+	if (sz != 0) {
+		sqlbox_warnx(&box->cfg, "prepare-bind: bad frame size");
+		free(parms);
+		return NULL;
+	}
+
 
 	/* Actually prepare the statement. */
 

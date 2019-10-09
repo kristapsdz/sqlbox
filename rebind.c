@@ -116,7 +116,7 @@ sqlbox_rebind(struct sqlbox *box, size_t id,
 int
 sqlbox_op_rebind(struct sqlbox *box, const char *buf, size_t sz)
 {
-	size_t	 		 i;
+	size_t	 		 i, psz;
 	ssize_t			 parmsz = -1;
 	struct sqlbox_stmt	*st;
 	int			 c;
@@ -125,8 +125,7 @@ sqlbox_op_rebind(struct sqlbox *box, const char *buf, size_t sz)
 	/* Read the source identifier. */
 
 	if (sz < sizeof(uint32_t)) {
-		sqlbox_warnx(&box->cfg, "rebind: "
-			"bad frame size: %zu", sz);
+		sqlbox_warnx(&box->cfg, "rebind: bad frame size");
 		return 0;
 	}
 	if ((st = sqlbox_stmt_find
@@ -155,16 +154,21 @@ sqlbox_op_rebind(struct sqlbox *box, const char *buf, size_t sz)
 		return 0;
 	}
 
-	/* 
-	 * Now the number of parameters.
-	 * FIXME: we should have nothing left in the buffer after this.
-	 */
+	/* Now the parameters. */
 
-	if (!sqlbox_parm_unpack(box, &parms, &parmsz, buf, sz)) {
+	psz = sqlbox_parm_unpack(box, &parms, &parmsz, buf, sz);
+	if (psz == 0) {
 		sqlbox_warnx(&box->cfg, "%s: rebind: "
 			"sqlbox_parm_unpack", st->db->src->fname);
 		sqlbox_warnx(&box->cfg, "%s: rebind statement: %s", 
 			st->db->src->fname, st->pstmt->stmt);
+		free(parms);
+		return 0;
+	}
+	sz -= psz;
+	buf += psz;
+	if (sz != 0) {
+		sqlbox_warnx(&box->cfg, "rebind: bad frame size");
 		free(parms);
 		return 0;
 	}

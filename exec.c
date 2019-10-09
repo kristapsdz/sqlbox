@@ -192,7 +192,7 @@ sqlbox_exec(struct sqlbox *box, size_t srcid,
 static enum sqlbox_code
 sqlbox_op_exec(struct sqlbox *box, const char *buf, size_t sz)
 {
-	size_t	 		 idx, cols;
+	size_t	 		 idx, cols, psz;
 	ssize_t			 parmsz = -1;
 	struct sqlbox_db	*db;
 	sqlite3_stmt		*stmt = NULL;
@@ -239,18 +239,23 @@ sqlbox_op_exec(struct sqlbox *box, const char *buf, size_t sz)
 	}
 	pst = &box->cfg.stmts.stmts[idx];
 
-	/* 
-	 * Now the number of parameters.
-	 * FIXME: we should have nothing left in the buffer after this.
-	 */
+	/* Now the parameters. */
 
-	if (!sqlbox_parm_unpack(box, &parms, &parmsz, buf, sz)) {
+	psz = sqlbox_parm_unpack(box, &parms, &parmsz, buf, sz);
+	if (psz == 0) {
 		sqlbox_warnx(&box->cfg, "%s: exec: "
 			"sqlbox_parm_unpack", db->src->fname);
 		free(parms);
 		return SQLBOX_CODE_ERROR;
 	}
 	assert(parmsz >= 0);
+	buf += psz;
+	sz -= psz;
+	if (sz != 0) {
+		sqlbox_warnx(&box->cfg, "exec: bad frame size");
+		free(parms);
+		return SQLBOX_CODE_ERROR;
+	}
 
 	/*
 	 * If we have no parameters, short-circuit into using sqlite3's

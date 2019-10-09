@@ -139,7 +139,7 @@ int	 sqlbox_parm_bind(struct sqlbox *, struct sqlbox_db *,
 		const struct sqlbox_parm *, size_t);
 int	 sqlbox_parm_pack(struct sqlbox *, size_t, 
 		const struct sqlbox_parm *, char **, size_t *, size_t *);
-int	 sqlbox_parm_unpack(struct sqlbox *, struct sqlbox_parm **, 
+size_t	 sqlbox_parm_unpack(struct sqlbox *, struct sqlbox_parm **, 
 		ssize_t *, const char *, size_t);
 
 int	 sqlbox_op_close(struct sqlbox *, const char *, size_t);

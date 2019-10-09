@@ -43,7 +43,7 @@ sqlbox_step_inner(struct sqlbox *box, int constraint, size_t stmtid)
 	uint32_t		 val;
 	char			 buf[sizeof(uint32_t) * 2];
 	const char		*frame;
-	size_t			 framesz;
+	size_t			 framesz, psz;
 	struct sqlbox_stmt 	*st;
 
 	if ((st = sqlbox_stmt_find(box, stmtid)) == NULL) {
@@ -79,8 +79,7 @@ sqlbox_step_inner(struct sqlbox *box, int constraint, size_t stmtid)
 	}
 
 	if (framesz < sizeof(uint32_t)) {
-		sqlbox_warnx(&box->cfg, "step: "
-			"bad frame size: %zu", framesz);
+		sqlbox_warnx(&box->cfg, "step: bad frame size");
 		return NULL;
 	}
 
@@ -98,9 +97,16 @@ sqlbox_step_inner(struct sqlbox *box, int constraint, size_t stmtid)
 	 * same number of parameters as the first time.
 	 */
 
-	if (!sqlbox_parm_unpack(box,
-	    &st->res.set.ps, &st->res.psz, frame, framesz)) {
+	psz = sqlbox_parm_unpack(box, 
+		&st->res.set.ps, &st->res.psz, frame, framesz);
+	if (psz == 0) {
 		sqlbox_warnx(&box->cfg, "step: sqlbox_parm_unpack");
+		return NULL;
+	}
+	frame += psz;
+	framesz -= psz;
+	if (framesz != 0) {
+		sqlbox_warnx(&box->cfg, "step: bad frame size");
 		return NULL;
 	}
 

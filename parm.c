@@ -219,14 +219,15 @@ sqlbox_parm_bind(struct sqlbox *box, struct sqlbox_db *db,
 
 /*
  * Unpack a set of sqlbox_parm from the buffer.
- * Returns TRUE on success, FALSE on failure.
+ * Returns zero on failure or the number of bytes processed on success.
  * On failure, no [new] memory is allocated into the result pointers.
  */
-int
+size_t
 sqlbox_parm_unpack(struct sqlbox *box, struct sqlbox_parm **parms, 
 	ssize_t *parmsz, const char *buf, size_t bufsz)
 {
-	size_t	 i = 0, len, psz;
+	size_t	 	 i = 0, len, psz;
+	const char	*start = buf;
 
 	if (bufsz < sizeof(uint32_t))
 		goto badframe;
@@ -345,7 +346,8 @@ sqlbox_parm_unpack(struct sqlbox *box, struct sqlbox_parm **parms,
 		}
 	}
 
-	return 1;
+	assert(buf > start);
+	return (size_t)(buf - start);
 badframe:
 	sqlbox_warnx(&box->cfg, "unpacking "
 		"parameter %zu: invalid frame size", i);
