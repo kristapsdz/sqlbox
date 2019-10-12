@@ -154,6 +154,8 @@ PERFS	 = perf-full-cycle-ksql \
 	   perf-rebind-sqlite3
 LDFLAGS	+= -L/usr/local/lib
 CPPFLAGS += -I/usr/local/include
+VGR	 = valgrind
+VGROPTS	 = -q --track-origins=yes --leak-check=full --show-reachable=yes --trace-children=yes --leak-resolution=high
 
 all: libsqlbox.a
 
@@ -221,6 +223,19 @@ regress_all: $(TESTS)
 			echo "\033[31mfail\033[0m"; \
 		else \
 			echo "\033[32mok\033[0m"; \
+		fi; \
+		set -e ; \
+	done
+
+valgrind: $(TESTS)
+	@for f in $(TESTS); do \
+		set +e ; \
+		echo "$$f... \033[33mrunning\033[0m"; \
+		$(VGR) $(VGROPTS) ./$$f 2>&1 | sed 's!^==\(.*\)!\x1B[31m==\1\x1B[0m!' ; \
+		if [ $$? -ne 0 ]; then \
+			echo "$$f... \033[31mfail\033[0m"; \
+		else \
+			echo "$$f... \033[32mok\033[0m"; \
 		fi; \
 		set -e ; \
 	done
