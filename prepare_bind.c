@@ -196,8 +196,7 @@ sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
 static struct sqlbox_stmt *
 sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 {
-	size_t	 		 idx, psz;
-	ssize_t			 parmsz = -1;
+	size_t	 		 idx, psz, parmsz;
 	struct sqlbox_db	*db;
 	sqlite3_stmt		*stmt = NULL;
 	struct sqlbox_stmt	*st;
@@ -246,7 +245,6 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 		free(parms);
 		return NULL;
 	}
-	assert(parmsz >= 0);
 	buf += psz;
 	sz -= psz;
 	if (sz != 0) {

@@ -192,8 +192,7 @@ sqlbox_exec(struct sqlbox *box, size_t srcid,
 static enum sqlbox_code
 sqlbox_op_exec(struct sqlbox *box, const char *buf, size_t sz)
 {
-	size_t	 		 idx, cols, psz;
-	ssize_t			 parmsz = -1;
+	size_t	 		 idx, cols, psz, parmsz;
 	struct sqlbox_db	*db;
 	sqlite3_stmt		*stmt = NULL;
 	struct sqlbox_pstmt	*pst = NULL;
@@ -248,7 +247,6 @@ sqlbox_op_exec(struct sqlbox *box, const char *buf, size_t sz)
 		free(parms);
 		return SQLBOX_CODE_ERROR;
 	}
-	assert(parmsz >= 0);
 	buf += psz;
 	sz -= psz;
 	if (sz != 0) {

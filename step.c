@@ -389,7 +389,12 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 	}
 
 	st->res.bufsz = SQLBOX_FRAME;
-	st->res.buf = malloc(st->res.bufsz);
+	st->res.buf = calloc(1, st->res.bufsz);
+	if (st->res.buf == NULL) {
+		sqlbox_warn(&box->cfg, "step: calloc");
+		return 0;
+	}
+
 	pos = sizeof(uint32_t);
 	rc = sqlbox_pack_step(box, &pos, st, allow_cstep);
 	if (rc < 0) {

@@ -115,8 +115,7 @@ sqlbox_rebind(struct sqlbox *box, size_t id,
 int
 sqlbox_op_rebind(struct sqlbox *box, const char *buf, size_t sz)
 {
-	size_t	 		 i, psz;
-	ssize_t			 parmsz = -1;
+	size_t	 		 i, psz, parmsz;
 	struct sqlbox_stmt	*st;
 	int			 c;
 	struct sqlbox_parm	*parms = NULL;
@@ -179,7 +178,6 @@ sqlbox_op_rebind(struct sqlbox *box, const char *buf, size_t sz)
 	 * and so it needs to be stored.
 	 */
 
-	assert(parmsz >= 0);
 	for (i = 0; i < (size_t)parmsz; i++) {
 		switch (parms[i].type) {
 		case SQLBOX_PARM_BLOB:
