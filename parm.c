@@ -229,12 +229,14 @@ sqlbox_parm_unpack(struct sqlbox *box, struct sqlbox_parm **parms,
 	size_t	 	 i = 0, len;
 	const char	*start = buf;
 
+	*parms = NULL;
+	*parmsz = 0;
+
 	if (bufsz < sizeof(uint32_t))
 		goto badframe;
 
 	/* Read prologue: param size. */
 
-	*parms = NULL;
 	*parmsz = le32toh(*(const uint32_t *)buf);
 	buf += sizeof(uint32_t);
 	bufsz -= sizeof(uint32_t);
