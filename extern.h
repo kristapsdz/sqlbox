@@ -54,8 +54,10 @@ enum	sqlbox_op {
 struct	sqlbox_res {
 	char			*buf; /* backing buffer */
 	size_t			 bufsz; /* length of buffer */
-	ssize_t			 psz;
-	struct sqlbox_parmset	 set; /* parsed values */
+	struct sqlbox_parmset	*set; /* parsed values */
+	size_t			 curset;
+	size_t			 setsz;
+	int			 done;
 };
 
 /*
@@ -112,6 +114,7 @@ void	 sqlbox_warnx(const struct sqlbox_cfg *, const char *, ...)
 void	 sqlbox_debug(const struct sqlbox_cfg *, const char *, ...)
 		__attribute__((format(printf, 2, 3)));
 int	 sqlbox_main_loop(struct sqlbox *);
+void	 sqlbox_res_clear(struct sqlbox_res *);
 
 enum sqlbox_code	 sqlbox_wrap_exec(struct sqlbox *,
 				struct sqlbox_db *, 
@@ -140,7 +143,7 @@ int	 sqlbox_parm_bind(struct sqlbox *, struct sqlbox_db *,
 int	 sqlbox_parm_pack(struct sqlbox *, size_t, 
 		const struct sqlbox_parm *, char **, size_t *, size_t *);
 size_t	 sqlbox_parm_unpack(struct sqlbox *, struct sqlbox_parm **, 
-		ssize_t *, const char *, size_t);
+		size_t *, const char *, size_t);
 
 int	 sqlbox_op_close(struct sqlbox *, const char *, size_t);
 int	 sqlbox_op_exec_async(struct sqlbox *, const char *, size_t);

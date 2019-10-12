@@ -89,7 +89,6 @@ sqlbox_pbind(struct sqlbox *box, enum sqlbox_op op, size_t srcid,
 		free(st);
 		return NULL;
 	}
-	st->res.psz = -1;
 
 	/* Skip the frame size til we get the packed parms. */
 
@@ -130,6 +129,7 @@ sqlbox_pbind(struct sqlbox *box, enum sqlbox_op op, size_t srcid,
 		free(st);
 		return NULL;
 	}
+
 	free(buf);
 	return st;
 }
@@ -287,7 +287,6 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 		return NULL;
 	}
 
-	st->res.psz = -1;
 	st->stmt = stmt;
 	st->pstmt = pst;
 	st->idx = idx;

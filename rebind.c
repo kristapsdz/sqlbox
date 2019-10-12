@@ -102,10 +102,9 @@ sqlbox_rebind(struct sqlbox *box, size_t id,
 	}
 	free(buf);
 
-	free(st->res.set.ps);
-	st->res.psz = -1;
-	st->res.set.ps = NULL;
-	st->res.set.psz = 0;
+	/* Remove any pending results. */
+
+	sqlbox_res_clear(&st->res);
 	return 1;
 }
 
@@ -247,11 +246,7 @@ sqlbox_op_rebind(struct sqlbox *box, const char *buf, size_t sz)
 	
 	/* Now get ready for new stepping. */
 
-	free(st->res.set.ps);
-	st->res.psz = -1;
-	st->res.set.ps = NULL;
-	st->res.set.psz = 0;
-
+	sqlbox_res_clear(&st->res);
 	return 1;
 }
 

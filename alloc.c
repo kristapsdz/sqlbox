@@ -42,13 +42,25 @@
 #include "extern.h"
 
 void
+sqlbox_res_clear(struct sqlbox_res *p)
+{
+	size_t	 i;
+	
+	for (i = 0; i < p->setsz; i++)
+		free(p->set[i].ps);
+
+	free(p->set);
+	free(p->buf);
+	memset(p, 0, sizeof(struct sqlbox_res));
+}
+
+void
 sqlbox_stmt_free(struct sqlbox_stmt *p)
 {
 	if (p == NULL)
 		return;
 
-	free(p->res.buf);
-	free(p->res.set.ps);
+	sqlbox_res_clear(&p->res);
 	free(p);
 }
 

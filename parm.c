@@ -223,10 +223,10 @@ sqlbox_parm_bind(struct sqlbox *box, struct sqlbox_db *db,
  * On failure, no [new] memory is allocated into the result pointers.
  */
 size_t
-sqlbox_parm_unpack(struct sqlbox *box, struct sqlbox_parm **parms, 
-	ssize_t *parmsz, const char *buf, size_t bufsz)
+sqlbox_parm_unpack(struct sqlbox *box, struct sqlbox_parm **parms,
+	size_t *parmsz, const char *buf, size_t bufsz)
 {
-	size_t	 	 i = 0, len, psz;
+	size_t	 	 i = 0, len;
 	const char	*start = buf;
 
 	if (bufsz < sizeof(uint32_t))
@@ -234,38 +234,21 @@ sqlbox_parm_unpack(struct sqlbox *box, struct sqlbox_parm **parms,
 
 	/* Read prologue: param size. */
 
-	psz = le32toh(*(const uint32_t *)buf);
+	*parms = NULL;
+	*parmsz = le32toh(*(const uint32_t *)buf);
 	buf += sizeof(uint32_t);
 	bufsz -= sizeof(uint32_t);
 
-	/* 
-	 * Allocate stored parameters.
-	 * If parmsz < 0, that means that we haven't allocated anything
-	 * so we can set the first allocation size.
-	 * If parmsz == 0, then we've already run the query.
-	 * Subsequent allocation sizes *must* match the first, even if
-	 * it's zero.
-	 */
+	if (*parmsz == 0)
+		return sizeof(uint32_t);
 
-	if (*parmsz == 0) {
-		sqlbox_warnx(&box->cfg, "parameters were already zero");
+	/* Allocate stored parameters (or not, if none). */
+
+	*parms = calloc(*parmsz, sizeof(struct sqlbox_parm));
+	if (*parms == NULL) {
+		sqlbox_warn(&box->cfg, "calloc");
 		return 0;
-	} else if (*parmsz < 0 && psz > 0) {
-		*parms = calloc(psz, sizeof(struct sqlbox_parm));
-		if (*parms == NULL) {
-			sqlbox_warn(&box->cfg, "calloc");
-			return 0;
-		}
-		*parmsz = psz;
-	} else if (*parmsz < 0) {
-		*parms = NULL;
-		*parmsz = 0;
-	} else if (psz && (size_t)*parmsz != psz) {
-		sqlbox_warnx(&box->cfg, "parameter length mismatch "
-			"(have %zu, %zu in parameters)", *parmsz, psz);
-		return 0;
-	} else if (psz == 0)
-		*parmsz = 0;
+	}
 
 	/* 
 	 * Copy out into our parameters.
@@ -273,8 +256,7 @@ sqlbox_parm_unpack(struct sqlbox *box, struct sqlbox_parm **parms,
 	 * the array for that.
 	 */
 
-	assert(*parmsz >= 0);
-	for (i = 0; i < (size_t)*parmsz; i++) {
+	for (i = 0; i < *parmsz; i++) {
 		if (bufsz < sizeof(uint32_t))
 			goto badframe;
 		(*parms)[i].type = le32toh(*(uint32_t *)buf);

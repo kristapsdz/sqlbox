@@ -37,21 +37,40 @@ struct	freen {
 	TAILQ_ENTRY(freen)	 entries;
 };
 
+TAILQ_HEAD(freeq, freen);
+
 static const struct sqlbox_parmset *
 sqlbox_step_inner(struct sqlbox *box, int constraint, size_t stmtid)
 {
 	uint32_t		 val;
 	char			 buf[sizeof(uint32_t) * 2];
 	const char		*frame;
-	size_t			 framesz, psz;
+	size_t			 i, framesz, psz;
 	struct sqlbox_stmt 	*st;
+	void			*pp;
+
+	/* Look up the statement. */
 
 	if ((st = sqlbox_stmt_find(box, stmtid)) == NULL) {
 		sqlbox_warnx(&box->cfg, "step: sqlbox_stmt_find");
 		return NULL;
 	}
 
-	/* Write id and whether we accept constraint violations. */
+	/* Return last cached response, if applicable. */
+
+	if (st->res.curset < st->res.setsz)
+		return &st->res.set[st->res.curset++];
+
+	/* Clear any existing results. */
+
+	sqlbox_res_clear(&st->res);
+
+	/* 
+	 * Write id and whether we accept constraint violations.
+	 * Mixing constraint and no-constraint is allowed: jumping
+	 * through hoops to prevent it just introduces complexity with
+	 * little benefit.
+	 */
 
 	val = htole32(stmtid);
 	memcpy(buf, (char *)&val, sizeof(uint32_t));
@@ -78,41 +97,47 @@ sqlbox_step_inner(struct sqlbox *box, int constraint, size_t stmtid)
 		return NULL;
 	}
 
-	if (framesz < sizeof(uint32_t)) {
-		sqlbox_warnx(&box->cfg, "step: bad frame size");
-		return NULL;
+	/* Read as many results sets as are available. */
+
+	while (framesz > 0) {
+		if (framesz < sizeof(uint32_t)) {
+			sqlbox_warnx(&box->cfg, 
+				"step: bad frame size");
+			return NULL;
+		}
+
+		pp = reallocarray(st->res.set, 
+			st->res.setsz + 1, 
+			sizeof(struct sqlbox_parmset));
+		if (pp == NULL) {
+			sqlbox_warn(&box->cfg, "step: reallocarray");
+			return NULL;
+		}
+		st->res.set = pp;
+		i = st->res.setsz++;
+		memset(&st->res.set[i], 0, 
+			sizeof(struct sqlbox_parmset));
+
+		st->res.set[i].code = le32toh(*(uint32_t *)frame);
+		frame += sizeof(uint32_t);
+		framesz -= sizeof(uint32_t);
+
+		psz = sqlbox_parm_unpack(box, 
+			&st->res.set[i].ps, 
+			&st->res.set[i].psz,
+			frame, framesz);
+		if (psz == 0) {
+			sqlbox_warnx(&box->cfg, 
+				"step: sqlbox_parm_unpack");
+			return NULL;
+		}
+		frame += psz;
+		framesz -= psz;
 	}
 
-	/* Extract the return code. */
+	/* Return the first cached entry. */
 
-	st->res.set.code = le32toh(*(uint32_t *)frame);
-	frame += sizeof(uint32_t);
-	framesz -= sizeof(uint32_t);
-
-	/* 
-	 * Next, extract the parsed parameters from the frame.
-	 * We use the signed psz in sqlbox_res as the size indicator
-	 * because it will store whether this is our first step.
-	 * This will make sure, on reentry, that we're unpacking the
-	 * same number of parameters as the first time.
-	 */
-
-	psz = sqlbox_parm_unpack(box, 
-		&st->res.set.ps, &st->res.psz, frame, framesz);
-	if (psz == 0) {
-		sqlbox_warnx(&box->cfg, "step: sqlbox_parm_unpack");
-		return NULL;
-	}
-	frame += psz;
-	framesz -= psz;
-	if (framesz != 0) {
-		sqlbox_warnx(&box->cfg, "step: bad frame size");
-		return NULL;
-	}
-
-	assert(st->res.psz >= 0);
-	st->res.set.psz = (size_t)st->res.psz;
-	return &st->res.set;
+	return &st->res.set[st->res.curset++];
 }
 
 const struct sqlbox_parmset *
@@ -130,99 +155,55 @@ sqlbox_cstep(struct sqlbox *box, size_t stmtid)
 }
 
 /*
- * Step through zero or more results to a prepared statement.
- * We do not allow constraint violations.
- * Return TRUE on success, FALSE on failure (nothing is allocated).
+ * Read a single result from the wire and append it to the packed
+ * parameters we already have in our buffer.
  */
-int
-sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
+static int
+sqlbox_pack_step(struct sqlbox *box, size_t *bufpos,
+	struct sqlbox_stmt *st, int allow_cstep)
 {
-	struct sqlbox_stmt	*st;
-	size_t			 pos, i, j, cols = 0;
-	int			 has_cstep = 0, allow_cstep, rc = 0;
-	uint32_t		 val;
-	void			*arg;
-	struct freen		*fn;
-	TAILQ_HEAD(freeq, freen) fq;
 	enum sqlbox_code	 code;
+	struct sqlbox_parmset	 set;
+	size_t			 cols = 0, i, j;
+	int			 has_cstep = 0, rc = 0;
+	void			*pp, *arg;
+	struct freeq		 fq;
+	struct freen		*fn;
+	uint32_t		 val;
 
-	/* Look up the statement in our global list. */
+	TAILQ_INIT(&fq);
 
-	if (sz != sizeof(uint32_t) * 2) {
-		sqlbox_warnx(&box->cfg, "step: "
-			"bad frame size: %zu", sz);
-		return 0;
-	}
-	if ((st = sqlbox_stmt_find
-	    (box, le32toh(*(uint32_t *)buf))) == NULL) {
-		sqlbox_warnx(&box->cfg, "step: sqlbox_stmt_find");
-		return 0;
-	}
-	allow_cstep = le32toh(*(uint32_t *)(buf + sizeof(uint32_t)));
-
-	/* 
-	 * Did we already run this to completion?
-	 * We know this if the existing result set has size zero.
-	 * If so, we're not allowed to reinvoke it.
-	 */
-
-	if (st->res.psz == 0) {
-		sqlbox_warnx(&box->cfg, "%s: step: already "
-			"stepped", st->db->src->fname);
-		sqlbox_warnx(&box->cfg, "%s: step: statement: "
-			"%s", st->db->src->fname, st->pstmt->stmt);
-		return 0;
-	}
-
-	/* Now we run the database routine. */
+	/* Start with the step itself. */
 
 	code = sqlbox_wrap_step(box, st->db, 
 		st->pstmt, st->stmt, &cols, allow_cstep);
 	if (code == SQLBOX_CODE_ERROR) {
 		sqlbox_warnx(&box->cfg, "%s: step: "
 			"sqlbox_wrap_step", st->db->src->fname);
-		return 0;
+		return -1;
 	} else if (code == SQLBOX_CODE_CONSTRAINT)
 		has_cstep = 1;
 	
-	/*
-	 * See if we need to prime our result set: if we have columns,
-	 * allocate results (make sure, with more results, that the
-	 * number of results are the same).
-	 */
-
-	if (cols && st->res.psz >= 0 && cols != (size_t)st->res.psz) {
-		sqlbox_warnx(&box->cfg, "%s: step: result length "
-			"mismatch (have %zd, %zu in results)",
-			st->db->src->fname, st->res.psz, cols);
-		sqlbox_warnx(&box->cfg, "%s: step: statement: "
-			"%s", st->db->src->fname, st->pstmt->stmt);
-		return 0;
-	} else if (cols && st->res.psz < 0) {
-		st->res.set.ps = calloc
-			(cols, sizeof(struct sqlbox_parm));
-		if (st->res.set.ps == NULL) {
+	if (cols > 0) {
+		set.psz = cols;
+		set.ps = calloc(cols, sizeof(struct sqlbox_parm));
+		if (set.ps == NULL) {
 			sqlbox_warn(&box->cfg, "step: calloc");
-			return 0;
+			return -1;
 		}
-		st->res.psz = cols;
-		st->res.set.psz = cols;
-	} else if (cols == 0 || st->res.psz < 0) {
-		assert(cols == 0);
-		st->res.psz = 0;
-		st->res.set.psz = 0;
+	} else {
+		set.psz = 0;
+		set.ps = NULL;
 	}
 
 	/*
 	 * Text and blob pointers are immediately serialised, so we
 	 * don't need to worry about the return pointers going stale.
-	 * Frome now on we need to use the "out" label in case something
-	 * goes wrong to free up from the freeq.
+	 * Maintain a list of pointers we need to pass to custom "free"
+	 * routines in "fq".
 	 */
 
-	TAILQ_INIT(&fq);
-
-	for (i = 0; i < st->res.set.psz; i++) {
+	for (i = 0; i < set.psz; i++) {
 		/*
 		 * See if we have a filter for generating data instead
 		 * of using the database.
@@ -237,7 +218,7 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 		if (j < box->cfg.filts.filtsz) {
 			arg = NULL;
 			if (!(*box->cfg.filts.filts[j].filt)
-			     (&st->res.set.ps[i], &arg)) {
+			    (&set.ps[i], &arg)) {
 				sqlbox_warn(&box->cfg, "%s: step: "
 					"filter: position %zu",
 					st->db->src->fname, i);
@@ -267,34 +248,29 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 
 		switch (sqlite3_column_type(st->stmt, i)) {
 		case SQLITE_BLOB:
-			st->res.set.ps[i].type = SQLBOX_PARM_BLOB;
-			st->res.set.ps[i].bparm = 
-				sqlite3_column_blob(st->stmt, i);
-			st->res.set.ps[i].sz = 
-				sqlite3_column_bytes(st->stmt, i);
+			set.ps[i].type = SQLBOX_PARM_BLOB;
+			set.ps[i].bparm = sqlite3_column_blob(st->stmt, i);
+			set.ps[i].sz = sqlite3_column_bytes(st->stmt, i);
 			break;
 		case SQLITE_FLOAT:
-			st->res.set.ps[i].type = SQLBOX_PARM_FLOAT;
-			st->res.set.ps[i].fparm = 
-				sqlite3_column_double(st->stmt, i);
-			st->res.set.ps[i].sz = sizeof(double);
+			set.ps[i].type = SQLBOX_PARM_FLOAT;
+			set.ps[i].fparm = sqlite3_column_double(st->stmt, i);
+			set.ps[i].sz = sizeof(double);
 			break;
 		case SQLITE_INTEGER:
-			st->res.set.ps[i].type = SQLBOX_PARM_INT;
-			st->res.set.ps[i].iparm = 
-				sqlite3_column_int64(st->stmt, i);
-			st->res.set.ps[i].sz = sizeof(int64_t);
+			set.ps[i].type = SQLBOX_PARM_INT;
+			set.ps[i].iparm = sqlite3_column_int64(st->stmt, i);
+			set.ps[i].sz = sizeof(int64_t);
 			break;
 		case SQLITE_TEXT:
-			st->res.set.ps[i].type = SQLBOX_PARM_STRING;
-			st->res.set.ps[i].sparm = (char *)
+			set.ps[i].type = SQLBOX_PARM_STRING;
+			set.ps[i].sparm = (char *)
 				sqlite3_column_text(st->stmt, i);
-			st->res.set.ps[i].sz = 
-				sqlite3_column_bytes(st->stmt, i) + 1;
+			set.ps[i].sz = sqlite3_column_bytes(st->stmt, i) + 1;
 			break;
 		case SQLITE_NULL:
-			st->res.set.ps[i].type = SQLBOX_PARM_NULL;
-			st->res.set.ps[i].sz = 0;
+			set.ps[i].type = SQLBOX_PARM_NULL;
+			set.ps[i].sz = 0;
 			break;
 		default:
 			sqlbox_warnx(&box->cfg, "%s: step: "
@@ -308,21 +284,23 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 		}
 	}
 
-
 	/* 
-	 * We now serialise our results over the wire.
-	 * Start with at least a SQLBOX_FRAME byte buffer.
+	 * Serialise our results.
+	 * The buffer has already been primed with space for the initial
+	 * byte length.
+	 * FIXME: optimal buffer sizing here and in sqlbox_parm_pack()?
 	 */
 
-	if (st->res.bufsz == 0) {
-		st->res.bufsz = SQLBOX_FRAME;
-		st->res.buf = calloc(1, st->res.bufsz);
-		if (st->res.buf == NULL) {
-			sqlbox_warn(&box->cfg, "step: malloc");
+	assert(st->res.bufsz);
+	if (*bufpos + sizeof(uint32_t) >= st->res.bufsz) {
+		pp = realloc(st->res.buf, *bufpos + 1024);
+		if (pp == NULL) {
+			sqlbox_warn(&box->cfg, "step: realloc");
 			goto out;
 		}
+		st->res.buf = pp;
+		st->res.bufsz = *bufpos + 1024;
 	}
-	assert(st->res.bufsz >= SQLBOX_FRAME);
 
 	/* 
 	 * Write our return code (whether we had a constraint violation)
@@ -331,15 +309,97 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 	 */
 
 	val = htole32(has_cstep);
-	memcpy(st->res.buf + sizeof(uint32_t), 
-		(char *)&val, sizeof(uint32_t));
-	pos = sizeof(uint32_t) * 2;
+	memcpy(st->res.buf + *bufpos, (char *)&val, sizeof(uint32_t));
+	*bufpos += sizeof(uint32_t);
 
-	if (!sqlbox_parm_pack(box, st->res.set.psz, st->res.set.ps, 
-	    &st->res.buf, &pos, &st->res.bufsz)) {
+	if (!sqlbox_parm_pack(box, set.psz, set.ps, 
+	    &st->res.buf, bufpos, &st->res.bufsz)) {
 		sqlbox_warnx(&box->cfg, "step: sqlbox_parm_pack");
 		goto out;
 	}
+	rc = 1;
+out:
+	while ((fn = TAILQ_FIRST(&fq)) != NULL) {
+		TAILQ_REMOVE(&fq, fn, entries);
+		(*fn->fp)(fn->dat);
+		free(fn);
+	}
+	free(set.ps);
+	return rc;
+}
+
+/*
+ * Step through zero or more results to a prepared statement.
+ * We do not allow constraint violations.
+ * Return TRUE on success, FALSE on failure (nothing is allocated).
+ */
+int
+sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
+{
+	struct sqlbox_stmt	*st;
+	size_t			 pos;
+	int			 allow_cstep, rc, done;
+	uint32_t		 val;
+	
+	/* Look up the statement in our global list. */
+
+	if (sz != sizeof(uint32_t) * 2) {
+		sqlbox_warnx(&box->cfg, "step: bad frame size");
+		return 0;
+	}
+	if ((st = sqlbox_stmt_find
+	    (box, le32toh(*(uint32_t *)buf))) == NULL) {
+		sqlbox_warnx(&box->cfg, "step: sqlbox_stmt_find");
+		return 0;
+	}
+	allow_cstep = le32toh(*(uint32_t *)(buf + sizeof(uint32_t)));
+
+	/* 
+	 * Immediately write any cached responses.
+	 * If the last caching set our "done" marker, then don't try to
+	 * read any additional results.
+	 * If we come back into this function we'll hit the limitation
+	 * that we can't step an already-stepped function.
+	 */
+
+	if (st->res.bufsz) {
+		if (!sqlbox_write(box, st->res.buf, st->res.bufsz)) {
+			sqlbox_warnx(&box->cfg, "%s: step: "
+				"sqlbox_write", st->db->src->fname);
+			return 0;
+		}
+		done = st->res.done;
+		sqlbox_res_clear(&st->res);
+		st->res.done = done;
+		if (done)
+			return 1;
+	}
+
+	/* 
+	 * No cached responses.
+	 * Did we already run this to completion?
+	 */
+
+	if (st->res.done) {
+		sqlbox_warnx(&box->cfg, "%s: step: already "
+			"stepped", st->db->src->fname);
+		sqlbox_warnx(&box->cfg, "%s: statement: %s", 
+			st->db->src->fname, st->pstmt->stmt);
+		return 0;
+	}
+
+	st->res.bufsz = SQLBOX_FRAME;
+	st->res.buf = malloc(st->res.bufsz);
+	pos = sizeof(uint32_t);
+	rc = sqlbox_pack_step(box, &pos, st, allow_cstep);
+	if (rc < 0) {
+		sqlbox_warnx(&box->cfg, "%s: step: "
+			"sqlbox_pack_step", st->db->src->fname);
+		sqlbox_warnx(&box->cfg, "%s: statement: %s",
+			st->db->src->fname, st->pstmt->stmt);
+		return 0;
+	} else if (rc == 0)
+		st->res.done = 1;
 
 	/* Now write our frame size. */
 
@@ -351,20 +411,11 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 	pos = pos > SQLBOX_FRAME ? pos : SQLBOX_FRAME;
 	if (!sqlbox_write(box, st->res.buf, pos)) {
 		sqlbox_warnx(&box->cfg, "step: sqlbox_write");
-		goto out;
+		return 0;
 	}
 
-	rc = 1;
-out:
-	/*
-	 * If we allocated any filter memory, then release it here after
-	 * we've serialised.
-	 */
-
-	while ((fn = TAILQ_FIRST(&fq)) != NULL) {
-		TAILQ_REMOVE(&fq, fn, entries);
-		(*fn->fp)(fn->dat);
-		free(fn);
-	}
-	return rc;
+	done = st->res.done;
+	sqlbox_res_clear(&st->res);
+	st->res.done = done;
+	return 1;
 }
