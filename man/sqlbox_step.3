@@ -18,7 +18,6 @@
 .Dt SQLBOX_STEP 3
 .Os
 .Sh NAME
-.Nm sqlbox_cstep ,
 .Nm sqlbox_step
 .Nd execute a prepared statement
 .Sh LIBRARY
@@ -27,25 +26,20 @@
 .In stddef.h
 .In sqlbox.h
 .Ft const struct sqlbox_parmset *
-.Fo sqlbox_cstep
-.Fa "struct sqlbox *box"
-.Fa "size_t id"
-.Fc
-.Ft const struct sqlbox_parmset *
 .Fo sqlbox_step
 .Fa "struct sqlbox *box"
 .Fa "size_t id"
 .Fc
 .Sh DESCRIPTION
-These functions execute a statement
+Executes a statement
 .Fa id
 as returned by
 .Xr sqlbox_prepare_bind 3 .
-They are typically run for returned rows in query statements.
+Typically run for returned rows in query statements.
 If
 .Fa id
 is zero, the last prepared statement is used.
-They return a result set with the following fields:
+Returns a result set with the following fields:
 .Bl -tag -width Ds
 .It Va code
 Either
@@ -53,8 +47,9 @@ Either
 if the query executed or
 .Dv SQLBOX_CODE_CONSTRAINT
 on a constraint violation if
-.Fn sqlbox_cstep
-was used.
+.Xr sqlbox_prepare_bind 3
+is passed
+.Dv SQLBOX_STMT_CONSTRAINT .
 .It Va ps
 The results (columns) themselves or
 .Dv NULL
@@ -100,25 +95,9 @@ The result set as a whole, including the memory allocated for each
 and
 .Va bparm
 column, is only valid until the next
-.Fn sqlbox_step ,
-.Fn sqlbox_cstep ,
+.Fn sqlbox_step
 or
 .Xr sqlbox_finalise 3 .
-.Pp
-Both
-.Fn sqlbox_step
-and
-.Fn sqlbox_cstep
-are identical except in that
-.Fn sqlbox_step
-will fail on constraint violations while
-.Fn sqlbox_cstep
-will set the
-.Dv SQLBOX_CODE_CONSTRAINT
-in
-.Va code
-if constraints are violated, where it's otherwise
-.Dv SQLBOX_CODE_OK .
 .Pp
 When there are no more rows available,
 .Xr sqlbox_rebind 3
@@ -177,27 +156,20 @@ or
 .Dv SQLITE_ROW .
 Handling of
 .Dv SQLITE_CONSTRAINT
-depends upon whether
-.Fn sqlbox_step
-or
-.Fn sqlbox_cstep
-were used.
+depends upon whether constraint violations are allowed when
+.Xr sqlbox_prepare_bind 3
+was invoked.
 .Sh RETURN VALUES
 Returns the results of the query or
 .Dv NULL
 on failure.
 Failure covers situations like failure to communicate with the box,
 stepping after the last result has been returned, or database error.
-Constraint violations are errors with
-.Fn sqlbox_step ,
-but allowed (with the appropriate
+Constraint violations are allowed (with the appropriate
 .Va code
-set) with
-.Fn sqlbox_cstep .
-.Pp
+set) only when stipulated by
+.Xr sqlbox_prepare_bind 3 .
 If
-.Fn sqlbox_cstep
-or
 .Fn sqlbox_step
 fails,
 .Fa box
@@ -250,7 +222,7 @@ if ((p = sqlbox_alloc(&cfg)) == NULL)
   errx(EXIT_FAILURE, "sqlbox_alloc");
 if (!(dbid = sqlbox_open(p, 0)))
   errx(EXIT_FAILURE, "sqlbox_open");
-if (!(stmtid = sqlbox_prepare_bind(p, dbid, 1, 1, parms)))
+if (!(stmtid = sqlbox_prepare_bind(p, dbid, 1, 1, parms, 0)))
   errx(EXIT_FAILURE, "sqlbox_prepare_bind");
 if ((res = sqlbox_step(p, stmtid)) == NULL)
   errx(EXIT_FAILURE, "sqlbox_step");
@@ -291,7 +263,7 @@ if ((p = sqlbox_alloc(&cfg)) == NULL)
   errx(EXIT_FAILURE, "sqlbox_alloc");
 if (!(dbid = sqlbox_open(p, 0)))
   errx(EXIT_FAILURE, "sqlbox_open");
-if (!(stmtid = sqlbox_prepare_bind(p, dbid, 1, 1, parms)))
+if (!(stmtid = sqlbox_prepare_bind(p, dbid, 1, 1, parms, 0)))
   errx(EXIT_FAILURE, "sqlbox_prepare_bind");
 if ((res = sqlbox_step(p, stmtid)) == NULL)
   errx(EXIT_FAILURE, "sqlbox_step");
@@ -371,7 +343,7 @@ if ((p = sqlbox_alloc(&cfg)) == NULL)
   errx(EXIT_FAILURE, "sqlbox_alloc");
 if (sqlbox_open_async(p, 0)))
   errx(EXIT_FAILURE, "sqlbox_open_async");
-if (sqlbox_prepare_bind_async(p, 0, 2, 0, NULL))
+if (sqlbox_prepare_bind_async(p, 0, 2, 0, NULL, 0))
   errx(EXIT_FAILURE, "sqlbox_prepare_bind_async");
 if ((res = sqlbox_step(p, 0)) == NULL)
   errx(EXIT_FAILURE, "sqlbox_step");

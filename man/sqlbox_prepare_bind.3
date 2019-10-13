@@ -33,6 +33,7 @@
 .Fa "size_t idx"
 .Fa "size_t psz"
 .Fa "const struct sqlbox_parm *ps"
+.Fa "unsigned long flags"
 .Fc
 .Ft int
 .Fo sqlbox_prepare_bind_async
@@ -41,6 +42,7 @@
 .Fa "size_t idx"
 .Fa "size_t psz"
 .Fa "const struct sqlbox_parm *ps"
+.Fa "unsigned long flags"
 .Fc
 .Sh DESCRIPTION
 Prepares an SQL statement
@@ -103,6 +105,21 @@ terminator.
 If the string is shorter than the given length (i.e., contains an
 embedded NUL terminator), the database will still return the full given
 length of the original size (terminating NUL inclusive).
+.Pp
+The
+.Fa flags
+may be zero or one of
+.Dv SQLBOX_STMT_CONSTRAINT
+for subsequent
+.Xr sqlbox_step 3
+to allow constraint violations or
+.Dv SQLBOX_STMT_MULTI
+to allow the server to asynchronously fetch rows in advance of
+.Xr sqlbox_step 3 .
+If zero, each
+.Xr sqlbox_step 3
+is a round-trip synchronous call to access the next row of data where
+constraint violations are considered database errors.
 .Pp
 .Fn sqlbox_prepare_bind
 returns a non-zero identifier for later use by
@@ -186,7 +203,7 @@ if ((p = sqlbox_alloc(&cfg)) == NULL)
   errx(EXIT_FAILURE, "sqlbox_alloc");
 if (!(dbid = sqlbox_open(p, 0)))
   errx(EXIT_FAILURE, "sqlbox_open");
-if (!(stmtid = sqlbox_prepare_bind(p, dbid, 1, 1, parms)))
+if (!(stmtid = sqlbox_prepare_bind(p, dbid, 1, 1, parms, 0)))
   errx(EXIT_FAILURE, "sqlbox_prepare_bind");
 if ((res = sqlbox_step(p, stmtid)) == NULL)
   errx(EXIT_FAILURE, "sqlbox_step");
