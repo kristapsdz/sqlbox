@@ -76,16 +76,16 @@ again:
 
 /*
  * Step through statement.
- * Returns SQLBOX_CODE_OK on success, SQLBOX_CODE_CONSTRAINT if cstep is
- * non-zero and there's a constraint violation, or SQLBOX_CODE_ERROR
- * otherwise.
+ * Returns SQLBOX_CODE_OK on success, SQLBOX_CODE_CONSTRAINT if
+ * allow_cstep is non-zero and there's a constraint violation, or
+ * SQLBOX_CODE_ERROR otherwise.
  * If there are columns in the return of the SQL statement, this sets
  * "cols" but otherwise returns SQLBOX_CODE_OK.
  */
 enum sqlbox_code
 sqlbox_wrap_step(struct sqlbox *box, struct sqlbox_db *db,
 	const struct sqlbox_pstmt *pst, sqlite3_stmt *stmt,
-	size_t *cols, int cstep)
+	size_t *cols, int allow_cstep)
 {
 	size_t	 attempt = 0;
 	int	 ccount;
@@ -122,7 +122,7 @@ again_step:
 			db->src->fname, pst->stmt);
 		return SQLBOX_CODE_ERROR;
 	case SQLITE_CONSTRAINT:
-		if (cstep)
+		if (allow_cstep)
 			return SQLBOX_CODE_CONSTRAINT;
 		/* FALLTHROUGH */
 	default:
@@ -160,7 +160,7 @@ sqlbox_wrap_finalise(struct sqlbox *box, struct sqlbox_db *db,
 
 enum sqlbox_code
 sqlbox_wrap_exec(struct sqlbox *box, struct sqlbox_db *db,
-	const struct sqlbox_pstmt *pst, int cstep)
+	const struct sqlbox_pstmt *pst, int allow_cstep)
 {
 	size_t	 attempt = 0;
 
@@ -184,7 +184,7 @@ again_step:
 	case SQLITE_OK:
 		return SQLBOX_CODE_OK;
 	case SQLITE_CONSTRAINT:
-		if (cstep)
+		if (allow_cstep)
 			return SQLBOX_CODE_CONSTRAINT;
 		/* FALLTHROUGH */
 	default:

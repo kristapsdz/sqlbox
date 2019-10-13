@@ -39,11 +39,10 @@ struct	freen {
 
 TAILQ_HEAD(freeq, freen);
 
-static const struct sqlbox_parmset *
-sqlbox_step_inner(struct sqlbox *box, int constraint, size_t stmtid)
+const struct sqlbox_parmset *
+sqlbox_step(struct sqlbox *box, size_t stmtid)
 {
 	uint32_t		 val;
-	char			 buf[sizeof(uint32_t) * 2];
 	const char		*frame;
 	size_t			 i, framesz, psz;
 	struct sqlbox_stmt 	*st;
@@ -65,21 +64,11 @@ sqlbox_step_inner(struct sqlbox *box, int constraint, size_t stmtid)
 
 	sqlbox_res_clear(&st->res);
 
-	/* 
-	 * Write id and whether we accept constraint violations.
-	 * Mixing constraint and no-constraint is allowed: jumping
-	 * through hoops to prevent it just introduces complexity with
-	 * little benefit.
-	 */
+	/* Write id frame. */
 
 	val = htole32(stmtid);
-	memcpy(buf, (char *)&val, sizeof(uint32_t));
-
-	val = htole32(constraint);
-	memcpy(buf + sizeof(uint32_t), (char *)&val, sizeof(uint32_t));
-
 	if (!sqlbox_write_frame
-	    (box, SQLBOX_OP_STEP, buf, sizeof(buf))) {
+	    (box, SQLBOX_OP_STEP, (char *)&val, sizeof(uint32_t))) {
 		sqlbox_warnx(&box->cfg, "step: sqlbox_write_frame");
 		return NULL;
 	}
@@ -140,27 +129,12 @@ sqlbox_step_inner(struct sqlbox *box, int constraint, size_t stmtid)
 	return &st->res.set[st->res.curset++];
 }
 
-const struct sqlbox_parmset *
-sqlbox_step(struct sqlbox *box, size_t stmtid)
-{
-
-	return sqlbox_step_inner(box, 0, stmtid);
-}
-
-const struct sqlbox_parmset *
-sqlbox_cstep(struct sqlbox *box, size_t stmtid)
-{
-
-	return sqlbox_step_inner(box, 1, stmtid);
-}
-
 /*
  * Read a single result from the wire and append it to the packed
  * parameters we already have in our buffer.
  */
 static int
-sqlbox_pack_step(struct sqlbox *box, size_t *bufpos,
-	struct sqlbox_stmt *st, int allow_cstep)
+sqlbox_pack_step(struct sqlbox *box, size_t *bufpos, struct sqlbox_stmt *st)
 {
 	enum sqlbox_code	 code;
 	struct sqlbox_parmset	 set;
@@ -176,7 +150,8 @@ sqlbox_pack_step(struct sqlbox *box, size_t *bufpos,
 	/* Start with the step itself. */
 
 	code = sqlbox_wrap_step(box, st->db, 
-		st->pstmt, st->stmt, &cols, allow_cstep);
+		st->pstmt, st->stmt, &cols, 
+		(st->flags & SQLBOX_STMT_CONSTRAINT));
 	if (code == SQLBOX_CODE_ERROR) {
 		sqlbox_warnx(&box->cfg, "%s: step: "
 			"sqlbox_wrap_step", st->db->src->fname);
@@ -338,12 +313,12 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 {
 	struct sqlbox_stmt	*st;
 	size_t			 pos;
-	int			 allow_cstep, rc, done;
+	int			 rc, done;
 	uint32_t		 val;
 	
 	/* Look up the statement in our global list. */
 
-	if (sz != sizeof(uint32_t) * 2) {
+	if (sz != sizeof(uint32_t)) {
 		sqlbox_warnx(&box->cfg, "step: bad frame size");
 		return 0;
 	}
@@ -352,7 +327,6 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 		sqlbox_warnx(&box->cfg, "step: sqlbox_stmt_find");
 		return 0;
 	}
-	allow_cstep = le32toh(*(uint32_t *)(buf + sizeof(uint32_t)));
 
 	/* 
 	 * Immediately write any cached responses.
@@ -396,7 +370,7 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 	}
 
 	pos = sizeof(uint32_t);
-	rc = sqlbox_pack_step(box, &pos, st, allow_cstep);
+	rc = sqlbox_pack_step(box, &pos, st);
 	if (rc < 0) {
 		sqlbox_warnx(&box->cfg, "%s: step: "
 			"sqlbox_pack_step", st->db->src->fname);

@@ -58,7 +58,8 @@ sqlbox_rolecheck_stmt(struct sqlbox *box, size_t idx)
  */
 static struct sqlbox_stmt *
 sqlbox_pbind(struct sqlbox *box, enum sqlbox_op op, size_t srcid, 
-	size_t pstmt, size_t psz, const struct sqlbox_parm *ps)
+	size_t pstmt, size_t psz, const struct sqlbox_parm *ps,
+	unsigned long opts)
 {
 	size_t			 pos = 0, bufsz = SQLBOX_FRAME, i;
 	uint32_t		 val;
@@ -94,9 +95,17 @@ sqlbox_pbind(struct sqlbox *box, enum sqlbox_op op, size_t srcid,
 
 	pos = sizeof(uint32_t);
 
-	/* Pack operation, source, statement, and parameters. */
+	/* 
+	 * Pack operation, source, statement, and parameters. 
+	 * We know that this is less than the initial frame size of
+	 * SQLBOX_FRAME, so it's ok.
+	 */
 
 	val = htole32(op);
+	memcpy(buf + pos, (char *)&val, sizeof(uint32_t));
+	pos += sizeof(uint32_t);
+
+	val = htole32(opts);
 	memcpy(buf + pos, (char *)&val, sizeof(uint32_t));
 	pos += sizeof(uint32_t);
 
@@ -136,12 +145,13 @@ sqlbox_pbind(struct sqlbox *box, enum sqlbox_op op, size_t srcid,
 
 int
 sqlbox_prepare_bind_async(struct sqlbox *box, size_t srcid,
-	size_t pstmt, size_t psz, const struct sqlbox_parm *ps)
+	size_t pstmt, size_t psz, const struct sqlbox_parm *ps,
+	unsigned long opts)
 {
 	struct sqlbox_stmt	*st;
 
 	if ((st = sqlbox_pbind(box, SQLBOX_OP_PREPARE_BIND_ASYNC, 
-	    srcid, pstmt, psz, ps)) == NULL) {
+	    srcid, pstmt, psz, ps, opts)) == NULL) {
 		sqlbox_warnx(&box->cfg, 
 			"prepare-bind-async: sqlbox_pbind");
 		return 0;
@@ -156,13 +166,14 @@ sqlbox_prepare_bind_async(struct sqlbox *box, size_t srcid,
 
 size_t
 sqlbox_prepare_bind(struct sqlbox *box, size_t srcid,
-	size_t pstmt, size_t psz, const struct sqlbox_parm *ps)
+	size_t pstmt, size_t psz, const struct sqlbox_parm *ps,
+	unsigned long opts)
 {
 	struct sqlbox_stmt	*st;
 	uint32_t		 val;
 
 	if ((st = sqlbox_pbind(box, SQLBOX_OP_PREPARE_BIND_SYNC,
-	    srcid, pstmt, psz, ps)) == NULL) {
+	    srcid, pstmt, psz, ps, opts)) == NULL) {
 		sqlbox_warnx(&box->cfg, 
 			"prepare-bind-sync: sqlbox_pbind");
 		return 0;
@@ -202,23 +213,28 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 	struct sqlbox_stmt	*st;
 	struct sqlbox_pstmt	*pst = NULL;
 	struct sqlbox_parm	*parms = NULL;
+	unsigned long		 opts;
 
-	/* Read the source identifier. */
+	if (sz < sizeof(uint32_t) * 3) {
+		sqlbox_warnx(&box->cfg, "prepare-bind: bad frame size");
+		return NULL;
+	}
 
-	if (sz < sizeof(uint32_t))
-		goto badframe;
+	/* Read and validate all fixed parameters. */
+
+	opts = le32toh(*(uint32_t *)buf);
+	buf += sizeof(uint32_t);
+	sz -= sizeof(uint32_t);
+
 	db = sqlbox_db_find(box, le32toh(*(uint32_t *)buf));
+	buf += sizeof(uint32_t);
+	sz -= sizeof(uint32_t);
+
 	if (db == NULL) {
 		sqlbox_warnx(&box->cfg, "prepare-bind: sqlbox_db_find");
 		return NULL;
 	}
-	buf += sizeof(uint32_t);
-	sz -= sizeof(uint32_t);
 
-	/* Read and validate the statement identifier. */
-
-	if (sz < sizeof(uint32_t))
-		goto badframe;
 	idx = le32toh(*(uint32_t *)buf);
 	buf += sizeof(uint32_t);
 	sz -= sizeof(uint32_t);
@@ -253,7 +269,6 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 		return NULL;
 	}
 
-
 	/* Actually prepare the statement. */
 
 	if ((stmt = sqlbox_wrap_prep(box, db, pst)) == NULL) {
@@ -285,6 +300,7 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 		return NULL;
 	}
 
+	st->flags = opts;
 	st->stmt = stmt;
 	st->pstmt = pst;
 	st->idx = idx;
@@ -293,10 +309,6 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 	TAILQ_INSERT_TAIL(&db->stmtq, st, entries);
 	TAILQ_INSERT_TAIL(&box->stmtq, st, gentries);
 	return st;
-
-badframe:
-	sqlbox_warnx(&box->cfg, "prepare-bind: bad frame size");
-	return NULL;
 }
 
 int

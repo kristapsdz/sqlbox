@@ -219,14 +219,16 @@ struct	sqlbox_parmset {
 	enum sqlbox_code	 code; /* return type */
 };
 
+#define	SQLBOX_STMT_NORMAL	0x00
+#define	SQLBOX_STMT_CONSTRAINT	0x01
+#define	SQLBOX_STMT_MULTI	0x02
+
 struct	sqlbox;
 
 __BEGIN_DECLS
 
 struct sqlbox	*sqlbox_alloc(struct sqlbox_cfg *);
 int		 sqlbox_close(struct sqlbox *, size_t);
-const struct sqlbox_parmset
-		*sqlbox_cstep(struct sqlbox *, size_t);
 enum sqlbox_code sqlbox_cexec(struct sqlbox *, size_t, size_t, 
 			size_t, const struct sqlbox_parm *);
 int		 sqlbox_exec_async(struct sqlbox *, size_t, size_t, 
@@ -242,9 +244,11 @@ size_t		 sqlbox_open(struct sqlbox *, size_t);
 int		 sqlbox_open_async(struct sqlbox *, size_t);
 int		 sqlbox_ping(struct sqlbox *);
 size_t		 sqlbox_prepare_bind(struct sqlbox *, size_t,
-			size_t, size_t, const struct sqlbox_parm *);
+			size_t, size_t, const struct sqlbox_parm *,
+			unsigned long);
 int		 sqlbox_prepare_bind_async(struct sqlbox *, size_t,
-			size_t, size_t, const struct sqlbox_parm *);
+			size_t, size_t, const struct sqlbox_parm *,
+			unsigned long);
 int		 sqlbox_rebind(struct sqlbox *, size_t,
 			size_t, const struct sqlbox_parm *);
 int	 	 sqlbox_role(struct sqlbox *, size_t);

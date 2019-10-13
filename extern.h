@@ -70,6 +70,7 @@ struct	sqlbox_stmt {
 	const struct sqlbox_pstmt *pstmt; /* prepared statement */
 	struct sqlbox_db	*db; /* source */
 	struct sqlbox_res	 res; /* results, if any */
+	unsigned long		 flags; /* stepping flags */
 	TAILQ_ENTRY(sqlbox_stmt) entries; /* per-database */
 	TAILQ_ENTRY(sqlbox_stmt) gentries; /* global */
 };
