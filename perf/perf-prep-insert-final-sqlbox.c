@@ -78,7 +78,7 @@ main(int argc, char *argv[])
 	if (!(dbid = sqlbox_open(p, 0)))
 		errx(EXIT_FAILURE, "sqlbox_open");
 
-	if (!(stmtid = sqlbox_prepare_bind(p, dbid, 0, 0, NULL)))
+	if (!(stmtid = sqlbox_prepare_bind(p, dbid, 0, 0, NULL, 0)))
 		errx(EXIT_FAILURE, "sqlbox_prepare_bind");
 	if (sqlbox_step(p, stmtid) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_step");
@@ -90,7 +90,7 @@ main(int argc, char *argv[])
 		parms[1].iparm = arc4random();
 		parms[2].iparm = arc4random();
 		parms[3].iparm = arc4random();
-		if (!sqlbox_prepare_bind_async(p, dbid, 1, 4, parms))
+		if (!sqlbox_prepare_bind_async(p, dbid, 1, 4, parms, 0))
 			errx(EXIT_FAILURE, "sqlbox_prepare_bind");
 		if (sqlbox_step(p, 0) == NULL)
 			errx(EXIT_FAILURE, "sqlbox_step");
