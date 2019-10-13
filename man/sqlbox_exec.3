@@ -18,7 +18,6 @@
 .Dt SQLBOX_EXEC 3
 .Os
 .Sh NAME
-.Nm sqlbox_cexec ,
 .Nm sqlbox_exec ,
 .Nm sqlbox_exec_async
 .Nd execute a statement with bound parameters
@@ -28,20 +27,13 @@
 .In stddef.h
 .In sqlbox.h
 .Ft enum sqlbox_code
-.Fo sqlbox_cexec
-.Fa "struct sqlbox *box"
-.Fa "size_t src"
-.Fa "size_t idx"
-.Fa "size_t psz"
-.Fa "const struct sqlbox_parm *ps"
-.Fc
-.Ft enum sqlbox_code
 .Fo sqlbox_exec
 .Fa "struct sqlbox *box"
 .Fa "size_t src"
 .Fa "size_t idx"
 .Fa "size_t psz"
 .Fa "const struct sqlbox_parm *ps"
+.Fa "unsigned long flags"
 .Fc
 .Ft int
 .Fo sqlbox_exec_async
@@ -50,6 +42,7 @@
 .Fa "size_t idx"
 .Fa "size_t psz"
 .Fa "const struct sqlbox_parm *ps"
+.Fa "unsigned long flags"
 .Fc
 .Sh DESCRIPTION
 Executes an SQL statement.
@@ -64,6 +57,11 @@ success.
 See
 .Xr sqlbox_prepare_bind 3
 for a description of the arguments.
+The
+.Dv SQLBOX_STMT_MULTI
+argument value for
+.Fa flags
+is always ignored with these functions.
 .Pp
 The synchronous
 .Fn sqlbox_exec
@@ -76,11 +74,6 @@ was accessed, leaving an explicit check to
 or implicit with the next
 .Fa box
 operation.
-In the synchronous case,
-.Fn sqlbox_cexc
-additionally allows for constraint violations, which are otherwise
-considered an error.
-There is no asynchronous version of this function.
 .Ss SQLite3 Implementation
 If passed a
 .Fa psz
@@ -107,11 +100,12 @@ statement could not be executed, or the database raises errors.
 Otherwise it returns
 .Dv SQLBOX_CODE_OK ,
 including if the statement returns rows (which are discarded).
-In addition to these,
-.Fn sqlbox_cexec
+In addition to these, it will also return
 will also return
 .Dv SQLBOX_CODE_CONSTRAINT
-on constraint violation, which does not signify an error.
+on constraint violation when
+.Dv SQLBOX_STMT_CONSTRAINT
+has been specified.
 .Pp
 .Fn sqlbox_exec_async
 returns zero if strings are not NUL-terminated at their size (if
