@@ -78,7 +78,7 @@ main(int argc, char *argv[])
 	for (i = 0; i < iters; i++) {
 		if (!sqlbox_open_async(p, 0))
 			errx(EXIT_FAILURE, "sqlbox_open_async");
-		if (!sqlbox_exec_async(p, 0, 0, 0, NULL))
+		if (!sqlbox_exec_async(p, 0, 0, 0, NULL, 0))
 			errx(EXIT_FAILURE, "sqlbox_exec_async");
 
 		parms[0].iparm = arc4random();
@@ -86,7 +86,7 @@ main(int argc, char *argv[])
 		parms[2].iparm = arc4random();
 		parms[3].iparm = arc4random();
 
-		if (!sqlbox_exec_async(p, 0, 1, 4, parms))
+		if (!sqlbox_exec_async(p, 0, 1, 4, parms, 0))
 			errx(EXIT_FAILURE, "sqlbox_exec_async");
 		if (!sqlbox_close(p, 0))
 			errx(EXIT_FAILURE, "sqlbox_close");
