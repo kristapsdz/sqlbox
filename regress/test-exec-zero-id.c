@@ -70,7 +70,7 @@ main(int argc, char *argv[])
 	if (!sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping");
 
-	if (!(stmtid = sqlbox_prepare_bind(p, 0, 2, 0, NULL)))
+	if (!(stmtid = sqlbox_prepare_bind(p, 0, 2, 0, NULL, 0)))
 		errx(EXIT_FAILURE, "sqlbox_prepare_bind");
 	if ((res = sqlbox_step(p, stmtid)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_step");

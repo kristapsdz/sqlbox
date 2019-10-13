@@ -56,7 +56,7 @@ main(int argc, char *argv[])
 
 	/* Create table. */
 
-	if (!(stmtid = sqlbox_prepare_bind(p, 0, 0, 0, NULL)))
+	if (!(stmtid = sqlbox_prepare_bind(p, 0, 0, 0, NULL, 0)))
 		errx(EXIT_FAILURE, "sqlbox_prepare_bind");
 	if (!sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping");

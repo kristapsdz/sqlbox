@@ -61,7 +61,7 @@ main(int argc, char *argv[])
 		errx(EXIT_FAILURE, "sqlbox_open");
 	if (!sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping");
-	if (!(stmtid = sqlbox_prepare_bind(p, dbid, 0, 0, NULL)))
+	if (!(stmtid = sqlbox_prepare_bind(p, dbid, 0, 0, NULL, 0)))
 		errx(EXIT_FAILURE, "sqlbox_prepare_bind");
 	if ((res = sqlbox_step(p, stmtid)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_step");
@@ -72,7 +72,8 @@ main(int argc, char *argv[])
 
 	/* The string in "sparm" is not NUL terminated. */
 
-	if (sqlbox_prepare_bind(p, dbid, 1, nitems(parms1), parms1))
+	if (sqlbox_prepare_bind
+  	    (p, dbid, 1, nitems(parms1), parms1, 0))
 		errx(EXIT_FAILURE, "sqlbox_prepare_bind should fail");
 	sqlbox_free(p);
 	return EXIT_SUCCESS;

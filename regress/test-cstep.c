@@ -62,9 +62,10 @@ main(int argc, char *argv[])
 	if (!(dbid = sqlbox_open(p, 0)))
 		errx(EXIT_FAILURE, "sqlbox_open");
 
-	if (!(stmtid = sqlbox_prepare_bind(p, dbid, 0, 0, NULL)))
+	if (!(stmtid = sqlbox_prepare_bind
+	    (p, dbid, 0, 0, NULL, SQLBOX_STMT_CONSTRAINT)))
 		errx(EXIT_FAILURE, "sqlbox_prepare_bind");
-	if ((res = sqlbox_cstep(p, stmtid)) == NULL)
+	if ((res = sqlbox_step(p, stmtid)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_step");
 	if (res->code != SQLBOX_CODE_OK)
 		errx(EXIT_FAILURE, "res->code != SQLBOX_CODE_OK");
@@ -74,9 +75,10 @@ main(int argc, char *argv[])
 	/* This will have a constraint error. */
 
 	if (!(stmtid = sqlbox_prepare_bind
-	      (p, dbid, 1, nitems(parms1), parms1)))
+	      (p, dbid, 1, nitems(parms1), parms1, 
+	       SQLBOX_STMT_CONSTRAINT)))
 		errx(EXIT_FAILURE, "sqlbox_prepare_bind");
-	if ((res = sqlbox_cstep(p, stmtid)) == NULL)
+	if ((res = sqlbox_step(p, stmtid)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_step");
 	if (res->code != SQLBOX_CODE_CONSTRAINT)
 		errx(EXIT_FAILURE, "res->code != SQLBOX_CODE_CONSTRAINT");
@@ -86,8 +88,8 @@ main(int argc, char *argv[])
 	/* This won't. */
 
 	if (!sqlbox_rebind(p, stmtid, nitems(parms2), parms2))
-		errx(EXIT_FAILURE, "sqlbox_prepare_bind");
-	if ((res = sqlbox_cstep(p, stmtid)) == NULL)
+		errx(EXIT_FAILURE, "sqlbox_rebind");
+	if ((res = sqlbox_step(p, stmtid)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_step");
 	if (res->code != SQLBOX_CODE_OK)
 		errx(EXIT_FAILURE, "res->code != SQLBOX_CODE_OK");

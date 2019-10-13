@@ -53,7 +53,7 @@ main(int argc, char *argv[])
 		errx(EXIT_FAILURE, "sqlbox_open");
 	if (!sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping");
-	if (!(stmtid = sqlbox_prepare_bind(p, dbid, 0, 0, NULL)))
+	if (!(stmtid = sqlbox_prepare_bind(p, dbid, 0, 0, NULL, 0)))
 		errx(EXIT_FAILURE, "sqlbox_prepare_bind");
 	if (!sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping");

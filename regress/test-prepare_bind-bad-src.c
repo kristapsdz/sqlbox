@@ -55,7 +55,7 @@ main(int argc, char *argv[])
 
 	/* Fail: not an available source. */
 
-	if (sqlbox_prepare_bind(p, dbid + 1, 0, 0, NULL))
+	if (sqlbox_prepare_bind(p, dbid + 1, 0, 0, NULL, 0))
 		errx(EXIT_FAILURE, "sqlbox_prepare_bind should fail");
 
 	sqlbox_free(p);

@@ -50,7 +50,7 @@ main(int argc, char *argv[])
 
 	/* Fail: no database available. */
 
-	if (sqlbox_prepare_bind(p, 0, 0, 0, NULL))
+	if (sqlbox_prepare_bind(p, 0, 0, 0, NULL, 0))
 		errx(EXIT_FAILURE, "sqlbox_prepare_bind should fail");
 
 	sqlbox_free(p);

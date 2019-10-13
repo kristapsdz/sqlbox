@@ -81,7 +81,7 @@ main(int argc, char *argv[])
 	if (!(dbid = sqlbox_open(p, 0)))
 		errx(EXIT_FAILURE, "sqlbox_open");
 
-	if (!(stmtid = sqlbox_prepare_bind(p, dbid, 0, 0, NULL)))
+	if (!(stmtid = sqlbox_prepare_bind(p, dbid, 0, 0, NULL, 0)))
 		errx(EXIT_FAILURE, "sqlbox_prepare_bind");
 	if ((res = sqlbox_step(p, stmtid)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_step");
@@ -89,14 +89,14 @@ main(int argc, char *argv[])
 		errx(EXIT_FAILURE, "sqlbox_finalise");
 
 	if (!(stmtid = sqlbox_prepare_bind
-	      (p, dbid, 1, nitems(parms1), parms1)))
+	      (p, dbid, 1, nitems(parms1), parms1, 0)))
 		errx(EXIT_FAILURE, "sqlbox_prepare_bind");
 	if ((res = sqlbox_step(p, stmtid)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_step");
 	if (!sqlbox_finalise(p, stmtid))
 		errx(EXIT_FAILURE, "sqlbox_finalise");
 
-	if (!(stmtid = sqlbox_prepare_bind(p, dbid, 2, 0, NULL)))
+	if (!(stmtid = sqlbox_prepare_bind(p, dbid, 2, 0, NULL, 0)))
 		errx(EXIT_FAILURE, "sqlbox_prepare_bind");
 	if ((res = sqlbox_step(p, stmtid)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_step");

@@ -43,7 +43,7 @@ main(int argc, char *argv[])
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_alloc");
-	if (!sqlbox_prepare_bind_async(p, 1, 0, 0, NULL))
+	if (!sqlbox_prepare_bind_async(p, 1, 0, 0, NULL, 0))
 		errx(EXIT_FAILURE, "sqlbox_prepare_bind");
 	if (sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping should fail");
