@@ -229,12 +229,12 @@ __BEGIN_DECLS
 
 struct sqlbox	*sqlbox_alloc(struct sqlbox_cfg *);
 int		 sqlbox_close(struct sqlbox *, size_t);
-enum sqlbox_code sqlbox_cexec(struct sqlbox *, size_t, size_t, 
-			size_t, const struct sqlbox_parm *);
 int		 sqlbox_exec_async(struct sqlbox *, size_t, size_t, 
-			size_t, const struct sqlbox_parm *);
+			size_t, const struct sqlbox_parm *,
+			unsigned long);
 enum sqlbox_code sqlbox_exec(struct sqlbox *, size_t, size_t, 
-			size_t, const struct sqlbox_parm *);
+			size_t, const struct sqlbox_parm *,
+			unsigned long);
 int		 sqlbox_finalise(struct sqlbox *, size_t);
 void		 sqlbox_free(struct sqlbox *);
 int		 sqlbox_lastid(struct sqlbox *, size_t, int64_t *);

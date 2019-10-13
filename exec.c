@@ -57,9 +57,9 @@ sqlbox_rolecheck_stmt(struct sqlbox *box, size_t idx)
  * Returns TRUE on success, FALSE on failure.
  */
 static int
-sqlbox_exec_inner(struct sqlbox *box, int allow_cstep, 
+sqlbox_exec_inner(struct sqlbox *box,
 	enum sqlbox_op op, size_t srcid, size_t pstmt, size_t psz, 
-	const struct sqlbox_parm *ps)
+	const struct sqlbox_parm *ps, unsigned long flags)
 {
 	size_t		 pos = 0, bufsz = SQLBOX_FRAME, i;
 	uint32_t	 val;
@@ -94,11 +94,11 @@ sqlbox_exec_inner(struct sqlbox *box, int allow_cstep,
 	memcpy(buf + pos, (char *)&val, sizeof(uint32_t));
 	pos += sizeof(uint32_t);
 
-	val = htole32(srcid);
+	val = htole32(flags);
 	memcpy(buf + pos, (char *)&val, sizeof(uint32_t));
 	pos += sizeof(uint32_t);
 
-	val = htole32(allow_cstep);
+	val = htole32(srcid);
 	memcpy(buf + pos, (char *)&val, sizeof(uint32_t));
 	pos += sizeof(uint32_t);
 
@@ -130,12 +130,12 @@ sqlbox_exec_inner(struct sqlbox *box, int allow_cstep,
 }
 
 int
-sqlbox_exec_async(struct sqlbox *box, size_t srcid,
-	size_t pstmt, size_t psz, const struct sqlbox_parm *ps)
+sqlbox_exec_async(struct sqlbox *box, size_t srcid, size_t pstmt, 
+	size_t psz, const struct sqlbox_parm *ps, unsigned long opts)
 {
 
-	if (!sqlbox_exec_inner(box, 0,
-	    SQLBOX_OP_EXEC_ASYNC, srcid, pstmt, psz, ps)) {
+	if (!sqlbox_exec_inner(box, SQLBOX_OP_EXEC_ASYNC, 
+	    srcid, pstmt, psz, ps, opts)) {
 		sqlbox_warnx(&box->cfg, "exec-async: sqlbox_exec_inner");
 		return 0;
 	}
@@ -144,33 +144,13 @@ sqlbox_exec_async(struct sqlbox *box, size_t srcid,
 }
 
 enum sqlbox_code
-sqlbox_cexec(struct sqlbox *box, size_t srcid,
-	size_t pstmt, size_t psz, const struct sqlbox_parm *ps)
+sqlbox_exec(struct sqlbox *box, size_t srcid, size_t pstmt, 
+	size_t psz, const struct sqlbox_parm *ps, unsigned long opts)
 {
 	uint32_t	 val;
 
-	if (!sqlbox_exec_inner(box, 1,
-	    SQLBOX_OP_EXEC_SYNC, srcid, pstmt, psz, ps)) {
-		sqlbox_warnx(&box->cfg, "cexec: sqlbox_exec_inner");
-		return SQLBOX_CODE_ERROR;
-	}
-
-	if (!sqlbox_read(box, (char *)&val, sizeof(uint32_t))) {
-		sqlbox_warnx(&box->cfg, "exec-sync: sqlbox_read");
-		return SQLBOX_CODE_ERROR;
-	}
-
-	return (enum sqlbox_code)val;
-}
-
-enum sqlbox_code
-sqlbox_exec(struct sqlbox *box, size_t srcid,
-	size_t pstmt, size_t psz, const struct sqlbox_parm *ps)
-{
-	uint32_t	 val;
-
-	if (!sqlbox_exec_inner(box, 0,
-	    SQLBOX_OP_EXEC_SYNC, srcid, pstmt, psz, ps)) {
+	if (!sqlbox_exec_inner(box, SQLBOX_OP_EXEC_SYNC,
+	    srcid, pstmt, psz, ps, opts)) {
 		sqlbox_warnx(&box->cfg, "exec-sync: sqlbox_exec_inner");
 		return SQLBOX_CODE_ERROR;
 	}
@@ -198,7 +178,7 @@ sqlbox_op_exec(struct sqlbox *box, const char *buf, size_t sz)
 	struct sqlbox_pstmt	*pst = NULL;
 	struct sqlbox_parm	*parms = NULL;
 	enum sqlbox_code	 code;
-	int			 allow_cstep;
+	unsigned long		 flags;
 
 	/* 
 	 * Read the source identifier, whether we can have constraints,
@@ -210,17 +190,18 @@ sqlbox_op_exec(struct sqlbox *box, const char *buf, size_t sz)
 		return SQLBOX_CODE_ERROR;
 	}
 
+	flags = le32toh(*(uint32_t *)buf);
+	buf += sizeof(uint32_t);
+	sz -= sizeof(uint32_t);
+
 	db = sqlbox_db_find(box, le32toh(*(uint32_t *)buf));
+	buf += sizeof(uint32_t);
+	sz -= sizeof(uint32_t);
+
 	if (db == NULL) {
 		sqlbox_warnx(&box->cfg, "exec: sqlbox_db_find");
 		return SQLBOX_CODE_ERROR;
 	}
-	buf += sizeof(uint32_t);
-	sz -= sizeof(uint32_t);
-
-	allow_cstep = le32toh(*(uint32_t *)buf);
-	buf += sizeof(uint32_t);
-	sz -= sizeof(uint32_t);
 
 	idx = le32toh(*(uint32_t *)buf);
 	buf += sizeof(uint32_t);
@@ -262,8 +243,8 @@ sqlbox_op_exec(struct sqlbox *box, const char *buf, size_t sz)
 	 */
 
 	if (parmsz == 0) {
-		code = sqlbox_wrap_exec
-			(box, db, pst, allow_cstep);
+		code = sqlbox_wrap_exec(box, db, 
+			pst, (flags & SQLBOX_STMT_CONSTRAINT));
 		if (code == SQLBOX_CODE_ERROR)
 			sqlbox_warnx(&box->cfg, 
 				"%s: exec: sqlbox_wrap_exec", 
@@ -288,8 +269,8 @@ sqlbox_op_exec(struct sqlbox *box, const char *buf, size_t sz)
 		}
 		free(parms);
 
-		code = sqlbox_wrap_step(box, db, 
-			pst, stmt, &cols, allow_cstep);
+		code = sqlbox_wrap_step(box, db, pst, stmt, 
+			&cols, (flags & SQLBOX_STMT_CONSTRAINT));
 		if (code == SQLBOX_CODE_ERROR)
 			sqlbox_warnx(&box->cfg, 
 				"%s: exec: sqlbox_wrap_step", 
