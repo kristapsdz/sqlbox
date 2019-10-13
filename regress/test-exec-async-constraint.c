@@ -1,4 +1,3 @@
-
 /*	$Id$ */
 /*
  * Copyright (c) 2019 Kristaps Dzonsons <kristaps@bsd.lv>
@@ -57,15 +56,15 @@ main(int argc, char *argv[])
 		errx(EXIT_FAILURE, "sqlbox_alloc");
 	if (!(dbid = sqlbox_open(p, 0)))
 		errx(EXIT_FAILURE, "sqlbox_open");
-	if (!sqlbox_exec_async(p, dbid, 0, 0, NULL)) 
+	if (!sqlbox_exec_async(p, dbid, 0, 0, NULL, 0)) 
 		err(EXIT_FAILURE, "sqlbox_exec");
 	if (!sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping");
-	if (!sqlbox_exec_async(p, dbid, 1, nitems(parms), parms)) 
+	if (!sqlbox_exec_async(p, dbid, 1, nitems(parms), parms, 0)) 
 		err(EXIT_FAILURE, "sqlbox_exec");
 	if (!sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping");
-	if (!sqlbox_exec_async(p, dbid, 1, nitems(parms), parms)) 
+	if (!sqlbox_exec_async(p, dbid, 1, nitems(parms), parms, 0)) 
 		err(EXIT_FAILURE, "sqlbox_exec_async");
 	if (sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping should fail");

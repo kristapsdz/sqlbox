@@ -1,4 +1,3 @@
-
 /*	$Id$ */
 /*
  * Copyright (c) 2019 Kristaps Dzonsons <kristaps@bsd.lv>
@@ -49,7 +48,7 @@ main(int argc, char *argv[])
 
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_alloc");
-	if (!sqlbox_exec_async(p, 0, 0, 0, NULL)) 
+	if (!sqlbox_exec_async(p, 0, 0, 0, NULL, 0)) 
 		err(EXIT_FAILURE, "sqlbox_exec_async");
 	if (sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping should fail");

@@ -1,4 +1,3 @@
-
 /*	$Id$ */
 /*
  * Copyright (c) 2019 Kristaps Dzonsons <kristaps@bsd.lv>
@@ -60,12 +59,13 @@ main(int argc, char *argv[])
 	if (!sqlbox_open_async(p, 0))
 		errx(EXIT_FAILURE, "sqlbox_open");
 
-	if (SQLBOX_CODE_ERROR == sqlbox_exec(p, 0, 0, 0, NULL)) 
+	if (SQLBOX_CODE_ERROR == sqlbox_exec(p, 0, 0, 0, NULL, 0)) 
 		err(EXIT_FAILURE, "sqlbox_exec");
 	if (!sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping");
 
-	if (SQLBOX_CODE_ERROR == sqlbox_exec(p, 0, 1, nitems(parms), parms)) 
+	if (SQLBOX_CODE_ERROR == sqlbox_exec
+	    (p, 0, 1, nitems(parms), parms, 0)) 
 		err(EXIT_FAILURE, "sqlbox_exec");
 	if (!sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping");

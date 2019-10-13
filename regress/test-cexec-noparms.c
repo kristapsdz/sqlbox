@@ -1,4 +1,3 @@
-
 /*	$Id$ */
 /*
  * Copyright (c) 2019 Kristaps Dzonsons <kristaps@bsd.lv>
@@ -54,18 +53,19 @@ main(int argc, char *argv[])
 	if (!(dbid = sqlbox_open(p, 0)))
 		errx(EXIT_FAILURE, "sqlbox_open");
 
-	if (SQLBOX_CODE_ERROR == sqlbox_exec(p, dbid, 0, 0, NULL)) 
+	if (SQLBOX_CODE_ERROR == sqlbox_exec(p, dbid, 0, 0, NULL, 0)) 
 		err(EXIT_FAILURE, "sqlbox_exec");
 	if (!sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping");
 
-	if (SQLBOX_CODE_ERROR == sqlbox_exec(p, dbid, 1, 0, NULL)) 
+	if (SQLBOX_CODE_ERROR == sqlbox_exec(p, dbid, 1, 0, NULL, 0)) 
 		err(EXIT_FAILURE, "sqlbox_exec");
 	if (!sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping");
 
-	if (SQLBOX_CODE_CONSTRAINT != sqlbox_cexec(p, dbid, 1, 0, NULL))
-		err(EXIT_FAILURE, "sqlbox_cexec should violate constraint");
+	if (SQLBOX_CODE_CONSTRAINT != sqlbox_exec
+	    (p, dbid, 1, 0, NULL, SQLBOX_STMT_CONSTRAINT))
+		err(EXIT_FAILURE, "sqlbox_exec should violate constraint");
 	if (!sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping");
 
