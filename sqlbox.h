@@ -219,6 +219,10 @@ struct	sqlbox_parmset {
 	enum sqlbox_code	 code; /* return type */
 };
 
+/*
+ * Flag bit values for sqlbox_exec, sqlbox_exec_async,
+ * sqlbox_preapre_bind, and sqlbox_prepare_bind_async.
+ */
 #define	SQLBOX_STMT_NORMAL	0x00
 #define	SQLBOX_STMT_CONSTRAINT	0x01
 #define	SQLBOX_STMT_MULTI	0x02
