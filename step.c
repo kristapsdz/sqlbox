@@ -31,6 +31,12 @@
 #include "sqlbox.h"
 #include "extern.h"
 
+/*
+ * When we're caching results, cache at most 10 times the frame size.
+ * XXX: this will probably end up being tuned or dynamically set.
+ */
+#define	SQLBOX_CACHE_MAX (SQLBOX_FRAME * 10)
+
 struct	freen {
 	void			 *dat;
 	void			(*fp)(void *);
@@ -132,6 +138,7 @@ sqlbox_step(struct sqlbox *box, size_t stmtid)
 /*
  * Read a single result from the wire and append it to the packed
  * parameters we already have in our buffer.
+ * Return <0 on error, 0 if there are no results, >0 if we have a row.
  */
 static int
 sqlbox_pack_step(struct sqlbox *box, size_t *bufpos, struct sqlbox_stmt *st)
@@ -139,7 +146,7 @@ sqlbox_pack_step(struct sqlbox *box, size_t *bufpos, struct sqlbox_stmt *st)
 	enum sqlbox_code	 code;
 	struct sqlbox_parmset	 set;
 	size_t			 cols = 0, i, j;
-	int			 has_cstep = 0, rc = 0;
+	int			 has_cstep = 0, rc = -1;
 	void			*pp, *arg;
 	struct freeq		 fq;
 	struct freen		*fn;
@@ -268,13 +275,13 @@ sqlbox_pack_step(struct sqlbox *box, size_t *bufpos, struct sqlbox_stmt *st)
 
 	assert(st->res.bufsz);
 	if (*bufpos + sizeof(uint32_t) >= st->res.bufsz) {
-		pp = realloc(st->res.buf, *bufpos + 1024);
+		pp = realloc(st->res.buf, *bufpos + SQLBOX_FRAME);
 		if (pp == NULL) {
 			sqlbox_warn(&box->cfg, "step: realloc");
 			goto out;
 		}
 		st->res.buf = pp;
-		st->res.bufsz = *bufpos + 1024;
+		st->res.bufsz = *bufpos + SQLBOX_FRAME;
 	}
 
 	/* 
@@ -292,7 +299,8 @@ sqlbox_pack_step(struct sqlbox *box, size_t *bufpos, struct sqlbox_stmt *st)
 		sqlbox_warnx(&box->cfg, "step: sqlbox_parm_pack");
 		goto out;
 	}
-	rc = 1;
+	rc = (cols > 0);
+
 out:
 	while ((fn = TAILQ_FIRST(&fq)) != NULL) {
 		TAILQ_REMOVE(&fq, fn, entries);
@@ -312,8 +320,8 @@ int
 sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 {
 	struct sqlbox_stmt	*st;
-	size_t			 pos;
-	int			 rc, done;
+	size_t			 i, pos;
+	int			 rc, done, wrote = 0;
 	uint32_t		 val;
 	
 	/* Look up the statement in our global list. */
@@ -330,10 +338,8 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 
 	/* 
 	 * Immediately write any cached responses.
-	 * If the last caching set our "done" marker, then don't try to
-	 * read any additional results.
-	 * If we come back into this function we'll hit the limitation
-	 * that we can't step an already-stepped function.
+	 * Make sure to update our "done" marker after clearing out the
+	 * buffer of rows, which sqlbox_res_clear() otherwise clears.
 	 */
 
 	if (st->res.bufsz) {
@@ -342,19 +348,21 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 				"sqlbox_write", st->db->src->fname);
 			return 0;
 		}
+		wrote = 1;
 		done = st->res.done;
 		sqlbox_res_clear(&st->res);
 		st->res.done = done;
-		if (done)
-			return 1;
 	}
 
 	/* 
-	 * No cached responses.
-	 * Did we already run this to completion?
+	 * No cached responses: did we already run this to completion?
+	 * This is an ok situation if we just wrote a response message
+	 * which would indicate that we're done, as this isn't a retry.
 	 */
 
 	if (st->res.done) {
+		if (wrote)
+			return 1;
 		sqlbox_warnx(&box->cfg, "%s: step: already "
 			"stepped", st->db->src->fname);
 		sqlbox_warnx(&box->cfg, "%s: statement: %s", 
@@ -362,39 +370,85 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 		return 0;
 	}
 
-	st->res.bufsz = SQLBOX_FRAME;
-	st->res.buf = calloc(1, st->res.bufsz);
-	if (st->res.buf == NULL) {
-		sqlbox_warn(&box->cfg, "step: calloc");
-		return 0;
+	/*
+	 * If we haven't written anything yet, which is the norm for
+	 * non-multi stepping, then perform a single step and write it.
+	 */
+
+	if (!wrote) {
+		st->res.bufsz = SQLBOX_FRAME;
+		st->res.buf = calloc(st->res.bufsz, 1);
+		if (st->res.buf == NULL) {
+			sqlbox_warn(&box->cfg, "step: calloc");
+			return 0;
+		}
+		pos = sizeof(uint32_t);
+		if ((rc = sqlbox_pack_step(box, &pos, st)) < 0) {
+			sqlbox_warnx(&box->cfg, "%s: step: "
+				"sqlbox_pack_step", st->db->src->fname);
+			sqlbox_warnx(&box->cfg, "%s: statement: %s",
+				st->db->src->fname, st->pstmt->stmt);
+			return 0;
+		} else if (rc == 0)
+			st->res.done = 1;
+
+		val = htole32(pos - sizeof(uint32_t));
+		memcpy(st->res.buf, (char *)&val, sizeof(uint32_t));
+		pos = pos > SQLBOX_FRAME ? pos : SQLBOX_FRAME;
+		if (!sqlbox_write(box, st->res.buf, pos)) {
+			sqlbox_warnx(&box->cfg, "step: sqlbox_write");
+			return 0;
+		}
+		done = st->res.done;
+		sqlbox_res_clear(&st->res);
+		st->res.done = done;
+
+		/*
+		 * If we're doing a multi-step and we just wrote some
+		 * data, then continue to collect for the next request.
+		 */
+
+		if ((st->flags & SQLBOX_STMT_MULTI))
+			wrote = 1;
+	} 
+
+	/*
+	 * We've written data but want to cache up for the next call to
+	 * this function.
+	 */
+
+	if (wrote && !st->res.done) {
+		assert(st->res.bufsz == 0);
+		st->res.bufsz = SQLBOX_FRAME;
+		st->res.buf = calloc(st->res.bufsz, 1);
+		if (st->res.buf == NULL) {
+			sqlbox_warn(&box->cfg, "step: calloc");
+			return 0;
+		}
+		pos = sizeof(uint32_t);
+		assert(!st->res.done);
+		i = 0;
+		while (pos < SQLBOX_CACHE_MAX) {
+			rc = sqlbox_pack_step(box, &pos, st);
+			if (rc < 0) {
+				sqlbox_warnx(&box->cfg, "%s: step: "
+					"sqlbox_pack_step (multi)", 
+					st->db->src->fname);
+				sqlbox_warnx(&box->cfg, 
+					"%s: statement: %s",
+					st->db->src->fname, 
+					st->pstmt->stmt);
+				return 0;
+			} else if (rc == 0) {
+				st->res.done = 1;
+				break;
+			}
+			i++;
+		}
+		val = htole32(pos - sizeof(uint32_t));
+		memcpy(st->res.buf, (char *)&val, sizeof(uint32_t));
+		st->res.bufsz = pos > SQLBOX_FRAME ? pos : SQLBOX_FRAME;
 	}
 
-	pos = sizeof(uint32_t);
-	rc = sqlbox_pack_step(box, &pos, st);
-	if (rc < 0) {
-		sqlbox_warnx(&box->cfg, "%s: step: "
-			"sqlbox_pack_step", st->db->src->fname);
-		sqlbox_warnx(&box->cfg, "%s: statement: %s",
-			st->db->src->fname, st->pstmt->stmt);
-		return 0;
-	} else if (rc == 0)
-		st->res.done = 1;
-
-	/* Now write our frame size. */
-
-	val = htole32(pos - sizeof(uint32_t));
-	memcpy(st->res.buf, (char *)&val, sizeof(uint32_t));
-
-	/* The frame will be at least SQLBOX_FRAME long. */
-
-	pos = pos > SQLBOX_FRAME ? pos : SQLBOX_FRAME;
-	if (!sqlbox_write(box, st->res.buf, pos)) {
-		sqlbox_warnx(&box->cfg, "step: sqlbox_write");
-		return 0;
-	}
-
-	done = st->res.done;
-	sqlbox_res_clear(&st->res);
-	st->res.done = done;
 	return 1;
 }
