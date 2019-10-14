@@ -104,6 +104,13 @@ TESTS	 = test-alloc-bad-defrole \
 	   test-step-int-many \
 	   test-step-int-maxvalue \
 	   test-step-int-maxnegvalue \
+	   test-step-multi \
+	   test-step-multi-many \
+	   test-step-multi-many-twice \
+	   test-step-multi-none \
+	   test-step-multi-none2 \
+	   test-step-multi-none-twice \
+	   test-step-multi-twice \
 	   test-step-string-explicit-length \
 	   test-step-string-implicit-length \
 	   test-step-string-missing-nul \
@@ -142,7 +149,8 @@ OBJS	 = alloc.o \
 	   warn.o
 PERFPNGS = perf-full-cycle.png \
 	   perf-prep-insert-final.png \
-	   perf-rebind.png
+	   perf-rebind.png \
+	   perf-select-multi.png
 PERFS	 = perf-full-cycle-ksql \
 	   perf-full-cycle-sqlbox \
 	   perf-full-cycle-sqlite3 \
@@ -151,13 +159,18 @@ PERFS	 = perf-full-cycle-ksql \
 	   perf-prep-insert-final-sqlite3 \
 	   perf-rebind-ksql \
 	   perf-rebind-sqlbox \
-	   perf-rebind-sqlite3
+	   perf-rebind-sqlite3 \
+	   perf-select-multi-ksql \
+	   perf-select-multi-sqlbox \
+	   perf-select-multi-sqlite3
 LDFLAGS	+= -L/usr/local/lib
 CPPFLAGS += -I/usr/local/include
 VGR	 = valgrind
 VGROPTS	 = -q --track-origins=yes --leak-check=full --show-reachable=yes --trace-children=yes --leak-resolution=high
 
 all: libsqlbox.a
+
+allperf: $(PERFS)
 
 www: index.html perf index.svg
 
@@ -179,7 +192,7 @@ $(PERFPNGS): perf.gnuplot
 ${test}: regress/${test}.c
 .endfor
 
-.for perf in perf-prep-insert-final perf-rebind perf-full-cycle
+.for perf in perf-prep-insert-final perf-rebind perf-full-cycle perf-select-multi
 #${perf}.dat: ${perf}-ksql ${perf}-sqlbox ${perf}-sqlite3 perf.sh
 #	sh ./perf.sh ${perf} >$@
 

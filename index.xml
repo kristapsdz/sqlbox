@@ -117,6 +117,14 @@
 						The step function, again, is synchronous and constitutes the majority of overhead.
 					</figcaption>
 				</figure>
+				<figure class="perf">
+					<img src="perf-select-multi.png" alt="performance metric 4" />
+					<figcaption>
+						This showcases how quickly selection occurs with <span class="nm">sqlbox</span>'s
+						multiple-select option, where rows are cached ahead of time by the server and returned quickly
+						to the client.
+					</figcaption>
+				</figure>
 				<p>
 					In general, the slowness of <a href="https://kristaps.bsd.lv/ksql">ksql</a> is that each operation
 					involves a synchronous read and write between server and client.
