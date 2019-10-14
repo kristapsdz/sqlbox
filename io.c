@@ -190,7 +190,8 @@ sqlbox_read_frame(struct sqlbox *box, char **buf,
 			return -1;
 		} else if (rsz == 0 && sz == 0) {
 			return 0;
-		}
+		} else if (rsz == 0)
+			break;
 
 		/* 
 		 * Make sure we've read the entire initial frame.
