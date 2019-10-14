@@ -20,6 +20,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "perf.h"
 #include <sqlite3.h>
 
 int

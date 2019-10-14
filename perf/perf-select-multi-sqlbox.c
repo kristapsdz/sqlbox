@@ -20,6 +20,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "perf.h"
 #include "../sqlbox.h"
 
 int

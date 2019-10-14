@@ -20,6 +20,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "perf.h"
 #include "../sqlbox.h"
 
 int
@@ -86,10 +87,17 @@ main(int argc, char *argv[])
 		errx(EXIT_FAILURE, "sqlbox_finalise");
 
 	for (i = 0; i < rows; i++) {
+#ifdef __OpenBSD__
 		parms[0].iparm = arc4random();
 		parms[1].iparm = arc4random();
 		parms[2].iparm = arc4random();
 		parms[3].iparm = arc4random();
+#else
+		parms[0].iparm = random();
+		parms[1].iparm = random();
+		parms[2].iparm = random();
+		parms[3].iparm = random();
+#endif
 		if (!sqlbox_prepare_bind_async(p, dbid, 1, 4, parms, 0))
 			errx(EXIT_FAILURE, "sqlbox_prepare_bind");
 		if (sqlbox_step(p, 0) == NULL)

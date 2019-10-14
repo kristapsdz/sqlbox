@@ -24,6 +24,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "perf.h"
 #include <ksql.h>
 
 static	const char *const stmts[] = {
@@ -38,6 +39,7 @@ main(int argc, char *argv[])
 	struct ksqlcfg	 cfg;
 	struct ksqlstmt	*stmt;
 	int		 c;
+	int64_t		 v1, v2, v3, v4;
 	size_t		 i, rows = 10000;
 
 	if (pledge("stdio rpath cpath wpath flock fattr proc", NULL) == -1)
@@ -77,15 +79,26 @@ main(int argc, char *argv[])
 		errx(EXIT_FAILURE, "ksql_stmt_alloc");
 
 	for (i = 0; i < rows; i++) {
+#ifdef __OpenBSD__
+		v1 = arc4random();
+		v2 = arc4random();
+		v3 = arc4random();
+		v4 = arc4random();
+#else
+		v1 = random();
+		v2 = random();
+		v3 = random();
+		v4 = random();
+#endif
 		if (ksql_stmt_reset(stmt) != KSQL_OK)
 			errx(EXIT_FAILURE, "ksql_stmt_reset");
-		if (ksql_bind_int(stmt, 0, arc4random()) != KSQL_OK)
+		if (ksql_bind_int(stmt, 0, v1) != KSQL_OK)
 			errx(EXIT_FAILURE, "ksql_bind_int");
-		if (ksql_bind_int(stmt, 1, arc4random()) != KSQL_OK)
+		if (ksql_bind_int(stmt, 1, v2) != KSQL_OK)
 			errx(EXIT_FAILURE, "ksql_bind_int");
-		if (ksql_bind_int(stmt, 2, arc4random()) != KSQL_OK)
+		if (ksql_bind_int(stmt, 2, v3) != KSQL_OK)
 			errx(EXIT_FAILURE, "ksql_bind_int");
-		if (ksql_bind_int(stmt, 3, arc4random()) != KSQL_OK)
+		if (ksql_bind_int(stmt, 3, v4) != KSQL_OK)
 			errx(EXIT_FAILURE, "ksql_bind_int");
 		if (ksql_stmt_step(stmt) != KSQL_DONE)
 			errx(EXIT_FAILURE, "ksql_stmt_step");
