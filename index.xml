@@ -3,11 +3,18 @@
 	<head>
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta charset="utf-8" /> 
-		<title>SQLbox: yet another SQLite wrapper</title>
+		<title>SQLbox: database access library</title>
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" />
 		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Alegreya+Sans:400,400italic,500" />
 		<link rel="stylesheet" href="https://bsd.lv/css/style.css" />
 		<link rel="stylesheet" href="index.css" />
+		<meta property="og:title" content="sqlbox: database access library" />
+		<meta property="og:description" 
+		 content="A secure database access library using privilege separation." />
+	 	<meta property="og:url" content="https://kristaps.bsd.lv/sqlbox/index.html" />
+		<meta property="og:type" content="website" />
+		<meta name="description" 
+		 content="A secure database access library using privilege separation." />
 	</head>
 	<body itemscope="itemscope" itemtype="http://schema.org/SoftwareApplication">
 		<nav>
@@ -22,11 +29,13 @@
 					introduction
 				</h2>
 				<p>
-					<span class="nm">sqlbox</span> is an 
-					<a href="http://opensource.org/licenses/ISC" rel="license">open source</a> C/C++ secure database access
-					library at this time limited to <a href="https://www.sqlite.org">sqlite3</a> databases.
+					<span itemprop="name" class="nm">sqlbox</span> is an 
+					<a href="http://opensource.org/licenses/ISC" rel="license">open source</a> 
+					<span itemprop="description">C/C++ secure database access library</span>
+				       	at this time limited to <a href="https://www.sqlite.org">sqlite3</a> databases.
 					(<a href="https://www.postgresql.org">postgresql</a> is in the planning phase.)
-					Instead of operating databases in-process, <span class="nm">sqlbox</span> uses a split-process approach.
+					Instead of operating databases in-process, <span class="nm">sqlbox</span> uses a multi-process,
+					resource-separated approach.
 					When the caller uses <a href="https://man.openbsd.org/pledge.2">pledge</a> or similar, this brings
 					considerable security benefits at an acceptable cost of performance.
 				</p>
@@ -64,7 +73,8 @@
 					with higher performance and a simpler implementation.
 					The library is well-documented and has all of its behaviour checked with a large set of regression
 					tests.
-					It may be run on any modern UNIX, but <a href="https://www.openbsd.org">OpenBSD</a> is the focus due to
+					It may be run on any modern <span itemprop="operatingSystem">UNIX</span>, but 
+					<a href="https://www.openbsd.org">OpenBSD</a> is the focus due to
 					<a href="https://man.openbsd.org/pledge.2">pledge</a>.
 					It is a <a href="https://www.bsd.lv">BSD.lv</a> project.
 				</p>
