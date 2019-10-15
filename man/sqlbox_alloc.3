@@ -23,7 +23,7 @@
 .Sh LIBRARY
 .Lb sqlbox
 .Sh SYNOPSIS
-.In stddef.h
+.In stdint.h
 .In sqlbox.h
 .Ft struct sqlbox *
 .Fo sqlbox_alloc
@@ -128,7 +128,7 @@ struct sqlbox *p;
 struct sqlbox_cfg cfg;
 struct sqlbox_src srcs[] = {
   { .fname = (char *)":memory:",
-    .mode = SQLBOX_MODE_RWC }
+    .mode = SQLBOX_SRC_RWC }
 };
 
 memset(&cfg, 0, sizeof(struct sqlbox_cfg));
@@ -162,7 +162,7 @@ struct sqlbox_role roles[] = {
 };
 struct sqlbox_src srcs[] = {
   { .fname = (char *)":memory:",
-    .mode = SQLBOX_MODE_RWC }
+    .mode = SQLBOX_SRC_RWC }
 };
 
 memset(&cfg, 0, sizeof(struct sqlbox_cfg));
