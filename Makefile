@@ -186,10 +186,11 @@ sqlbox.tar.gz:
 	rm -rf .dist
 	mkdir -p .dist/sqlbox-$(VERSION)
 	mkdir -p .dist/sqlbox-$(VERSION)/{regress,man,perf}
-	install -m 0644 *.c */*.c .dist/sqlbox-$(VERSION)
-	install -m 0644 extern.h sqlbox.h */*.h .dist/sqlbox-$(VERSION)
+	install -m 0644 Makefile *.c extern.h sqlbox.h .dist/sqlbox-$(VERSION)
+	install -m 0644 regress/*.[ch] .dist/sqlbox-$(VERSION)/regress
+	install -m 0644 perf/*.[ch] .dist/sqlbox-$(VERSION)/perf
+	install -m 0644 man/*.3 .dist/sqlbox-$(VERSION)/man
 	install -m 0755 configure .dist/sqlbox-$(VERSION)
-	install -m 0644 Makefile .dist/sqlbox-$(VERSION)
 	( cd .dist/ && tar zcf ../$@ ./ )
 	rm -rf .dist/
 
