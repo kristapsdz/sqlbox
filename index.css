@@ -35,6 +35,8 @@ figure				{ margin-left: 0;
 				  margin-right: 0; }
 .nm				{ color: #000;
 				  font-weight: 500; }
+.path				{ font-style: italic;
+				  color: #000; }
 #within				{ text-align: center;
 				  font-size: smaller;
 				  position: fixed;

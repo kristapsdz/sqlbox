@@ -32,7 +32,7 @@
 			BSD.lv tools for BCHS: 
 			<a href="https://kristaps.bsd.lv/kcgi">kcgi</a>, 
 			<strong><a href="https://kristaps.bsd.lv/sqlbox">sqlbox</a></strong>, 
-			<a href="https://kristaps.bsd.lv/openradtool">openradtool</a>
+			<a href="https://kristaps.bsd.lv/openradtool">ort</a>
 		</nav>
 		<article class="text">
 			<section>
@@ -95,7 +95,8 @@
 					install
 				</h2>
 				<p>
-					You'll need any modern UNIX system.
+					You'll need any modern UNIX system with the 
+					<a href="https://www.sqlite.org/index.html">sqlite3</a> library already installed.
 					I strongly suggest using <a href="https://www.openbsd.org">OpenBSD</a>, as it provides the
 					<a href="https://man.openbsd.org/pledge.2">pledge</a> facility.
 					Other systems, such as Linux or FreeBSD, are more difficult (hugely so, in the former case) to configure
@@ -127,7 +128,7 @@ make install</pre>
 				<p>
 					That's it!
 					The manpages are the canonical source of information on this library.
-					Start with <span class="path">sqlbox_alloc(3)</span>.
+					Start with <span class="path">sqlbox(3)</span>.
 				</p>
 			</section>
 			<section id="security">
