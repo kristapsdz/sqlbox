@@ -264,16 +264,6 @@ int		 sqlbox_trans_exclusive(struct sqlbox *, size_t, size_t);
 int		 sqlbox_trans_commit(struct sqlbox *, size_t, size_t);
 int		 sqlbox_trans_rollback(struct sqlbox *, size_t, size_t);
 
-#if 0
-enum ksqlc	 ksql_bind_zblob(struct ksqlstmt *, size_t, size_t);
-enum ksqlc	 ksql_exec(struct ksql *, const char *, size_t);
-
-enum ksqlc	 ksql_stmt_reset(struct ksqlstmt *);
-
-enum ksqlc	 ksql_trace(struct ksql *);
-enum ksqlc	 ksql_untrace(struct ksql *);
-
 __END_DECLS
 
-#endif
 #endif
