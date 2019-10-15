@@ -1,4 +1,4 @@
-.SUFFIXES: .png .dat .xml .html .dot .svg
+.SUFFIXES: .png .dat .dot .svg
 
 include Makefile.configure
 
@@ -194,12 +194,11 @@ sqlbox.tar.gz:
 	rm -rf .dist/
 
 installwww:
-	mkdir -p $(WWWDIR)
 	mkdir -p $(WWWDIR)/snapshots
 	install -m 0444 sqlbox.tar.gz $(WWWDIR)/snapshots/sqlbox-$(VERSION).tar.gz
 	install -m 0444 sqlbox.tar.gz.sha512 $(WWWDIR)/snapshots/sqlbox-$(VERSION).tar.gz.sha512
 	install -m 0444 sqlbox.tar.gz sqlbox.tar.gz.sha512 $(WWWDIR)/snapshots
-	install -m 0444 *.html *.png *.css $(WWWDIR)/snapshots
+	install -m 0444 *.html *.png *.svg *.css $(WWWDIR)
 
 distcheck: sqlbox.tar.gz.sha512
 	rm -rf .distcheck
@@ -313,9 +312,9 @@ valgrind: $(TESTS) $(PERFS)
 
 .dat.png:
 	gnuplot -c perf.gnuplot $< $@
-	
-.xml.html:
-	cp -f $< $@
 
+index.html: index.xml versions.xml
+	sblg -t index.xml -o $@ versions.xml
+	
 .dot.svg:
 	dot -Tsvg $< | xsltproc --novalid notugly.xsl - >$@
