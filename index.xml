@@ -17,7 +17,18 @@
 		 content="A secure database access library using privilege separation." />
 	</head>
 	<body itemscope="itemscope" itemtype="http://schema.org/SoftwareApplication">
-		<nav>
+		<nav id="within">
+			<a href="#install">install</a>
+			<a href="#security">security</a>
+			<a href="#performance">performance</a>
+			<span>
+				<a href="https://github.com/kristapsdz/sqlbox"><i class="fa fa-fw fa-github"></i></a>
+				<nav data-sblg-nav="1" data-sblg-navsz="1" data-sblg-navsort="date" data-sblg-navxml="1">
+					v${sblg-title}
+				</nav>
+			</span>
+		</nav>
+		<nav id="breadcrumbs">
 			BSD.lv tools for BCHS: 
 			<a href="https://kristaps.bsd.lv/kcgi">kcgi</a>, 
 			<strong><a href="https://kristaps.bsd.lv/sqlbox">sqlbox</a></strong>, 
@@ -35,28 +46,18 @@
 				       	at this time limited to <a href="https://www.sqlite.org">sqlite3</a> databases.
 					(<a href="https://www.postgresql.org">postgresql</a> is in the planning phase.)
 					Instead of operating databases in-process, <span class="nm">sqlbox</span> uses a multi-process,
-					resource-separated approach.
-					When the caller uses <a href="https://man.openbsd.org/pledge.2">pledge</a> or similar, this brings
-					considerable security benefits at an acceptable cost of performance.
+					resource-separated approach to safe-guard the database from the calling application.
 				</p>
-				<figure class="intro">
-					<img src="index.svg" alt="operation of sqlbox" />
-					<figcaption>
-						Not only does this protect the database itself, it also allows fine-grained access controls and
-						other operations opaque to the caller.
-					</figcaption>
-				</figure>
 				<h3>
 					some features&#8230;
 				</h3>
 				<ul>
 					<li>
-						role-based access control on a per-statement and per-source (opening and closing) basis enforced
-						in child process, limiting application database access to role purview
+						role-based access control on a per-statement and per-source (opening and closing) basis,
+						limiting application database access and manipulation to role purview
 					</li>
 					<li>
-						in-child filter capabilities allowing for selective scrambling or anonymisation of queries,
-						allowing specific roles (or access in general) to filtered data
+						in-child filter capabilities allowing for selective scrambling or anonymisation of query results
 					</li>
 					<li>
 						<q>asynchronous</q> mode for some operations allows all the security benefits with only the
@@ -72,13 +73,24 @@
 					with higher performance and a simpler implementation.
 					The library is well-documented and has all of its behaviour checked with a large set of regression
 					tests.
-					It may be run on any modern <span itemprop="operatingSystem">UNIX</span>, but 
-					<a href="https://www.openbsd.org">OpenBSD</a> is the focus due to
-					<a href="https://man.openbsd.org/pledge.2">pledge</a>.
+					It may be run on any modern <span itemprop="operatingSystem">UNIX</span>.
 					It is a <a href="https://www.bsd.lv">BSD.lv</a> project.
 				</p>
+				<h3>
+					latest release&#8230;
+				</h3>
+				<nav data-sblg-nav="1" data-sblg-navsz="1" data-sblg-navsort="date" data-sblg-navcontent="1">
+					<div class="header">
+						<span class="date">
+							<i class="fa fa-calendar fa-fw"></i>
+							<time datetime="${sblg-datetime}">${sblg-date}</time>
+						</span>
+						<span class="version">version ${sblg-title}</span>
+					</div>
+					<div class="content">${sblg-aside}</div>
+				</nav>
 			</section>
-			<section>
+			<section id="install">
 				<h2>
 					install
 				</h2>
@@ -92,9 +104,14 @@
 						class="nm">sqlbox</span>.
 					If it does not, proceed.
 				</p>
+				<p>
+					Download either the latest release (<a href="snapshots/sqlbox.tar.gz">sqlbox.tar.gz</a> | <a
+						href="snapshots/sqlbox.tar.gz.sha512">sha512</a>) or the current sources from the <a
+						href="https://github.com/kristapsdz/sqlbox">GitHub repository</a>.
+				</p>
 				<ol>
 					<li>
-						Download and verify the newest release.
+						Download and verify the newest release (if not from the source repository).
 						<pre>sha512 -C sqlbox.tar.gz.sh512 sqlbox.tar.gz
 tar zvxpf sqlbox.tar.gz</pre>
 					</li>
@@ -104,14 +121,68 @@ tar zvxpf sqlbox.tar.gz</pre>
 						<pre>./configure 
 make
 make install</pre>
+						You may need to run this with BSD make (<code>bmake</code>) on non-BSD systems.
 					</li>
 				</ol>
 				<p>
+					That's it!
 					The manpages are the canonical source of information on this library.
 					Start with <span class="path">sqlbox_alloc(3)</span>.
 				</p>
 			</section>
-			<section>
+			<section id="security">
+				<h2>
+					security
+				</h2>
+				<p>
+					The purpose of <span class="nm">sqlbox</span> is to provide security to your data <emph>from your
+						application</emph>: both from programming errors and compromise.
+					Its security principles are as follows:
+				</p>
+				<ul>
+					<li>
+						only pre-set statements shall be executed
+					</li>
+					<li>
+						only pre-set databases shall be opened
+					</li>
+					<li>
+						database components shall not be reachable by process file-system or memory
+					</li>
+					<li>
+						provide this with an acceptable impact on performance
+					</li>
+				</ul>
+				<p>
+					It effects this by forked a database management process with pre-set database names and statements.
+					Once forked, the names and statements are inherited and can no longer be changed.
+					Communication with the database is via tightly-controlled socket IPC with the control process.
+					Requests for statements are by identifier, not strings.
+				</p>
+				<figure class="intro">
+					<img src="index.svg" alt="operation of sqlbox" />
+					<figcaption>
+						Not only does this protect the database itself, it also allows fine-grained access controls and
+						other operations opaque to the caller.
+					</figcaption>
+				</figure>
+				<p>
+					When the caller uses a constraint mechanism such as <a
+						href="https://man.openbsd.org/pledge.2">pledge</a>, it makes the database completely
+					inaccessable except via controlled IPC.
+				</p>
+				<p>
+					This security is built to enforce a <a
+						href="https://en.wikipedia.org/wiki/Role-based_access_control">role-based access control</a>
+					system, which is useful when a single application has several different roles of operation (e.g., users,
+					administration, analysis).
+					This is enforced within the management process, so a compromised application cannot change its own role
+					except within the transition matrix set during creation.
+					The management process also provides opaque anonymisation of data, which is especially useful for
+					analysis when database information may contain identity information.
+				</p>
+			</section>
+			<section id="performance">
 				<h2>
 					performance
 				</h2>
@@ -123,6 +194,11 @@ make install</pre>
 					<a href="https://kristaps.bsd.lv/ksql">ksql</a>,
 					and <span class="nm">sqlbox</span>.
 					For consistency, all databases in the performance analysis are opened as <code>:memory:</code>.
+				</p>
+				<p>
+					<span class="nm">sqlbox</span> tries to minimise the amount of system calls used to exchange data, and
+					minimise even further instances of <q>synchronous</q> communication where the client requests then waits
+					for data.
 				</p>
 				<figure class="perf">
 					<img src="perf-full-cycle.png" alt="performance metric 1" />
