@@ -51,11 +51,6 @@
 				</h3>
 				<ul>
 					<li>
-						databases managed in a child process over IPC: application crashes won't create inconsistent
-						state, nor will application exploits (if correctly 
-						<a href="https://man.openbsd.org/pledge.2">pledged</a>) allow direct data access
-					</li>
-					<li>
 						role-based access control on a per-statement and per-source (opening and closing) basis enforced
 						in child process, limiting application database access to role purview
 					</li>
@@ -64,8 +59,12 @@
 						allowing specific roles (or access in general) to filtered data
 					</li>
 					<li>
-						high-speed <q>asynchronous mode</q> allows all the security benefits with only the slightest
-						performance penalty in one-way interprocess communication
+						<q>asynchronous</q> mode for some operations allows all the security benefits with only the
+						slightest performance penalty in one-way interprocess communication
+					</li>
+					<li>
+						<q>multi-select</q> mode allows forward-caching of step responses, considerably reducing the
+						frequency of synchronous communication
 					</li>
 				</ul>
 				<p>
@@ -77,6 +76,39 @@
 					<a href="https://www.openbsd.org">OpenBSD</a> is the focus due to
 					<a href="https://man.openbsd.org/pledge.2">pledge</a>.
 					It is a <a href="https://www.bsd.lv">BSD.lv</a> project.
+				</p>
+			</section>
+			<section>
+				<h2>
+					install
+				</h2>
+				<p>
+					You'll need any modern UNIX system.
+					I strongly suggest using <a href="https://www.openbsd.org">OpenBSD</a>, as it provides the
+					<a href="https://man.openbsd.org/pledge.2">pledge</a> facility.
+					Other systems, such as Linux or FreeBSD, are more difficult (hugely so, in the former case) to configure
+					securely.
+					Start by checking that your system's third-party packages system doesn't already have <span
+						class="nm">sqlbox</span>.
+					If it does not, proceed.
+				</p>
+				<ol>
+					<li>
+						Download and verify the newest release.
+						<pre>sha512 -C sqlbox.tar.gz.sh512 sqlbox.tar.gz
+tar zvxpf sqlbox.tar.gz</pre>
+					</li>
+					<li>
+						Configure for your system and install destination, compile, install.
+						The default is <span class="path">/usr/local</span>.
+						<pre>./configure 
+make
+make install</pre>
+					</li>
+				</ol>
+				<p>
+					The manpages are the canonical source of information on this library.
+					Start with <span class="path">sqlbox_alloc(3)</span>.
 				</p>
 			</section>
 			<section>

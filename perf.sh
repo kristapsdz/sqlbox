@@ -5,7 +5,7 @@ TMPFILE2=`mktemp` || exit 1
 
 trap "rm -f $TMPFILE $TMPFILE2" EXIT ERR INT HUP QUIT
 
-ITERS=20
+ITERS=40
 prefix="$1"
 
 set -e
