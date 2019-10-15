@@ -96,7 +96,6 @@ on
 to limit file-system access.
 This protects the database from direct tampering and forces the
 application to use the socket channel for communication.
-.Ox .
 .Pp
 Prior to calling
 .Xr sqlbox_alloc 3 ,
@@ -105,6 +104,33 @@ the application may pledge with
 and only
 .Va stdio
 afterward.
+.Bd -literal
+struct sqlbox *p;
+struct sqlbox_cfg cfg;
+struct sqlbox_src srcs[] = {
+  { .fname = (char *)":memory:",
+    .mode = SQLBOX_SRC_RWC }
+};
+
+if (pledge("stdio rpath cpath "
+    "wpath flock proc fattr", NULL) == -1)
+  err(EXIT_FAILURE, "pledge");
+
+memset(&cfg, 0, sizeof(struct sqlbox_cfg));
+cfg.msg.func_short = warnx;
+cfg.srcs.srcs = srcs;
+cfg.srcs.srcsz = 1;
+
+if ((p = sqlbox_alloc(&cfg)) == NULL)
+  errx(EXIT_FAILURE, "sqlbox_alloc");
+
+if (pledge("stdio", NULL) == -1)
+  err(EXIT_FAILURE, "pledge");
+
+/* Do work. */
+
+sqlbox_free(p);
+.Ed
 .\" .Sh CONTEXT
 .\" For section 9 functions only.
 .\" .Sh IMPLEMENTATION NOTES
