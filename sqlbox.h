@@ -40,12 +40,12 @@
 /*
  * Minor version.
  */
-#define	SQLBOX_VMINOR	3
+#define	SQLBOX_VMINOR	1
 
 /*
  * Build version.
  */
-#define	SQLBOX_VBUILD	5
+#define	SQLBOX_VBUILD	1
 
 /*
  * Stringification of version major, minor, and build.

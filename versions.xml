@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<articles>
+	<article data-sblg-article="1" data-sblg-tags="version">
+		<header>
+			<h1>0.1.1</h1>
+			<address>Kristaps Dzonsons</address>
+			<time datetime="2019-10-15">2019-10-15</time>
+		</header>
+		<aside>
+			<p>
+				First public release.
+				This already has about 130 regression tests for behaviour and has
+				been heavily orchestrated with <a
+					href="http://valgrind.org">valgrind</a>.
+			</p>
+		</aside>
+	</article>
+</articles>
