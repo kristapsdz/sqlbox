@@ -246,6 +246,12 @@ int		 sqlbox_msg_set_dat(struct sqlbox *,
 			const void *, size_t);
 size_t		 sqlbox_open(struct sqlbox *, size_t);
 int		 sqlbox_open_async(struct sqlbox *, size_t);
+int		 sqlbox_parm_blob(const struct sqlbox_parm *, void *, size_t, size_t *);
+int		 sqlbox_parm_blob_alloc(const struct sqlbox_parm *, void **, size_t *);
+int		 sqlbox_parm_float(const struct sqlbox_parm *, double *);
+int		 sqlbox_parm_int(const struct sqlbox_parm *, int64_t *);
+int		 sqlbox_parm_string(const struct sqlbox_parm *, char *, size_t, size_t *);
+int		 sqlbox_parm_string_alloc(const struct sqlbox_parm *, char **, size_t *);
 int		 sqlbox_ping(struct sqlbox *);
 size_t		 sqlbox_prepare_bind(struct sqlbox *, size_t,
 			size_t, size_t, const struct sqlbox_parm *,

@@ -1,0 +1,172 @@
+.\"	$Id$
+.\"
+.\" Copyright (c) 2019 Kristaps Dzonsons <kristaps@bsd.lv>
+.\"
+.\" Permission to use, copy, modify, and distribute this software for any
+.\" purpose with or without fee is hereby granted, provided that the above
+.\" copyright notice and this permission notice appear in all copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\" WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\" ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\" WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+.\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+.\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd $Mdocdate$
+.Dt SQLBOX_PARM_INT 3
+.Os
+.Sh NAME
+.Nm sqlbox_parm_float ,
+.Nm sqlbox_parm_int ,
+.Nm sqlbox_parm_string_alloc
+.Nd convert sqlbox results
+.Sh LIBRARY
+.Lb sqlbox
+.Sh SYNOPSIS
+.In stdint.h
+.In sqlbox.h
+.Ft int
+.Fo sqlbox_parm_blob
+.Fa "const struct sqlbox_parm *p"
+.Fa "void *v"
+.Fa "size_t insz"
+.Fa "size_t *outsz"
+.Fc
+.Ft int
+.Fo sqlbox_parm_blob_alloc
+.Fa "const struct sqlbox_parm *p"
+.Fa "void **v"
+.Fa "size_t *outsz"
+.Fc
+.Ft int
+.Fo sqlbox_parm_float
+.Fa "const struct sqlbox_parm *p"
+.Fa "double *v"
+.Fc
+.Ft int
+.Fo sqlbox_parm_int
+.Fa "const struct sqlbox_parm *p"
+.Fa "int64_t *v"
+.Fc
+.Ft int
+.Fo sqlbox_parm_string
+.Fa "const struct sqlbox_parm *p"
+.Fa "char *v"
+.Fa "size_t insz"
+.Fa "size_t *outsz"
+.Fc
+.Ft int
+.Fo sqlbox_parm_string_alloc
+.Fa "const struct sqlbox_parm *p"
+.Fa "char **v"
+.Fa "size_t *outsz"
+.Fc
+.Sh DESCRIPTION
+Convert between result types as returned from
+.Xr sqlbox_step 3 .
+They use the following conversion matrix, with the type-from specified
+on the left-most column, and the type-to on corresponding columns of the
+same row.
+.Pp
+.TS
+r | c | c | c | c
+r | c c c c.
+type	float	int	string	blob
+_
+float	self	cast	%lf	bcopy
+int	cast	self	%PRId64	bcopy
+string	strtod(3)	strtoll(3)	self	bcopy
+blob	-	-	-	self
+.TE
+.Pp
+For example, an integer is cast into a string by way of the
+.Qq %PRId64
+modifier to the applicable function of the
+.Xr printf 3
+family.
+.Pp
+The
+.Qq cast
+means a native cast, while
+.Qq self
+simply means a non-conversion.
+Values starting with
+.Qq %
+(the percent sign) are as passed to
+.Xr asprintf 3
+or
+.Xr snprintf 3
+depending upon whether the function allocates memory.
+The
+.Qq bcopy
+are binary copies.
+A dash
+.Pq Dq \&-
+means that conversion is not possible.
+The remainder are functions.
+.Pp
+.Fn sqlbox_parm_string
+and
+.Fn sqlbox_parm_string_alloc
+additionally accept the
+.Fa outsz
+parameter, which is the size (not including the trailing NUL terminator)
+of the allocated string for
+.Fn sqlbox_parm_string_alloc
+or for how many bytes
+.Em would
+be written in
+.Fn sqlbox_parm_string ,
+again not including the trailing NUL terminator.
+The
+.Fa outsz
+is thus equivalent to the return value of
+.Xr strlcpy 3 ,
+.Xr asprintf 3 ,
+or
+.Xr snprintf 3 .
+.Pp
+.Fn sqlbox_parm_string
+also accepts the size of
+.Fa v
+as
+.Fa insz ,
+which is the full buffer size including where the NUL terminator will be
+written.
+If the resulting string isn't large enough for
+.Fa insz ,
+it is truncated and the NUL terminator always written.
+.Pp
+.Fn sqlbox_parm_blob
+and
+.Fn sqlbox_parm_blob_alloc
+behave similarly except for with strings, where the NUL terminator is
+considered part of the buffer size.
+.Sh RETURN VALUES
+These functions return -1 on failure, 0 if no conversion occurred (the
+requested type is the input type), and 1 if a conversion occurred.
+Failure occurs in memory allocation failure or
+.Fn sqlbox_parm_string
+was given a zero-sized buffer, or underflow or overflow occurs.
+.\" For sections 2, 3, and 9 function return values only.
+.\" .Sh ENVIRONMENT
+.\" For sections 1, 6, 7, and 8 only.
+.\" .Sh FILES
+.\" .Sh EXIT STATUS
+.\" For sections 1, 6, and 8 only.
+.\" .Sh EXAMPLES
+.\" .Sh DIAGNOSTICS
+.\" For sections 1, 4, 6, 7, 8, and 9 printf/stderr messages only.
+.\" .Sh ERRORS
+.\" For sections 2, 3, 4, and 9 errno settings only.
+.Sh SEE ALSO
+.Xr sqlbox_step 3
+.\" .Sh STANDARDS
+.\" .Sh HISTORY
+.\" .Sh AUTHORS
+.\" .Sh CAVEATS
+.\" .Sh BUGS
+.\" .Sh SECURITY CONSIDERATIONS
+.\" Not used in OpenBSD.

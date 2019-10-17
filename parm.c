@@ -21,10 +21,12 @@
 #endif 
 
 #include <assert.h>
-#include <endian.h>
-#include <poll.h>
+#include <errno.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <math.h> /* HUGE_VAL */
+#include <stdio.h> /* asprintf */
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -340,4 +342,190 @@ err:
 	*parms = NULL;
 	*parmsz = 0;
 	return 0;
+}
+
+int
+sqlbox_parm_int(const struct sqlbox_parm *p, int64_t *v)
+{
+	long long	 lval;
+	char		*ep;
+
+	switch (p->type) {
+	case SQLBOX_PARM_INT:
+		*v = p->iparm;
+		break;
+	case SQLBOX_PARM_FLOAT:
+		*v = (int64_t)p->fparm;
+		break;
+	case SQLBOX_PARM_STRING:
+		errno = 0;
+		lval = strtoll(p->sparm, &ep, 10);
+		if (p->sparm[0] == '\0' || *ep != '\0')
+			return -1;
+		if (errno == ERANGE && 
+		    (lval == LONG_MAX || lval == LONG_MIN))
+			return -1;
+		break;
+	case SQLBOX_PARM_NULL:
+	case SQLBOX_PARM_BLOB:
+		return -1;
+	}
+
+	return p->type == SQLBOX_PARM_INT ? 0 : 1;
+}
+
+int
+sqlbox_parm_float(const struct sqlbox_parm *p, double *v)
+{
+	double	 dval;
+	char	*ep;
+
+	switch (p->type) {
+	case SQLBOX_PARM_INT:
+		*v = (double)p->iparm;
+		break;
+	case SQLBOX_PARM_FLOAT:
+		*v = p->fparm;
+		break;
+	case SQLBOX_PARM_STRING:
+		errno = 0;
+		dval = strtod(p->sparm, &ep);
+		if (p->sparm[0] == '\0' || *ep != '\0')
+			return -1;
+		if (errno == ERANGE && 
+		    (dval == HUGE_VAL || dval == -HUGE_VAL))
+			return -1;
+		break;
+	case SQLBOX_PARM_NULL:
+	case SQLBOX_PARM_BLOB:
+		return -1;
+	}
+
+	return p->type == SQLBOX_PARM_FLOAT ? 0 : 1;
+}
+
+int
+sqlbox_parm_string(const struct sqlbox_parm *p, char *v, size_t vsz, size_t *outsz)
+{
+	int	 c;
+
+	if (vsz == 0)
+		return -1;
+
+	switch (p->type) {
+	case SQLBOX_PARM_INT:
+		if ((c = snprintf(v, vsz, "%" PRId64, p->iparm)) < 0)
+			return -1;
+		*outsz = c;
+		break;
+	case SQLBOX_PARM_FLOAT:
+		if ((c = snprintf(v, vsz, "%lf", p->fparm)) < 0)
+			return -1;
+		*outsz = c;
+		break;
+	case SQLBOX_PARM_STRING:
+		*outsz = strlcpy(v, p->sparm, vsz);
+		break;
+	case SQLBOX_PARM_NULL:
+	case SQLBOX_PARM_BLOB:
+		return -1;
+	}
+
+	return p->type == SQLBOX_PARM_STRING ? 0 : 1;
+}
+
+int
+sqlbox_parm_string_alloc(const struct sqlbox_parm *p, char **v, size_t *outsz)
+{
+	int	 c;
+
+	switch (p->type) {
+	case SQLBOX_PARM_INT:
+		if ((c = asprintf(v, "%" PRId64, p->iparm)) < 0)
+			return -1;
+		*outsz = c;
+		break;
+	case SQLBOX_PARM_FLOAT:
+		if ((c = asprintf(v, "%lf", p->fparm)) < 0)
+			return -1;
+		*outsz = c;
+		break;
+	case SQLBOX_PARM_STRING:
+		if ((*v = strdup(p->sparm)) == NULL)
+			return -1;
+		*outsz = strlen(*v);
+		break;
+	case SQLBOX_PARM_NULL:
+	case SQLBOX_PARM_BLOB:
+		return -1;
+	}
+
+	return p->type == SQLBOX_PARM_STRING ? 0 : 1;
+}
+
+int
+sqlbox_parm_blob(const struct sqlbox_parm *p, void *v, size_t vsz, size_t *outsz)
+{
+
+	if (vsz == 0)
+		return -1;
+
+	switch (p->type) {
+	case SQLBOX_PARM_INT:
+		memcpy(v, &p->iparm, vsz);
+		*outsz = sizeof(int64_t);
+		break;
+	case SQLBOX_PARM_FLOAT:
+		memcpy(v, &p->fparm, vsz);
+		*outsz = sizeof(double);
+		break;
+	case SQLBOX_PARM_STRING:
+		*outsz = strlcpy(v, p->sparm, vsz) + 1;
+		break;
+	case SQLBOX_PARM_NULL:
+		return -1;
+	case SQLBOX_PARM_BLOB:
+		memcpy(v, p->bparm, vsz);
+		*outsz = p->sz;
+		break;
+	}
+
+	return p->type == SQLBOX_PARM_BLOB ? 0 : 1;
+}
+
+int
+sqlbox_parm_blob_alloc(const struct sqlbox_parm *p, void **v, size_t *outsz)
+{
+
+	switch (p->type) {
+	case SQLBOX_PARM_INT:
+		if ((*v = malloc(sizeof(int64_t))) == NULL)
+			return -1;
+		*outsz = sizeof(int64_t);
+		memcpy(*v, &p->iparm, *outsz);
+		break;
+	case SQLBOX_PARM_FLOAT:
+		if ((*v = malloc(sizeof(double))) == NULL)
+			return -1;
+		*outsz = sizeof(double);
+		memcpy(*v, &p->fparm, *outsz);
+		break;
+	case SQLBOX_PARM_STRING:
+		if ((*v = strdup(p->sparm)) == NULL)
+			return -1;
+		*outsz = strlen(*v) + 1;
+		break;
+	case SQLBOX_PARM_NULL:
+		return -1;
+	case SQLBOX_PARM_BLOB:
+		if (p->sz) {
+			if ((*v = malloc(p->sz)) == NULL)
+				return -1;
+			memcpy(*v, p->bparm, p->sz);
+		}
+		*outsz = p->sz;
+		break;
+	}
+
+	return p->type == SQLBOX_PARM_BLOB ? 0 : 1;
 }
