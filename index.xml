@@ -69,7 +69,7 @@
 					</li>
 				</ul>
 				<p>
-					<span class="nm">sqlbox</span> is designed to update <a href="https://kristaps.bsd.lv">ksql</a>
+					<span class="nm">sqlbox</span> is designed to update <a href="https://kristaps.bsd.lv/ksql">ksql</a>
 					with higher performance and a simpler implementation.
 					The library is well-documented and has all of its behaviour checked with a large set of regression
 					tests.
