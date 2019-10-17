@@ -98,8 +98,10 @@ TESTS		 = test-alloc-bad-defrole \
 		   test-step-create-insert-selectmulti \
 		   test-step-create-insert-selectmulticol \
 		   test-step-float-explicit-length \
+		   test-step-float-inf \
 		   test-step-float-many \
 		   test-step-float-maxvalue \
+		   test-step-float-nan \
 		   test-step-int-explicit-length \
 		   test-step-int-many \
 		   test-step-int-maxvalue \

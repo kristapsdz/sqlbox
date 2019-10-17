@@ -80,6 +80,11 @@ The number of parameters
 must match the prepared statement parameters given in the SQL or be
 zero.
 .Pp
+Floating point numbers bound as NAN (not a number) are interpreted as
+.Dv NULL
+values by the underlying data store.
+Infinite values are passed through.
+.Pp
 The
 .Fa ps
 array, if
