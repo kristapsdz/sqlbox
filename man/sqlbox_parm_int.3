@@ -89,7 +89,7 @@ family.
 .Pp
 The
 .Qq cast
-means a native cast, while
+means a native cast and
 .Qq self
 simply means a non-conversion.
 Values starting with
@@ -167,7 +167,11 @@ conversion was not possible according to the above table.
 .\" .Sh STANDARDS
 .\" .Sh HISTORY
 .\" .Sh AUTHORS
-.\" .Sh CAVEATS
+.Sh CAVEATS
+Native casts between un-representable values is not well defined.
+For example, casting
+.Dv DBL_MAX
+into an integer differs in result between platforms.
 .\" .Sh BUGS
 .\" .Sh SECURITY CONSIDERATIONS
 .\" Not used in OpenBSD.
