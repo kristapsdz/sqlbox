@@ -79,8 +79,8 @@ main(int argc, char *argv[])
 	c = sqlbox_parm_int(&parm, &res_int);
 	if (c != 1)
 		errx(EXIT_FAILURE, "sqlbox_parm_int convert");
-	if (res_int != (int64_t)DBL_MAX)
-		errx(EXIT_FAILURE, "sqlbox_parm_int value: %" PRId64, res_int);
+	if (res_int != (int64_t)DBL_MAX && res_int != (int64_t)-DBL_MAX)
+		errx(EXIT_FAILURE, "sqlbox_parm_int value");
 
 	c = sqlbox_parm_string(&parm,
 		res_string_array, sizeof(res_string_array), &sz);
