@@ -70,6 +70,15 @@ TESTS		 = test-alloc-bad-defrole \
 		   test-open-memory-role \
 		   test-open-not-found \
 		   test-open-twice \
+		   test-parm-blob-bad \
+		   test-parm-float \
+		   test-parm-float-bad \
+		   test-parm-float-maxvalues \
+		   test-parm-int-bad \
+		   test-parm-int \
+		   test-parm-int-long \
+		   test-parm-int-maxvalues \
+		   test-parm-string \
 		   test-ping \
 		   test-ping-fail \
 		   test-prepare_bind-async \

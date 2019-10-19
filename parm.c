@@ -363,8 +363,9 @@ sqlbox_parm_int(const struct sqlbox_parm *p, int64_t *v)
 		if (p->sparm[0] == '\0' || *ep != '\0')
 			return -1;
 		if (errno == ERANGE && 
-		    (lval == LONG_MAX || lval == LONG_MIN))
+		    (lval == LLONG_MAX || lval == LLONG_MIN))
 			return -1;
+		*v = lval;
 		break;
 	case SQLBOX_PARM_NULL:
 	case SQLBOX_PARM_BLOB:
@@ -377,7 +378,6 @@ sqlbox_parm_int(const struct sqlbox_parm *p, int64_t *v)
 int
 sqlbox_parm_float(const struct sqlbox_parm *p, double *v)
 {
-	double	 dval;
 	char	*ep;
 
 	switch (p->type) {
@@ -389,11 +389,11 @@ sqlbox_parm_float(const struct sqlbox_parm *p, double *v)
 		break;
 	case SQLBOX_PARM_STRING:
 		errno = 0;
-		dval = strtod(p->sparm, &ep);
+		*v = strtod(p->sparm, &ep);
 		if (p->sparm[0] == '\0' || *ep != '\0')
 			return -1;
 		if (errno == ERANGE && 
-		    (dval == HUGE_VAL || dval == -HUGE_VAL))
+		    (*v == HUGE_VAL || *v == -HUGE_VAL))
 			return -1;
 		break;
 	case SQLBOX_PARM_NULL:

@@ -149,7 +149,8 @@ These functions return -1 on failure, 0 if no conversion occurred (the
 requested type is the input type), and 1 if a conversion occurred.
 Failure occurs in memory allocation failure or
 .Fn sqlbox_parm_string
-was given a zero-sized buffer, or underflow or overflow occurs.
+was given a zero-sized buffer, underflow or overflow occurs, or the
+conversion was not possible according to the above table.
 .\" For sections 2, 3, and 9 function return values only.
 .\" .Sh ENVIRONMENT
 .\" For sections 1, 6, 7, and 8 only.
