@@ -408,9 +408,12 @@ int
 sqlbox_parm_string(const struct sqlbox_parm *p, char *v, size_t vsz, size_t *outsz)
 {
 	int	 c;
+	size_t	 tmp;
 
 	if (vsz == 0)
 		return -1;
+	if (outsz == NULL)
+		outsz = &tmp;
 
 	switch (p->type) {
 	case SQLBOX_PARM_INT:
@@ -438,6 +441,10 @@ int
 sqlbox_parm_string_alloc(const struct sqlbox_parm *p, char **v, size_t *outsz)
 {
 	int	 c;
+	size_t	 tmp;
+
+	if (outsz == NULL)
+		outsz = &tmp;
 
 	switch (p->type) {
 	case SQLBOX_PARM_INT:
