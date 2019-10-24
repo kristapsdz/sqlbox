@@ -110,14 +110,14 @@ The remainder are functions.
 .Fn sqlbox_parm_string
 and
 .Fn sqlbox_parm_string_alloc
-additionally accept the
+additionally accept the optional
 .Fa outsz
-parameter, which is the size (not including the trailing NUL terminator)
-of the allocated string for
+parameter, which is set to the size (not including the trailing NUL
+terminator) of the allocated string for
 .Fn sqlbox_parm_string_alloc
 or for how many bytes
 .Em would
-be written in
+be written into
 .Fn sqlbox_parm_string ,
 again not including the trailing NUL terminator.
 The
@@ -127,6 +127,9 @@ is thus equivalent to the return value of
 .Xr asprintf 3 ,
 or
 .Xr snprintf 3 .
+If passed as
+.Dv NULL ,
+it is not set.
 .Pp
 .Fn sqlbox_parm_string
 also accepts the size of
