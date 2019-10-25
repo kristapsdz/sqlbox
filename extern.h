@@ -127,6 +127,8 @@ void			 sqlbox_wrap_finalise(struct sqlbox *,
 sqlite3_stmt		*sqlbox_wrap_prep(struct sqlbox *, 
 				struct sqlbox_db *, 
 				const struct sqlbox_pstmt *);
+sqlite3			*sqlbox_wrap_open(struct sqlbox *,
+				const struct sqlbox_src *);
 enum sqlbox_code	 sqlbox_wrap_step(struct sqlbox *,
 				struct sqlbox_db *,
 				const struct sqlbox_pstmt *,

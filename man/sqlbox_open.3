@@ -57,7 +57,7 @@ Remote databases are not supported.
 .It Va mode
 One of
 .Dv SQLBOX_SRC_RO
-for a readonly source,
+for a readonly database,
 .Dv SQLBOX_SRC_RW
 for readable and writable, and
 .Dv SQLBOX_SRC_RWC
@@ -73,9 +73,11 @@ only returns whether
 .Fa box
 was accessed.
 It is used for implicit identifiers (i.e., an identifier of zero) in
-subsequent operations on the source.
+subsequent operations on the database.
 .Pp
-If the source is not closed with
+Both functions always enable foreign key support on the database.
+.Pp
+If the database is not closed with
 .Xr sqlbox_close 3 ,
 it is automatically closed on
 .Xr sqlbox_free 3 .
@@ -96,14 +98,16 @@ or
 Otherwise, if not
 .Dv SQLITE_OK ,
 considers it a failed open.
-Possibly closes again on error with
-.Xr sqlite3_close 3 .
+.Pp
+The foreign keys are enabled with a call to
+.Xr sqlite3_exec 3
+using a similar back-off algorithm.
 .Sh RETURN VALUES
 .Fn sqlbox_open
 returns an identifier >0 if communication with
 .Fa box
-works, zero otherwise (opening the source files, etc.).
-.fn sqlbox_open_async
+works, zero otherwise (opening the database files, etc.).
+.Fn sqlbox_open_async
 returns zero if communication with
 .Fa box
 failed, non-zero otherwise.

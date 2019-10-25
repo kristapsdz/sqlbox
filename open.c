@@ -95,11 +95,13 @@ sqlbox_open_async(struct sqlbox *box, size_t src)
 static int
 sqlbox_op_open(struct sqlbox *box, const char *buf, size_t sz, int sync)
 {
-	size_t		  idx, attempt = 0;
-	int		  fl;
-	const char	 *fn;
-	struct sqlbox_db *db;
-	uint32_t	  ack;
+	size_t			 idx;
+	const char		*fn;
+	struct sqlbox_db	*db;
+	uint32_t		 ack;
+	struct sqlbox_pstmt	 fk = {
+		.stmt = (char *)"PRAGMA foreign_keys = ON;"
+	};
 
 	/* Check source exists and we have permission for it. */
 
@@ -135,58 +137,32 @@ sqlbox_op_open(struct sqlbox *box, const char *buf, size_t sz, int sync)
 	db->src = &box->cfg.srcs.srcs[idx];
 	db->idx = idx;
 
-	if (db->src->mode == SQLBOX_SRC_RO)
-		fl = SQLITE_OPEN_READONLY;
-	else if (db->src->mode == SQLBOX_SRC_RW)
-		fl = SQLITE_OPEN_READWRITE;
-	else 
-		fl = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
-	
-	/*
-	 * We can legit be asked to wait for a while for opening
-	 * especially if the source is stressed.
-	 * Use our usual backing-off algorithm but keep trying ad
-	 * infinitum.
-	 * If we error out, be sure to free all resources.
-	 */
-again:
-	sqlbox_debug(&box->cfg, "sqlite3_open_v2: %s", fn);
-	switch (sqlite3_open_v2(fn, &db->db, fl, NULL)) {
-	case SQLITE_BUSY:
-	case SQLITE_LOCKED:
-	case SQLITE_PROTOCOL:
-		sqlbox_debug(&box->cfg, "sqlite3_close: %s", fn);
-		sqlite3_close(db->db);
-		db->db = NULL;
-		sqlbox_sleep(attempt++);
-		goto again;
-	case SQLITE_OK:
-		break;
-	default:
-		if (db->db != NULL) {
-			sqlbox_warnx(&box->cfg, "%s: open: %s", 
-				fn, sqlite3_errmsg(db->db));
-			sqlbox_debug(&box->cfg,
-				"sqlite3_close: %s", fn);
-			sqlite3_close(db->db);
-		} else
-			sqlbox_warnx(&box->cfg, "%s: open: "
-				"sqlite3_open_v2", fn);
+	if ((db->db = sqlbox_wrap_open(box, db->src)) == NULL) {
+		sqlbox_warnx(&box->cfg, "%s: sqlbox_wrap_open", fn);
 		free(db);
 		return 0;
 	}
 
-	/* Add to list of available sources and write back id. */
+	/* 
+	 * Add to list of available sources.
+	 * After this, the exit handler will properly close the database
+	 * so we don't need to.
+	 */
 
 	TAILQ_INSERT_TAIL(&box->dbq, db, entries);
-	ack = htole32(db->id);
 
+	/* We always enable foreign keys. */
+
+	if (sqlbox_wrap_exec(box, db, &fk, 0) == SQLBOX_CODE_ERROR) {
+		sqlbox_warnx(&box->cfg, "%s: sqlbox_wrap_exec", fn);
+		return 0;
+	}
+
+	/* Conditionally write response. */
+
+	ack = htole32(db->id);
 	if (sync && !sqlbox_write(box, (char *)&ack, sizeof(uint32_t))) {
 		sqlbox_warnx(&box->cfg, "%s: open: sqlbox_write", fn);
-		TAILQ_REMOVE(&box->dbq, db, entries);
-		sqlbox_debug(&box->cfg, "sqlite3_close: %s", fn);
-		sqlite3_close(db->db);
-		free(db);
 		return 0;
 	}
 	return 1;

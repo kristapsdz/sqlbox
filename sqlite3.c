@@ -74,6 +74,57 @@ again:
 	return NULL;
 }
 
+sqlite3 *
+sqlbox_wrap_open(struct sqlbox *box, const struct sqlbox_src *src)
+{
+	int	 	 fl = SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE;
+	size_t		 attempt = 0;
+	sqlite3		*db;
+
+	if (src->mode == SQLBOX_SRC_RO)
+		fl = SQLITE_OPEN_READONLY;
+	else if (src->mode == SQLBOX_SRC_RW)
+		fl = SQLITE_OPEN_READWRITE;
+	
+	/*
+	 * We can legit be asked to wait for a while for opening
+	 * especially if the source is stressed.
+	 * Use our usual backing-off algorithm but keep trying ad
+	 * infinitum.
+	 * If we error out, be sure to free all resources.
+	 */
+again:
+	sqlbox_debug(&box->cfg, "sqlite3_open_v2: %s", src->fname);
+	db = NULL;
+	switch (sqlite3_open_v2(src->fname, &db, fl, NULL)) {
+	case SQLITE_BUSY:
+	case SQLITE_LOCKED:
+	case SQLITE_PROTOCOL:
+		sqlbox_debug(&box->cfg, 
+			"sqlite3_close: %s", src->fname);
+		sqlite3_close(db);
+		sqlbox_sleep(attempt++);
+		goto again;
+	case SQLITE_OK:
+		assert(db != NULL);
+		return db;
+	default:
+		break;
+	}
+
+	if (db != NULL) {
+		sqlbox_warnx(&box->cfg, "%s: open: %s", 
+			src->fname, sqlite3_errmsg(db));
+		sqlbox_debug(&box->cfg,
+			"sqlite3_close: %s", src->fname);
+		sqlite3_close(db);
+	} else
+		sqlbox_warnx(&box->cfg, "%s: open: "
+			"sqlite3_open_v2", src->fname);
+
+	return NULL;
+}
+
 /*
  * Step through statement.
  * Returns SQLBOX_CODE_OK on success, SQLBOX_CODE_CONSTRAINT if
