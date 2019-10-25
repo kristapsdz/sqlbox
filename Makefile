@@ -194,7 +194,7 @@ perf: $(PERFPNGS)
 sqlbox.tar.gz.sha512: sqlbox.tar.gz
 	sha512 sqlbox.tar.gz >$@
 
-sqlbox.tar.gz:
+sqlbox.tar.gz: Makefile
 	rm -rf .dist
 	mkdir -p .dist/sqlbox-$(VERSION)
 	mkdir -p .dist/sqlbox-$(VERSION)/{regress,man,perf}
@@ -214,8 +214,9 @@ installwww:
 	install -m 0444 *.html *.png *.svg *.css $(WWWDIR)
 
 distcheck: sqlbox.tar.gz.sha512
-	@grep "<h1>$(VERSION)</h1>" versions.xml || \
-		{ echo "Version $(VERSION) not found in versions.xml" 1>&2 ; exit 1 ; }
+	newest=`grep "<h1>" versions.xml | head -n1 | sed 's![ 	]*!!g'` ; \
+	       [ "$$newest" == "<h1>$(VERSION)</h1>" ] || \
+		{ echo "Version $(VERSION) not newest in versions.xml" 1>&2 ; exit 1 ; }
 	rm -rf .distcheck
 	sha512 -C sqlbox.tar.gz.sha512 sqlbox.tar.gz
 	mkdir -p .distcheck
