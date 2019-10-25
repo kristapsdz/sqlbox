@@ -66,6 +66,7 @@ TESTS		 = test-alloc-bad-defrole \
 		   test-open-bad-role \
 		   test-open-bad-src \
 		   test-open-file-create \
+		   test-open-foreignkey \
 		   test-open-memory \
 		   test-open-memory-role \
 		   test-open-not-found \
