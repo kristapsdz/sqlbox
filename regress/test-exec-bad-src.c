@@ -53,7 +53,7 @@ main(int argc, char *argv[])
 		errx(EXIT_FAILURE, "sqlbox_open");
 
 	if (SQLBOX_CODE_ERROR != sqlbox_exec(p, dbid + 1, 0, 0, NULL, 0)) 
-		err(EXIT_FAILURE, "sqlbox_exec should fail");
+		errx(EXIT_FAILURE, "sqlbox_exec should fail");
 
 	sqlbox_free(p);
 	return EXIT_SUCCESS;

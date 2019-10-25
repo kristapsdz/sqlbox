@@ -49,7 +49,7 @@ main(int argc, char *argv[])
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_alloc");
 	if (SQLBOX_CODE_ERROR != sqlbox_exec(p, 0, 0, 0, NULL, 0)) 
-		err(EXIT_FAILURE, "sqlbox_exec should fail");
+		errx(EXIT_FAILURE, "sqlbox_exec should fail");
 
 	sqlbox_free(p);
 	return EXIT_SUCCESS;

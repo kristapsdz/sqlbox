@@ -42,7 +42,6 @@ main(int argc, char *argv[])
 
 	memset(&cfg, 0, sizeof(struct sqlbox_cfg));
 	cfg.msg.func_short = warnx;
-
 	cfg.srcs.srcsz = nitems(srcs);
 	cfg.srcs.srcs = srcs;
 	cfg.stmts.stmtsz = nitems(pstmts);
@@ -53,18 +52,18 @@ main(int argc, char *argv[])
 	if (!(dbid = sqlbox_open(p, 0)))
 		errx(EXIT_FAILURE, "sqlbox_open");
 
-	if (SQLBOX_CODE_ERROR == sqlbox_exec(p, dbid, 0, 0, NULL, 0)) 
-		err(EXIT_FAILURE, "sqlbox_exec");
+	if (sqlbox_exec(p, dbid, 0, 0, NULL, 0) == SQLBOX_CODE_ERROR) 
+		errx(EXIT_FAILURE, "sqlbox_exec");
 	if (!sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping");
 
-	if (SQLBOX_CODE_ERROR == sqlbox_exec(p, dbid, 1, 0, NULL, 0)) 
-		err(EXIT_FAILURE, "sqlbox_exec");
+	if (sqlbox_exec(p, dbid, 1, 0, NULL, 0) == SQLBOX_CODE_ERROR) 
+		errx(EXIT_FAILURE, "sqlbox_exec");
 	if (!sqlbox_ping(p))
 		errx(EXIT_FAILURE, "sqlbox_ping");
 
-	if (SQLBOX_CODE_ERROR != sqlbox_exec(p, dbid, 1, 0, NULL, 0))
-		err(EXIT_FAILURE, "sqlbox_exec should fail");
+	if (sqlbox_exec(p, dbid, 1, 0, NULL, 0) != SQLBOX_CODE_ERROR)
+		errx(EXIT_FAILURE, "sqlbox_exec should fail");
 
 	sqlbox_free(p);
 	return EXIT_SUCCESS;
