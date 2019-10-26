@@ -52,6 +52,11 @@ TESTS		 = test-alloc-bad-defrole \
 		   test-finalise-twice \
 		   test-finalise-twice-zero-id \
 		   test-finalise-zero-id \
+		   test-hier-child-loop \
+		   test-hier-empty \
+		   test-hier-invalid-child \
+		   test-hier-invalid-parent \
+		   test-hier-self-reference \
 		   test-lastid-bad-src \
 		   test-lastid-bad-zero-id \
 		   test-lastid-insert-explicit \
@@ -146,6 +151,7 @@ OBJS		 = alloc.o \
 		   close.o \
 		   exec.o \
 		   finalise.o \
+		   hier.o \
 		   io.o \
 		   lastid.o \
 		   main.o \
