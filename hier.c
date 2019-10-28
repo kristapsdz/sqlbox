@@ -168,7 +168,7 @@ sqlbox_role_hier_child(struct sqlbox_role_hier *p, size_t parent, size_t child)
 }
 
 void
-sqlbox_role_hier_write_free(struct sqlbox_roles *r)
+sqlbox_role_hier_gen_free(struct sqlbox_roles *r)
 {
 	size_t	 i;
 
@@ -188,24 +188,28 @@ sqlbox_role_hier_write_free(struct sqlbox_roles *r)
 /*
  * A simple algorithm.
  * First, we're guaranteed that we have a set of DAGs.
- * For each node that has a parent, traverse upward, allowing the parent
- * to transition into the child.
- * After that, propogate statements and sources downward, augmenting any
- * descendents' permissions.
+ * For each node that has a parent, traverse upward, allowing all
+ * ancestors to transition into the common descendent.
+ * Then for each node, uniquely add all permissions of the ancestors to
+ * the given node.
  */
 int
-sqlbox_role_hier_write(const struct sqlbox_role_hier *p, 
-	struct sqlbox_roles *r)
+sqlbox_role_hier_gen(const struct sqlbox_role_hier *p, 
+	struct sqlbox_roles *r, size_t defrole)
 {
 	size_t	  i, j, k, idx, pidx;
 	void	*pp;
 
 	memset(r, 0, sizeof(struct sqlbox_roles));
 
+	if (defrole >= p->sz)
+		return 0;
+
 	r->roles = calloc(p->sz, sizeof(struct sqlbox_role));
 	if (r->roles == NULL)
 		goto err;
 	r->rolesz = p->sz;
+	r->defrole = defrole;
 
 	/* 
 	 * Start by collecting the number of outbound roles we're going
@@ -309,6 +313,6 @@ sqlbox_role_hier_write(const struct sqlbox_role_hier *p,
 	return 1;
 
 err:
-	sqlbox_role_hier_write_free(r);
+	sqlbox_role_hier_gen_free(r);
 	return 0;
 }

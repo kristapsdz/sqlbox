@@ -39,8 +39,8 @@ main(int argc, char *argv[])
 	if (!sqlbox_role_hier_child(hier, 0, 2))
 		errx(EXIT_FAILURE, "sqlbox_role_hier_child");
 
-	if (!sqlbox_role_hier_write(hier, &roles))
-		errx(EXIT_FAILURE, "sqlbox_role_hier_write");
+	if (!sqlbox_role_hier_gen(hier, &roles, 0))
+		errx(EXIT_FAILURE, "sqlbox_role_hier_gen");
 	if (roles.roles[0].rolesz != 2)
 		errx(EXIT_FAILURE, "wrong role sizes");
 	if (!(roles.roles[0].roles[0] == 1 &&
@@ -53,7 +53,7 @@ main(int argc, char *argv[])
 	if (roles.roles[2].rolesz != 0)
 		errx(EXIT_FAILURE, "wrong role sizes");
 
-	sqlbox_role_hier_write_free(&roles);
+	sqlbox_role_hier_gen_free(&roles);
 	sqlbox_role_hier_free(hier);
 	return EXIT_SUCCESS;
 }
