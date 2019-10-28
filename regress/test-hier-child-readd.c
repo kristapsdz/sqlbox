@@ -29,45 +29,17 @@ int
 main(int argc, char *argv[])
 {
 	struct sqlbox_role_hier	*hier;
-	struct sqlbox_roles	 roles;
-	size_t			 i, j;
 
-	if ((hier = sqlbox_role_hier_alloc(5)) == NULL)
+	if ((hier = sqlbox_role_hier_alloc(3)) == NULL)
 		err(EXIT_FAILURE, "sqlbox_role_hier_alloc");
 
 	if (!sqlbox_role_hier_child(hier, 0, 1))
 		errx(EXIT_FAILURE, "sqlbox_role_hier_child");
-	if (!sqlbox_role_hier_child(hier, 0, 2))
+	if (!sqlbox_role_hier_child(hier, 1, 2))
 		errx(EXIT_FAILURE, "sqlbox_role_hier_child");
-	if (!sqlbox_role_hier_child(hier, 2, 3))
-		errx(EXIT_FAILURE, "sqlbox_role_hier_child");
-	if (!sqlbox_role_hier_child(hier, 2, 4))
-		errx(EXIT_FAILURE, "sqlbox_role_hier_child");
-	if (!sqlbox_role_hier_write(hier, &roles))
-		errx(EXIT_FAILURE, "sqlbox_role_hier_write");
+	if (sqlbox_role_hier_child(hier, 1, 2))
+		errx(EXIT_FAILURE, "sqlbox_role_hier_child should fail");
 
-	if (roles.roles[0].rolesz != 4)
-		errx(EXIT_FAILURE, "wrong role sizes");
-
-	for (i = 1; i <= 4; i++) {
-		for (j = 0; j < roles.roles[0].rolesz; j++) 
-			if (roles.roles[0].roles[j] == i)
-				break;
-		if (j == roles.roles[0].rolesz)
-			errx(EXIT_FAILURE, "role not specified");
-	}
-
-	if (roles.roles[1].rolesz != 0)
-		errx(EXIT_FAILURE, "wrong role sizes");
-	if (roles.roles[2].rolesz != 2)
-		errx(EXIT_FAILURE, "wrong role sizes");
-	if (!(roles.roles[2].roles[0] == 3 &&
-	      roles.roles[2].roles[1] == 4) &&
-	    !(roles.roles[2].roles[0] == 4 &&
-	      roles.roles[2].roles[1] == 3))
-		errx(EXIT_FAILURE, "wrong roles");
-
-	sqlbox_role_hier_write_free(&roles);
 	sqlbox_role_hier_free(hier);
 	return EXIT_SUCCESS;
 }

@@ -30,7 +30,6 @@ main(int argc, char *argv[])
 {
 	struct sqlbox_role_hier	*hier;
 	struct sqlbox_roles	 roles;
-	size_t			 i, j;
 
 	if ((hier = sqlbox_role_hier_alloc(5)) == NULL)
 		err(EXIT_FAILURE, "sqlbox_role_hier_alloc");
@@ -43,29 +42,44 @@ main(int argc, char *argv[])
 		errx(EXIT_FAILURE, "sqlbox_role_hier_child");
 	if (!sqlbox_role_hier_child(hier, 2, 4))
 		errx(EXIT_FAILURE, "sqlbox_role_hier_child");
+
+	if (!sqlbox_role_hier_stmt(hier, 0, 1))
+		errx(EXIT_FAILURE, "sqlbox_role_hier_stmt");
+	if (!sqlbox_role_hier_stmt(hier, 2, 2))
+		errx(EXIT_FAILURE, "sqlbox_role_hier_stmt");
+
 	if (!sqlbox_role_hier_write(hier, &roles))
 		errx(EXIT_FAILURE, "sqlbox_role_hier_write");
 
-	if (roles.roles[0].rolesz != 4)
-		errx(EXIT_FAILURE, "wrong role sizes");
-
-	for (i = 1; i <= 4; i++) {
-		for (j = 0; j < roles.roles[0].rolesz; j++) 
-			if (roles.roles[0].roles[j] == i)
-				break;
-		if (j == roles.roles[0].rolesz)
-			errx(EXIT_FAILURE, "role not specified");
-	}
-
-	if (roles.roles[1].rolesz != 0)
-		errx(EXIT_FAILURE, "wrong role sizes");
-	if (roles.roles[2].rolesz != 2)
-		errx(EXIT_FAILURE, "wrong role sizes");
-	if (!(roles.roles[2].roles[0] == 3 &&
-	      roles.roles[2].roles[1] == 4) &&
-	    !(roles.roles[2].roles[0] == 4 &&
-	      roles.roles[2].roles[1] == 3))
-		errx(EXIT_FAILURE, "wrong roles");
+	if (roles.roles[0].stmtsz != 1)
+		errx(EXIT_FAILURE, "wrong statement sizes");
+	if (roles.roles[0].stmts[0] != 1)
+		errx(EXIT_FAILURE, "wrong statement");
+	if (roles.roles[1].stmtsz != 1)
+		errx(EXIT_FAILURE, "wrong statement sizes");
+	if (roles.roles[1].stmts[0] != 1)
+		errx(EXIT_FAILURE, "wrong statement");
+	if (roles.roles[2].stmtsz != 2)
+		errx(EXIT_FAILURE, "wrong statement sizes");
+	if (!(roles.roles[2].stmts[0] == 1 &&
+	      roles.roles[2].stmts[1] == 2) &&
+	    !(roles.roles[2].stmts[1] == 1 &&
+	      roles.roles[2].stmts[0] == 2))
+		errx(EXIT_FAILURE, "wrong statement");
+	if (roles.roles[3].stmtsz != 2)
+		errx(EXIT_FAILURE, "wrong statement sizes");
+	if (!(roles.roles[3].stmts[0] == 1 &&
+	      roles.roles[3].stmts[1] == 2) &&
+	    !(roles.roles[3].stmts[1] == 1 &&
+	      roles.roles[3].stmts[0] == 2))
+		errx(EXIT_FAILURE, "wrong statement");
+	if (roles.roles[4].stmtsz != 2)
+		errx(EXIT_FAILURE, "wrong statement sizes");
+	if (!(roles.roles[3].stmts[0] == 1 &&
+	      roles.roles[3].stmts[1] == 2) &&
+	    !(roles.roles[3].stmts[1] == 1 &&
+	      roles.roles[3].stmts[0] == 2))
+		errx(EXIT_FAILURE, "wrong statement");
 
 	sqlbox_role_hier_write_free(&roles);
 	sqlbox_role_hier_free(hier);

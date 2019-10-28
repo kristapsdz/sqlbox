@@ -85,16 +85,20 @@ int
 sqlbox_role_hier_stmt(struct sqlbox_role_hier *p, size_t role, size_t stmt)
 {
 	void	*pp;
+	size_t	 i;
 
 	/* Bounds check. */
 
 	if (role >= p->sz)
 		return 0;
 
-	/* 
-	 * Reallocate and enqueue.
-	 * Duplicates are ok: we'll discard them when we serialise
-	 */
+	/* Ignore repeats. */
+
+	for (i = 0; i < p->roles[role].stmtsz; i++)
+		if (p->roles[role].stmts[i] == stmt)
+			return 1;
+
+	/* Reallocate and enqueue. */
 
 	pp = reallocarray(p->roles[role].stmts, 
 		p->roles[role].stmtsz + 1, sizeof(size_t));
@@ -110,16 +114,20 @@ int
 sqlbox_role_hier_src(struct sqlbox_role_hier *p, size_t role, size_t src)
 {
 	void	*pp;
+	size_t	 i;
 
 	/* Bounds check. */
 
 	if (role >= p->sz)
 		return 0;
 
-	/* 
-	 * Reallocate and enqueue.
-	 * Duplicates are ok: we'll discard them when we serialise
-	 */
+	/* Ignore repeats. */
+
+	for (i = 0; i < p->roles[role].srcsz; i++)
+		if (p->roles[role].srcs[i] == src)
+			return 1;
+
+	/* Reallocate and enqueue. */
 
 	pp = reallocarray(p->roles[role].srcs, 
 		p->roles[role].srcsz + 1, sizeof(size_t));

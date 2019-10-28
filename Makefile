@@ -53,6 +53,7 @@ TESTS		 = test-alloc-bad-defrole \
 		   test-finalise-twice-zero-id \
 		   test-finalise-zero-id \
 		   test-hier-child-loop \
+		   test-hier-child-readd \
 		   test-hier-empty \
 		   test-hier-invalid-child \
 		   test-hier-invalid-parent \
@@ -60,6 +61,9 @@ TESTS		 = test-alloc-bad-defrole \
 		   test-hier-simple \
 		   test-hier-simple2 \
 		   test-hier-simple3 \
+		   test-hier-stmts \
+		   test-hier-stmts-readd \
+		   test-hier-stmts-readd2 \
 		   test-lastid-bad-src \
 		   test-lastid-bad-zero-id \
 		   test-lastid-insert-explicit \
