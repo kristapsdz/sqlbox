@@ -189,7 +189,8 @@ int
 sqlbox_role_hier_write(const struct sqlbox_role_hier *p, 
 	struct sqlbox_roles *r)
 {
-	size_t	 		 i, idx, pidx;
+	size_t	  i, j, k, idx, pidx;
+	void	*pp;
 
 	memset(r, 0, sizeof(struct sqlbox_roles));
 
@@ -201,6 +202,7 @@ sqlbox_role_hier_write(const struct sqlbox_role_hier *p,
 	/* 
 	 * Start by collecting the number of outbound roles we're going
 	 * to have per parent.
+	 * Each parent needs to have space for each of its descendents.
 	 */
 
 	for (i = 0; i < p->sz; i++) {
@@ -238,11 +240,63 @@ sqlbox_role_hier_write(const struct sqlbox_role_hier *p,
 		}
 	}
 
-	/*
-	 * Now we can propogate downward efficiently.
-	 * From each node, augment all outbound nodes with the parent
-	 * nodes.
-	 */
+	/* Now we accumulate statements. */
+
+	for (i = 0; i < p->sz; i++) {
+		for (idx = i; ; idx = p->roles[idx].parent) {
+
+			/* Look for all parent statements in the child. */
+
+			for (j = 0; j < p->roles[idx].stmtsz; j++) {
+				for (k = 0; k < r->roles[i].stmtsz; k++)
+					if (p->roles[idx].stmts[j] ==
+					    r->roles[i].stmts[k])
+						break;
+				if (k < r->roles[i].stmtsz)
+					continue;
+
+				/* Not found: append. */
+
+				pp = reallocarray(r->roles[i].stmts,
+					r->roles[i].stmtsz + 1,
+					sizeof(size_t));
+				if (pp == NULL)
+					goto err;
+				r->roles[i].stmts = pp;
+				r->roles[i].stmts[r->roles[i].stmtsz] =
+					p->roles[idx].stmts[j];
+				r->roles[i].stmtsz++;
+			}
+
+			/* Now sources. */
+
+			for (j = 0; j < p->roles[idx].srcsz; j++) {
+				for (k = 0; k < r->roles[i].srcsz; k++)
+					if (p->roles[idx].srcs[j] ==
+					    r->roles[i].srcs[k])
+						break;
+				if (k < r->roles[i].srcsz)
+					continue;
+
+				/* Not found: append. */
+
+				pp = reallocarray(r->roles[i].srcs,
+					r->roles[i].srcsz + 1,
+					sizeof(size_t));
+				if (pp == NULL)
+					goto err;
+				r->roles[i].srcs = pp;
+				r->roles[i].srcs[r->roles[i].srcsz] =
+					p->roles[idx].srcs[j];
+				r->roles[i].srcsz++;
+			}
+
+			/* Stop when we're at a root. */
+
+			if (p->roles[idx].parent == idx)
+				break;
+		}
+	}
 
 	return 1;
 
