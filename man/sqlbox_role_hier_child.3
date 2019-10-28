@@ -15,29 +15,44 @@
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
 .Dd $Mdocdate$
-.Dt SQLBOX_ROLE_HIER_FREE 3
+.Dt SQLBOX_ROLE_HIER_CHILD 3
 .Os
 .Sh NAME
-.Nm sqlbox_role_hier_free
-.Nd free hierarchical role generator
+.Nm sqlbox_role_hier_child
+.Nd add a child to a role
 .Sh LIBRARY
 .Lb sqlbox
 .Sh SYNOPSIS
 .In stdint.h
 .In sqlbox.h
-.Ft void
-.Fo sqlbox_role_hier_free
+.Ft int
+.Fo sqlbox_role_hier_child
 .Fa "struct sqlbox_role_hier *p"
+.Fa "size_t parent"
+.Fa "size_t child"
 .Fc
 .Sh DESCRIPTION
-Releases memory held by a hierarchical generator
+Set
+.Fa parent
+to be the parent of role
+.Fa child
+in the hierarchy generator
 .Fa p .
-If it is
-.Dv NULL ,
-does nothing.
-This does not affect the memory of any lattices created with
-.Xr sqlbox_role_hier_write 3 .
-.\" .Sh RETURN VALUES
+.Sh RETURN VALUES
+Returns zero if
+.Fa child
+or
+.Fa parent
+exceed the number of roles specified in
+.Xr sqlbox_role_hier_alloc 3 ,
+if
+.Fa child
+already has a parent set, or
+if
+.Fa child
+is already an ancestor to
+.Fa parent .
+Returns non-zero otherwise.
 .\" For sections 2, 3, and 9 function return values only.
 .\" .Sh ENVIRONMENT
 .\" For sections 1, 6, 7, and 8 only.
@@ -50,8 +65,7 @@ This does not affect the memory of any lattices created with
 .\" .Sh ERRORS
 .\" For sections 2, 3, 4, and 9 errno settings only.
 .Sh SEE ALSO
-.Xr sqlbox_role_hier_alloc 3 ,
-.Xr sqlbox_role_hier_write 3
+.Xr sqlbox_role_hier_alloc 3
 .\" .Sh STANDARDS
 .\" .Sh HISTORY
 .\" .Sh AUTHORS

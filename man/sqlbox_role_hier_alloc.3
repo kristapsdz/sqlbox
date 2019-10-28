@@ -45,6 +45,12 @@ Self-transition is a no-op.
 .Pp
 By default, a role has no permissions and may not transition into any
 other role (except itself).
+.Pp
+Once allocated, callers usually use
+.Xr sqlbox_role_hier_child 3
+to create the hierarchy and
+.Xr sqlbox_role_hier_write 3
+to generate.
 .Sh RETURN VALUES
 Returns the allocated context or
 .Dv NULL
@@ -63,7 +69,9 @@ On success, the pointer must be freed with
 .\" .Sh ERRORS
 .\" For sections 2, 3, 4, and 9 errno settings only.
 .Sh SEE ALSO
-.Xr sqlbox_role_hier_free 3
+.Xr sqlbox_role_hier_child 3 ,
+.Xr sqlbox_role_hier_free 3 ,
+.Xr sqlbox_role_hier_write 3
 .\" .Sh STANDARDS
 .\" .Sh HISTORY
 .\" .Sh AUTHORS
