@@ -19,31 +19,28 @@
 #if HAVE_SYS_QUEUE
 # include <sys/queue.h>
 #endif 
-#include <sys/socket.h>
 
 #include <assert.h>
-#if HAVE_ERR
-# include <err.h>
-#endif
-#include <errno.h>
-#if !HAVE_SOCK_NONBLOCK
-# include <fcntl.h>
-#endif
-#include <poll.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
+#include <string.h> /* memset */
 
 #include <sqlite3.h>
 
 #include "sqlbox.h"
 #include "extern.h"
 
+struct	sqlbox_role_node {
+	size_t		 parent; /* parent role */
+	size_t		*srcs; /* available sources */
+	size_t		 srcsz; /* length of srcs */
+	size_t		*stmts; /* available statements */
+	size_t		 stmtsz; /* length of stmts */
+};
+
 struct	sqlbox_role_hier {
-	size_t		*parents;
-	size_t		 sz;
+	struct sqlbox_role_node	*roles; /* per-role perms */
+	size_t		  	 sz; /* number of roles */
 };
 
 struct sqlbox_role_hier *
@@ -56,13 +53,13 @@ sqlbox_role_hier_alloc(size_t rolesz)
 		return NULL;
 
 	p->sz = rolesz;
-	if (p->sz > 0 && 
-	    (p->parents = calloc(rolesz, sizeof(size_t))) == NULL) {
+	if (p->sz > 0 && (p->roles = calloc
+	    (rolesz, sizeof(struct sqlbox_role_node))) == NULL) {
 		free(p);
 		return NULL;
 	}
 	for (i = 0; i < p->sz; i++)
-		p->parents[i] = i;
+		p->roles[i].parent = i;
 
 	return p;
 }
@@ -70,11 +67,67 @@ sqlbox_role_hier_alloc(size_t rolesz)
 void
 sqlbox_role_hier_free(struct sqlbox_role_hier *p)
 {
+	size_t	 i;
 
 	if (p == NULL)
 		return;
-	free(p->parents);
+
+	for (i = 0; i < p->sz; i++) {
+		free(p->roles[i].srcs);
+		free(p->roles[i].stmts);
+	}
+
+	free(p->roles);
 	free(p);
+}
+
+int
+sqlbox_role_hier_stmt(struct sqlbox_role_hier *p, size_t role, size_t stmt)
+{
+	void	*pp;
+
+	/* Bounds check. */
+
+	if (role >= p->sz)
+		return 0;
+
+	/* 
+	 * Reallocate and enqueue.
+	 * Duplicates are ok: we'll discard them when we serialise
+	 */
+
+	pp = reallocarray(p->roles[role].stmts, 
+		p->roles[role].stmtsz + 1, sizeof(size_t));
+	if (pp == NULL)
+		return 0;
+	p->roles[role].stmts = pp;
+	p->roles[role].stmts[p->roles[role].stmtsz++] = stmt;
+	return 1;
+}
+
+
+int
+sqlbox_role_hier_src(struct sqlbox_role_hier *p, size_t role, size_t src)
+{
+	void	*pp;
+
+	/* Bounds check. */
+
+	if (role >= p->sz)
+		return 0;
+
+	/* 
+	 * Reallocate and enqueue.
+	 * Duplicates are ok: we'll discard them when we serialise
+	 */
+
+	pp = reallocarray(p->roles[role].srcs, 
+		p->roles[role].srcsz + 1, sizeof(size_t));
+	if (pp == NULL)
+		return 0;
+	p->roles[role].srcs = pp;
+	p->roles[role].srcs[p->roles[role].srcsz++] = src;
+	return 1;
 }
 
 int
@@ -86,7 +139,7 @@ sqlbox_role_hier_child(struct sqlbox_role_hier *p, size_t parent, size_t child)
 
 	if (parent >= p->sz || child >= p->sz)
 		return 0;
-	if (p->parents[child] != child)
+	if (p->roles[child].parent != child)
 		return 0;
 
 	/* Ignore self-reference. */
@@ -96,32 +149,54 @@ sqlbox_role_hier_child(struct sqlbox_role_hier *p, size_t parent, size_t child)
 
 	/* Make sure no ancestors are the self. */
 
-	for (idx = parent; ; idx = p->parents[idx])
-		if (p->parents[idx] == child)
+	for (idx = parent; ; idx = p->roles[idx].parent)
+		if (p->roles[idx].parent == child)
 			return 0;
-		else if (p->parents[idx] == idx)
+		else if (p->roles[idx].parent == idx)
 			break;
 
-	p->parents[child] = parent;
+	p->roles[child].parent = parent;
 	return 1;
 }
 
-int
-sqlbox_role_hier_write(const struct sqlbox_role_hier *p, struct sqlbox_role *roles)
+void
+sqlbox_role_hier_write_free(struct sqlbox_roles *r)
 {
-	size_t	 i, idx, pidx;
+	size_t	 i;
 
-	/*
-	 * A simple algorithm.
-	 * First, we're guaranteed that we have a set of DAGs.
-	 * For each node that has a parent, traverse upward, allowing
-	 * the parent to transition into the child.
-	 */
+	if (r == NULL)
+		return;
 
-	for (i = 0; i < p->sz; i++) {
-		free(roles[i].roles);
-		roles[i].rolesz = 0;
+	for (i = 0; i < r->rolesz; i++) {
+		free(r->roles[i].roles);
+		free(r->roles[i].stmts);
+		free(r->roles[i].srcs);
 	}
+
+	free(r->roles);
+	memset(r, 0, sizeof(struct sqlbox_roles));
+}
+
+/*
+ * A simple algorithm.
+ * First, we're guaranteed that we have a set of DAGs.
+ * For each node that has a parent, traverse upward, allowing the parent
+ * to transition into the child.
+ * After that, propogate statements and sources downward, augmenting any
+ * descendents' permissions.
+ */
+int
+sqlbox_role_hier_write(const struct sqlbox_role_hier *p, 
+	struct sqlbox_roles *r)
+{
+	size_t	 		 i, idx, pidx;
+
+	memset(r, 0, sizeof(struct sqlbox_roles));
+
+	r->roles = calloc(p->sz, sizeof(struct sqlbox_role));
+	if (r->roles == NULL)
+		goto err;
+	r->rolesz = p->sz;
 
 	/* 
 	 * Start by collecting the number of outbound roles we're going
@@ -130,9 +205,9 @@ sqlbox_role_hier_write(const struct sqlbox_role_hier *p, struct sqlbox_role *rol
 
 	for (i = 0; i < p->sz; i++) {
 		idx = i;
-		while (p->parents[idx] != idx) {
-			roles[p->parents[idx]].rolesz++;
-			idx = p->parents[idx];
+		while (p->roles[idx].parent != idx) {
+			r->roles[p->roles[idx].parent].rolesz++;
+			idx = p->roles[idx].parent;
 		}
 	}
 
@@ -143,24 +218,35 @@ sqlbox_role_hier_write(const struct sqlbox_role_hier *p, struct sqlbox_role *rol
 	 */
 
 	for (i = 0; i < p->sz; i++) {
-		if (roles[i].rolesz == 0)
+		if (r->roles[i].rolesz == 0)
 			continue;
-		roles[i].roles = calloc(roles[i].rolesz, sizeof(size_t));
-		if (roles[i].roles == NULL)
-			return 0;
-		roles[i].rolesz = 0;
+		r->roles[i].roles = calloc
+			(r->roles[i].rolesz, sizeof(size_t));
+		if (r->roles[i].roles == NULL)
+			goto err;
+		r->roles[i].rolesz = 0;
 	}
 
 	/* Assign children. */
 
 	for (i = 0; i < p->sz; i++) {
 		idx = i;
-		while (p->parents[idx] != idx) {
-			pidx = p->parents[idx];
-			roles[pidx].roles[roles[pidx].rolesz++] = idx;
+		while (p->roles[idx].parent != idx) {
+			pidx = p->roles[idx].parent;
+			r->roles[pidx].roles[r->roles[pidx].rolesz++] = i;
 			idx = pidx;
 		}
 	}
 
+	/*
+	 * Now we can propogate downward efficiently.
+	 * From each node, augment all outbound nodes with the parent
+	 * nodes.
+	 */
+
 	return 1;
+
+err:
+	sqlbox_role_hier_write_free(r);
+	return 0;
 }

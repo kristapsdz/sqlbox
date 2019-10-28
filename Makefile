@@ -57,6 +57,9 @@ TESTS		 = test-alloc-bad-defrole \
 		   test-hier-invalid-child \
 		   test-hier-invalid-parent \
 		   test-hier-self-reference \
+		   test-hier-simple \
+		   test-hier-simple2 \
+		   test-hier-simple3 \
 		   test-lastid-bad-src \
 		   test-lastid-bad-zero-id \
 		   test-lastid-insert-explicit \

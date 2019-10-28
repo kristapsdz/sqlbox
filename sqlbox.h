@@ -234,8 +234,12 @@ __BEGIN_DECLS
 struct sqlbox_role_hier
 		*sqlbox_role_hier_alloc(size_t);
 int		 sqlbox_role_hier_child(struct sqlbox_role_hier *, size_t, size_t);
-int		 sqlbox_role_hier_write(const struct sqlbox_role_hier *, struct sqlbox_role *);
 void		 sqlbox_role_hier_free(struct sqlbox_role_hier *);
+int		 sqlbox_role_hier_src(struct sqlbox_role_hier *, size_t, size_t);
+int		 sqlbox_role_hier_stmt(struct sqlbox_role_hier *, size_t, size_t);
+int		 sqlbox_role_hier_write(const struct sqlbox_role_hier *,
+			struct sqlbox_roles *);
+void		 sqlbox_role_hier_write_free(struct sqlbox_roles *);
 
 struct sqlbox	*sqlbox_alloc(struct sqlbox_cfg *);
 int		 sqlbox_close(struct sqlbox *, size_t);
