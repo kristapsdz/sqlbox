@@ -1,4 +1,4 @@
-.SUFFIXES: .png .dat .dot .svg
+.SUFFIXES: .png .dat .dot .svg .3.xml .3 .3.html
 
 include Makefile.configure
 
@@ -168,6 +168,24 @@ OBJS		 = alloc.o \
 		   step.o \
 		   transaction.o \
 		   warn.o
+MANS		 = man/sqlbox.3 \
+		   man/sqlbox_alloc.3 \
+		   man/sqlbox_close.3 \
+		   man/sqlbox_exec.3 \
+		   man/sqlbox_finalise.3 \
+		   man/sqlbox_free.3 \
+		   man/sqlbox_msg_set_dat.3 \
+		   man/sqlbox_open.3 \
+		   man/sqlbox_parm_int.3 \
+		   man/sqlbox_ping.3 \
+		   man/sqlbox_prepare_bind.3 \
+		   man/sqlbox_rebind.3 \
+		   man/sqlbox_role.3 \
+		   man/sqlbox_role_hier_alloc.3 \
+		   man/sqlbox_role_hier_free.3 \
+		   man/sqlbox_step.3 \
+		   man/sqlbox_trans_commit.3 \
+		   man/sqlbox_trans_immediate.3
 PERFPNGS	 = perf-full-cycle.png \
 		   perf-prep-insert-final.png \
 		   perf-rebind.png \
@@ -191,12 +209,16 @@ VGROPTS		 = -q --track-origins=yes --leak-check=full \
 		   --show-reachable=yes --trace-children=yes \
 		   --leak-resolution=high
 WWWDIR		 = /var/www/vhosts/kristaps.bsd.lv/htdocs/sqlbox
+.for mans in $(MANS)
+MANXMLS		+= ${mans}.xml
+MANHTMLS	+= ${mans}.html
+.endfor
 
 all: libsqlbox.a
 
 allperf: $(PERFS)
 
-www: index.html perf index.svg sqlbox.tar.gz.sha512
+www: index.html perf index.svg sqlbox.tar.gz.sha512 $(MANXMLS) $(MANHTMLS)
 
 perf: $(PERFPNGS)
 
@@ -217,10 +239,12 @@ sqlbox.tar.gz: Makefile
 
 installwww:
 	mkdir -p $(WWWDIR)/snapshots
+	mkdir -p $(WWWDIR)/man
 	install -m 0444 sqlbox.tar.gz $(WWWDIR)/snapshots/sqlbox-$(VERSION).tar.gz
 	install -m 0444 sqlbox.tar.gz.sha512 $(WWWDIR)/snapshots/sqlbox-$(VERSION).tar.gz.sha512
 	install -m 0444 sqlbox.tar.gz sqlbox.tar.gz.sha512 $(WWWDIR)/snapshots
 	install -m 0444 *.html *.png *.svg *.css $(WWWDIR)
+	install -m 0444 $(MANHTMLS) $(WWWDIR)/man
 
 distcheck: sqlbox.tar.gz.sha512
 	newest=`grep "<h1>" versions.xml | head -n1 | sed 's![ 	]*!!g'` ; \
@@ -280,6 +304,7 @@ ${perf}-sqlite3: perf/${perf}-sqlite3.c
 clean:
 	rm -f libsqlbox.a compats.o $(OBJS) $(TESTS) $(PERFS)
 	rm -f $(PERFS) $(PERFPNGS) index.html index.svg sqlbox.tar.gz sqlbox.tar.gz.sha512
+	rm -f $(MANXMLS) $(MANHTMLS)
 
 distclean: clean
 	rm -f config.h config.log Makefile.configure
@@ -338,8 +363,20 @@ valgrind: $(TESTS) $(PERFS)
 .dat.png:
 	gnuplot -c perf.gnuplot $< $@
 
-index.html: index.xml versions.xml
-	sblg -t index.xml -o $@ versions.xml
+index.html: index.xml versions.xml $(MANXMLS)
+	sblg -t index.xml -o $@ versions.xml $(MANXMLS)
 	
 .dot.svg:
 	dot -Tsvg $< | xsltproc --novalid notugly.xsl - >$@
+
+.3.3.html:
+	mandoc -Ostyle=https://bsd.lv/css/mandoc.css -Thtml $< >$@
+
+.3.3.xml:
+	( echo '<article data-sblg-article="1" data-sblg-tags="manpages">' ; \
+	  echo "<h1>`grep -h '^\.Nm ' $< | head -n1 | cut -c 5- | sed 's![ ]*,$$!!'`</h1>" ; \
+	  echo '<aside>' ; \
+	  grep -h '^\.Nd ' $< | cut -c 5- ; \
+	  echo '</aside>' ; \
+	  echo '</article>' ; \
+	) >$@

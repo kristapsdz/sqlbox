@@ -2,6 +2,19 @@
 <articles>
 	<article data-sblg-article="1" data-sblg-tags="version">
 		<header>
+			<h1>0.1.5</h1>
+			<address>Kristaps Dzonsons</address>
+			<time datetime="2019-10-28">2019-10-28</time>
+		</header>
+		<aside>
+			<p>
+				Add a set of functions for creating hierarchical roles.
+				This simplifies the creation of complex systems inheriting roles.
+			</p>
+		</aside>
+	</article>
+	<article data-sblg-article="1" data-sblg-tags="version">
+		<header>
 			<h1>0.1.4</h1>
 			<address>Kristaps Dzonsons</address>
 			<time datetime="2019-10-25">2019-10-25</time>

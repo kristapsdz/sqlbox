@@ -23,7 +23,8 @@
 			<a href="#performance">performance</a>
 			<span>
 				<a href="https://github.com/kristapsdz/sqlbox"><i class="fa fa-fw fa-github"></i></a>
-				<nav data-sblg-nav="1" data-sblg-navsz="1" data-sblg-navsort="date" data-sblg-navxml="1">
+				<nav data-sblg-nav="1" data-sblg-navtag="version" 
+				 data-sblg-navsz="1" data-sblg-navsort="date" data-sblg-navxml="1">
 					v${sblg-title}
 				</nav>
 			</span>
@@ -79,7 +80,8 @@
 				<h3>
 					latest release&#8230;
 				</h3>
-				<nav data-sblg-nav="1" data-sblg-navsz="1" data-sblg-navsort="date" data-sblg-navcontent="1">
+				<nav data-sblg-nav="1" data-sblg-navtag="version" 
+				 data-sblg-navsz="1" data-sblg-navsort="date" data-sblg-navcontent="1">
 					<div class="header">
 						<span class="date">
 							<i class="fa fa-calendar fa-fw"></i>
@@ -243,10 +245,28 @@ make install</pre>
 
 				</p>
 			</section>
+			<section id="docs">
+				<h2>
+					documentation
+				</h2>
+				<p>
+					The canonical documentation for <span class="nm">sqlbox</span> is its manpages.
+					Below is a list of all bundled manuals.
+					These apply to the current version of this software, which is
+					<nav data-sblg-nav="1" data-sblg-navtag="version" 
+					 data-sblg-navsz="1" data-sblg-navsort="date" data-sblg-navxml="1">
+					 <strong>${sblg-title}</strong>.
+					</nav>
+				</p>
+				<nav data-sblg-nav="1" data-sblg-navtag="manpages" data-sblg-navcontent="1" data-sblg-navsort="title">
+					<a href="${sblg-base}.html">${sblg-title}(3)</a>: ${sblg-aside}
+				</nav>
+			</section>
 		</article>
 		<footer>
 			&#169; 2019, 
-			<a itemprop="author" itemscope="itemscope" itemtype="http://schema.org/Person" rel="author" href="https://github.com/kristapsdz">
+			<a itemprop="author" itemscope="itemscope" 
+			 itemtype="http://schema.org/Person" rel="author" href="https://github.com/kristapsdz">
 				<span itemprop="name">Kristaps Dz</span>
 			</a>
 		</footer>
