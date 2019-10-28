@@ -52,9 +52,11 @@ TESTS		 = test-alloc-bad-defrole \
 		   test-finalise-twice \
 		   test-finalise-twice-zero-id \
 		   test-finalise-zero-id \
+		   test-hier-bad-defrole \
 		   test-hier-child-loop \
 		   test-hier-child-readd \
 		   test-hier-empty \
+		   test-hier-empty-gen \
 		   test-hier-invalid-child \
 		   test-hier-invalid-parent \
 		   test-hier-self-reference \
@@ -188,6 +190,7 @@ MANS		 = man/sqlbox.3 \
 		   man/sqlbox_role_hier_alloc.3 \
 		   man/sqlbox_role_hier_child.3 \
 		   man/sqlbox_role_hier_free.3 \
+		   man/sqlbox_role_hier_gen.3 \
 		   man/sqlbox_role_hier_stmt.3 \
 		   man/sqlbox_step.3 \
 		   man/sqlbox_trans_commit.3 \

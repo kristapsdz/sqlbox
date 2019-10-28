@@ -202,7 +202,9 @@ sqlbox_role_hier_gen(const struct sqlbox_role_hier *p,
 
 	memset(r, 0, sizeof(struct sqlbox_roles));
 
-	if (defrole >= p->sz)
+	if (p->sz && defrole >= p->sz)
+		return 0;
+	if (p->sz == 0 && defrole != 0)
 		return 0;
 
 	r->roles = calloc(p->sz, sizeof(struct sqlbox_role));
