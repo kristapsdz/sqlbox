@@ -1,0 +1,63 @@
+.\"	$Id$
+.\"
+.\" Copyright (c) 2019 Kristaps Dzonsons <kristaps@bsd.lv>
+.\"
+.\" Permission to use, copy, modify, and distribute this software for any
+.\" purpose with or without fee is hereby granted, provided that the above
+.\" copyright notice and this permission notice appear in all copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\" WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\" ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\" WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+.\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+.\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd $Mdocdate$
+.Dt SQLBOX_ROLE_HIER_GEN_FREE 3
+.Os
+.Sh NAME
+.Nm sqlbox_role_hier_gen_free
+.Nd free generated roles
+.Sh LIBRARY
+.Lb sqlbox
+.Sh SYNOPSIS
+.In stdint.h
+.In sqlbox.h
+.Ft void
+.Fo sqlbox_role_hier_gen_free
+.Fa "struct sqlbox_roles *roles"
+.Fc
+.Sh DESCRIPTION
+Frees roles created by a successful call to
+.Xr sqlbox_role_hier_gen 3 .
+It also zeroes the structure, so it may be subsequently re-used.
+This should only be called after invoking
+.Xr sqlbox_role_hier_gen 3 .
+It is a noop to invoke the function twice in sequence.
+It is a noop to pass
+.Dv NULL
+as
+.Fa roles .
+.\" .Sh RETURN VALUES
+.\" For sections 2, 3, and 9 function return values only.
+.\" .Sh ENVIRONMENT
+.\" For sections 1, 6, 7, and 8 only.
+.\" .Sh FILES
+.\" .Sh EXIT STATUS
+.\" For sections 1, 6, and 8 only.
+.\" .Sh EXAMPLES
+.\" .Sh DIAGNOSTICS
+.\" For sections 1, 4, 6, 7, 8, and 9 printf/stderr messages only.
+.\" .Sh ERRORS
+.\" For sections 2, 3, 4, and 9 errno settings only.
+.Sh SEE ALSO
+.Xr sqlbox_role_hier_gen 3
+.\" .Sh STANDARDS
+.\" .Sh HISTORY
+.\" .Sh AUTHORS
+.\" .Sh CAVEATS
+.\" .Sh BUGS
+.\" .Sh SECURITY CONSIDERATIONS
+.\" Not used in OpenBSD.
