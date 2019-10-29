@@ -199,6 +199,7 @@ MANS		 = man/sqlbox.3 \
 PERFPNGS	 = perf-full-cycle.png \
 		   perf-prep-insert-final.png \
 		   perf-rebind.png \
+		   perf-select.png \
 		   perf-select-multi.png
 PERFS		 = perf-full-cycle-ksql \
 		   perf-full-cycle-sqlbox \
@@ -209,6 +210,9 @@ PERFS		 = perf-full-cycle-ksql \
 		   perf-rebind-ksql \
 		   perf-rebind-sqlbox \
 		   perf-rebind-sqlite3 \
+		   perf-select-ksql \
+		   perf-select-sqlbox \
+		   perf-select-sqlite3 \
 		   perf-select-multi-ksql \
 		   perf-select-multi-sqlbox \
 		   perf-select-multi-sqlite3
@@ -293,7 +297,7 @@ $(PERFPNGS): perf.gnuplot
 ${test}: regress/${test}.c
 .endfor
 
-.for perf in perf-prep-insert-final perf-rebind perf-full-cycle perf-select-multi
+.for perf in perf-prep-insert-final perf-rebind perf-full-cycle perf-select-multi perf-select
 #
 # Reenable this if you want to regenerate the performance data files.
 # It will take... quite some time.
