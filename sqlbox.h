@@ -241,6 +241,7 @@ int		 sqlbox_role_hier_gen(const struct sqlbox_role_hier *,
 			struct sqlbox_roles *, size_t);
 void		 sqlbox_role_hier_gen_free(struct sqlbox_roles *);
 int		 sqlbox_role_hier_sink(struct sqlbox_role_hier *, size_t);
+int		 sqlbox_role_hier_start(struct sqlbox_role_hier *, size_t);
 
 struct sqlbox	*sqlbox_alloc(struct sqlbox_cfg *);
 int		 sqlbox_close(struct sqlbox *, size_t);

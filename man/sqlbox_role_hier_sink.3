@@ -33,21 +33,23 @@
 .Sh DESCRIPTION
 Set
 .Fa sink
-to be a possible destination of every node in
-.Fa p .
+such that it may be transitioned into from any other role in
+.Fa p
+but may not transition out.
 It may not already be the parent or child of any other node as set with
-.Xr sqlbox_role_hier_child 3 .
+.Xr sqlbox_role_hier_child 3
+or a start node as set with
+.Xr sqlbox_role_hier_start 3 .
 There may be multiple sink nodes.
 Setting multiple times as a sink is a no-op.
 .Pp
 A sink is considered a sibling transition: it will not inherit any
 permissions from other nodes.
-Sink roles also may not transition into other sinks.
 .Sh RETURN VALUES
 Returns zero if
 .Fa sink
-is not a valid role, has already been assigned as a child or parent, or
-memory allocation fails.
+is not a valid role, is a start role, has already been assigned as a
+child or parent, or memory allocation fails.
 Returns non-zero otherwise.
 .\" For sections 2, 3, and 9 function return values only.
 .\" .Sh ENVIRONMENT

@@ -15,48 +15,45 @@
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
 .Dd $Mdocdate$
-.Dt SQLBOX_ROLE_HIER_CHILD 3
+.Dt SQLBOX_ROLE_HIER_START 3
 .Os
 .Sh NAME
-.Nm sqlbox_role_hier_child
-.Nd add a child to a role
+.Nm sqlbox_role_hier_start
+.Nd add a start (source) node to a hierarchy
 .Sh LIBRARY
 .Lb sqlbox
 .Sh SYNOPSIS
 .In stdint.h
 .In sqlbox.h
 .Ft int
-.Fo sqlbox_role_hier_child
+.Fo sqlbox_role_hier_start
 .Fa "struct sqlbox_role_hier *p"
-.Fa "size_t parent"
-.Fa "size_t child"
+.Fa "size_t start"
 .Fc
 .Sh DESCRIPTION
 Set
-.Fa parent
-to be the parent of role
-.Fa child
-in the hierarchy generator
-.Fa p .
-In the hierarchical structure created by
-.Fn sqlbox_role_hier_child , 
-a node may have at most one parent.
+.Fa start
+such that it may transition into any other role in
+.Fa p
+but that no other role may transition into it.
+These are usually called
+.Qq sources
+but called starting nodes to disambiguate from
+.Xr sqlbox_role_hier_src 3 .
+The node may not already be the parent or child of any other node as set
+with
+.Xr sqlbox_role_hier_child 3
+nor a sink node.
+There may be multiple starting nodes.
+Setting multiple times as a start is a no-op.
+.Pp
+A start has sibling transition to all other nodes: it will not inherit
+any permissions from other nodes.
 .Sh RETURN VALUES
 Returns zero if
-.Fa child
-or
-.Fa parent
-is an invalid role,
-if
-.Fa child
-already has a parent set, if either
-.Fa child
-or
-.Fa parent
-are a sink or start role, or if
-.Fa child
-is already an ancestor to
-.Fa parent .
+.Fa start
+is not a valid role, has already been assigned as a child or parent, is
+a sink, or memory allocation fails.
 Returns non-zero otherwise.
 .\" For sections 2, 3, and 9 function return values only.
 .\" .Sh ENVIRONMENT

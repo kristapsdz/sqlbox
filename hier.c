@@ -43,6 +43,8 @@ struct	sqlbox_role_hier {
 	size_t		  	 sz; /* number of roles */
 	size_t			*sinks; /* "dead-end" nodes */
 	size_t			 sinksz;
+	size_t			*starts; /* "only-start" nodes */
+	size_t			 startsz;
 };
 
 struct sqlbox_role_hier *
@@ -81,6 +83,7 @@ sqlbox_role_hier_free(struct sqlbox_role_hier *p)
 
 	free(p->roles);
 	free(p->sinks);
+	free(p->starts);
 	free(p);
 }
 
@@ -142,6 +145,47 @@ sqlbox_role_hier_src(struct sqlbox_role_hier *p, size_t role, size_t src)
 }
 
 int
+sqlbox_role_hier_start(struct sqlbox_role_hier *p, size_t start)
+{
+	size_t	 i;
+	void	*pp;
+
+	/* Valid index. */
+
+	if (start >= p->sz)
+		return 0;
+
+	/* Not already a child. */
+
+	if (p->roles[start].parent != start)
+		return 0;
+
+	/* Not already a parent. */
+
+	for (i = 0; i < p->sz; i++)
+		if (i != start && p->roles[i].parent == start)
+			return 0;
+
+	/* Not a sink. */
+
+	for (i = 0; i < p->sinksz; i++)
+		if (p->sinks[i] == start)
+			return 0;
+
+	/* If not already set, set as a start. */
+
+	for (i = 0; i < p->startsz; i++)
+		if (p->starts[i] == start)
+			return 1;
+	pp = reallocarray(p->starts, p->startsz + 1, sizeof(size_t));
+	if (pp == NULL)
+		return 0;
+	p->starts = pp;
+	p->starts[p->startsz++] = start;
+	return 1;
+}
+
+int
 sqlbox_role_hier_sink(struct sqlbox_role_hier *p, size_t sink)
 {
 	size_t	 i;
@@ -163,6 +207,12 @@ sqlbox_role_hier_sink(struct sqlbox_role_hier *p, size_t sink)
 		if (i != sink && p->roles[i].parent == sink)
 			return 0;
 
+	/* Not a start. */
+
+	for (i = 0; i < p->startsz; i++)
+		if (p->starts[i] == sink)
+			return 0;
+
 	/* If not already set, set as a sink. */
 
 	for (i = 0; i < p->sinksz; i++)
@@ -181,7 +231,7 @@ sqlbox_role_hier_child(struct sqlbox_role_hier *p, size_t parent, size_t child)
 {
 	size_t	 idx, i;
 
-	/* Make sure not out of bounds or already set or a sink. */
+	/* Make sure not out of bounds or already set or a sink/start. */
 
 	if (parent >= p->sz || child >= p->sz)
 		return 0;
@@ -190,6 +240,9 @@ sqlbox_role_hier_child(struct sqlbox_role_hier *p, size_t parent, size_t child)
 
 	for (i = 0; i < p->sinksz; i++)
 		if (p->sinks[i] == parent || p->sinks[i] == child)
+			return 0;
+	for (i = 0; i < p->startsz; i++)
+		if (p->starts[i] == parent || p->starts[i] == child)
 			return 0;
 
 	/* Ignore self-reference. */
@@ -239,8 +292,9 @@ int
 sqlbox_role_hier_gen(const struct sqlbox_role_hier *p, 
 	struct sqlbox_roles *r, size_t defrole)
 {
-	size_t	  i, j, k, idx, pidx;
-	void	*pp;
+	size_t			  i, j, k, idx, pidx;
+	void			*pp;
+	struct sqlbox_role	*rr;
 
 	memset(r, 0, sizeof(struct sqlbox_roles));
 
@@ -276,9 +330,13 @@ sqlbox_role_hier_gen(const struct sqlbox_role_hier *p,
 	 * Remember for each non-sink to have transitions to all
 	 * available sinks.
 	 * Sinks never have outbound transitions.
+	 * Each starter has links to all other nodes except itself (of
+	 * course this is implied) and sinks.
 	 */
 
 	for (i = 0; i < p->sz; i++) {
+		/* Sinks have nothing. */
+
 		for (j = 0; j < p->sinksz; j++) 
 			if (p->sinks[j] == i)
 				break;
@@ -287,6 +345,20 @@ sqlbox_role_hier_gen(const struct sqlbox_role_hier *p,
 			assert(r->roles[i].rolesz == 0);
 			continue;
 		}
+
+		/* Starts have all nodes except other starts. */
+
+		for (j = 0; j < p->startsz; j++) 
+			if (p->starts[j] == i)
+				break;
+		if (j < p->startsz) {
+			assert(p->roles[i].parent == i);
+			assert(r->roles[i].rolesz == 0);
+			r->roles[i].rolesz = p->sz - p->startsz;
+		}
+
+		/* All nodes also have sinks. */
+
 		r->roles[i].rolesz += p->sinksz;
 		if (r->roles[i].rolesz == 0)
 			continue;
@@ -303,7 +375,8 @@ sqlbox_role_hier_gen(const struct sqlbox_role_hier *p,
 		idx = i;
 		while (p->roles[idx].parent != idx) {
 			pidx = p->roles[idx].parent;
-			r->roles[pidx].roles[r->roles[pidx].rolesz++] = i;
+			rr = &r->roles[pidx];
+			rr->roles[rr->rolesz++] = i;
 			idx = pidx;
 		}
 	}
@@ -311,14 +384,29 @@ sqlbox_role_hier_gen(const struct sqlbox_role_hier *p,
 	/* Assign sinks except to sinks themselves. */
 
 	for (i = 0; i < p->sz; i++) {
+		rr = &r->roles[i];
 		for (j = 0; j < p->sinksz; j++) 
 			if (p->sinks[j] == i)
 				break;
 		if (j < p->sinksz)
 			continue;
-		for (j = 0; j < p->sinksz; j++) 
-			r->roles[i].roles[r->roles[i].rolesz++] = 
-				p->sinks[j];
+		for (j = 0; j < p->sinksz; j++)
+			rr->roles[rr->rolesz++] = p->sinks[j];
+	}
+
+	/* Assign all nodes to starts except other starts. */
+
+	for (i = 0; i < p->startsz; i++) {
+		rr = &r->roles[p->starts[i]];
+		for (j = 0; j < p->sz; j++) {
+			for (k = 0; k < p->startsz; k++)
+				if (p->starts[k] == j)
+					break;
+			if (k < p->startsz)
+				continue;
+			assert(j != p->starts[i]);
+			rr->roles[rr->rolesz++] = j;
+		}
 	}
 
 	/* Now we accumulate statements. */

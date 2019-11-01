@@ -33,7 +33,7 @@
 Creates a generator for hierarchical roles.
 Accepts
 .Fa rolesz ,
-the total number of roles.
+the total number of roles including sinks and starts.
 .Pp
 In a hierchical role system, roles inherit the permissions of their
 ancestors.
@@ -42,12 +42,20 @@ includes SQL statements and database sources for opening/closing.
 Roles may transition into descendent roles, but not siblings or back to
 parents.
 Self-transition is a no-op.
+There are two special types of role: sinks and starts.
+Sinks may be transitioned into by all other roles, but not transitioned
+from.
+Starts transition to all other roles (except other starts), but may not
+be transitioned into.
 .Pp
 By default, a role has no permissions and may not transition into any
-other role (except itself).
+other role except itself.
 .Pp
 Once allocated, callers usually use
-.Xr sqlbox_role_hier_child 3
+.Xr sqlbox_role_hier_child 3 ,
+.Xr sqlbox_role_hier_start 3 ,
+and
+.Xr sqlbox_role_hier_sink 3
 to create the hierarchy and
 .Xr sqlbox_role_hier_gen 3
 to generate.
@@ -71,7 +79,9 @@ On success, the pointer must be freed with
 .Sh SEE ALSO
 .Xr sqlbox_role_hier_child 3 ,
 .Xr sqlbox_role_hier_free 3 ,
-.Xr sqlbox_role_hier_gen 3
+.Xr sqlbox_role_hier_gen 3 ,
+.Xr sqlbox_role_hier_sink 3 ,
+.Xr sqlbox_role_hier_start 3
 .\" .Sh STANDARDS
 .\" .Sh HISTORY
 .\" .Sh AUTHORS
