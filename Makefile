@@ -63,6 +63,14 @@ TESTS		 = test-alloc-bad-defrole \
 		   test-hier-simple \
 		   test-hier-simple2 \
 		   test-hier-simple3 \
+		   test-hier-sink-bad-child \
+		   test-hier-sink-bad-child-post \
+		   test-hier-sink-bad-index \
+		   test-hier-sink-bad-parent \
+		   test-hier-sink-bad-parent-post \
+		   test-hier-sink-empty \
+		   test-hier-sink-readd \
+		   test-hier-sink-simple \
 		   test-hier-stmts \
 		   test-hier-stmts-readd \
 		   test-hier-stmts-readd2 \

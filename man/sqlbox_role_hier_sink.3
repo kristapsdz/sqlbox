@@ -15,48 +15,39 @@
 .\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
 .Dd $Mdocdate$
-.Dt SQLBOX_ROLE_HIER_CHILD 3
+.Dt SQLBOX_ROLE_HIER_SINK 3
 .Os
 .Sh NAME
-.Nm sqlbox_role_hier_child
-.Nd add a child to a role
+.Nm sqlbox_role_hier_sink
+.Nd add a sink node to a hierarchy
 .Sh LIBRARY
 .Lb sqlbox
 .Sh SYNOPSIS
 .In stdint.h
 .In sqlbox.h
 .Ft int
-.Fo sqlbox_role_hier_child
+.Fo sqlbox_role_hier_sink
 .Fa "struct sqlbox_role_hier *p"
-.Fa "size_t parent"
-.Fa "size_t child"
+.Fa "size_t sink"
 .Fc
 .Sh DESCRIPTION
 Set
-.Fa parent
-to be the parent of role
-.Fa child
-in the hierarchy generator
+.Fa sink
+to be a possible destination of every node in
 .Fa p .
-In the hierarchical structure created by
-.Fn sqlbox_role_hier_child , 
-a node may have at most one parent.
+It may not already be the parent or child of any other node as set with
+.Xr sqlbox_role_hier_child 3 .
+There may be multiple sink nodes.
+Setting multiple times as a sink is a no-op.
+.Pp
+A sink is considered a sibling transition: it will not inherit any
+permissions from other nodes.
+Sink roles also may not transition into other sinks.
 .Sh RETURN VALUES
 Returns zero if
-.Fa child
-or
-.Fa parent
-is an invalid role,
-if
-.Fa child
-already has a parent set, if either
-.Fa child
-or
-.Fa parent
-are a sink role, or if
-.Fa child
-is already an ancestor to
-.Fa parent .
+.Fa sink
+is not a valid role, has already been assigned as a child or parent, or
+memory allocation fails.
 Returns non-zero otherwise.
 .\" For sections 2, 3, and 9 function return values only.
 .\" .Sh ENVIRONMENT

@@ -41,6 +41,8 @@ struct	sqlbox_role_node {
 struct	sqlbox_role_hier {
 	struct sqlbox_role_node	*roles; /* per-role perms */
 	size_t		  	 sz; /* number of roles */
+	size_t			*sinks; /* "dead-end" nodes */
+	size_t			 sinksz;
 };
 
 struct sqlbox_role_hier *
@@ -78,6 +80,7 @@ sqlbox_role_hier_free(struct sqlbox_role_hier *p)
 	}
 
 	free(p->roles);
+	free(p->sinks);
 	free(p);
 }
 
@@ -139,16 +142,55 @@ sqlbox_role_hier_src(struct sqlbox_role_hier *p, size_t role, size_t src)
 }
 
 int
+sqlbox_role_hier_sink(struct sqlbox_role_hier *p, size_t sink)
+{
+	size_t	 i;
+	void	*pp;
+
+	/* Valid index. */
+
+	if (sink >= p->sz)
+		return 0;
+
+	/* Not already a child. */
+
+	if (p->roles[sink].parent != sink)
+		return 0;
+
+	/* Not already a parent. */
+
+	for (i = 0; i < p->sz; i++)
+		if (i != sink && p->roles[i].parent == sink)
+			return 0;
+
+	/* If not already set, set as a sink. */
+
+	for (i = 0; i < p->sinksz; i++)
+		if (p->sinks[i] == sink)
+			return 1;
+	pp = reallocarray(p->sinks, p->sinksz + 1, sizeof(size_t));
+	if (pp == NULL)
+		return 0;
+	p->sinks = pp;
+	p->sinks[p->sinksz++] = sink;
+	return 1;
+}
+
+int
 sqlbox_role_hier_child(struct sqlbox_role_hier *p, size_t parent, size_t child)
 {
-	size_t	 idx;
+	size_t	 idx, i;
 
-	/* Make sure not out of bounds or already set. */
+	/* Make sure not out of bounds or already set or a sink. */
 
 	if (parent >= p->sz || child >= p->sz)
 		return 0;
 	if (p->roles[child].parent != child)
 		return 0;
+
+	for (i = 0; i < p->sinksz; i++)
+		if (p->sinks[i] == parent || p->sinks[i] == child)
+			return 0;
 
 	/* Ignore self-reference. */
 
@@ -231,9 +273,21 @@ sqlbox_role_hier_gen(const struct sqlbox_role_hier *p,
 	 * Now allocate space.
 	 * Reset the number of roles because we're going to use it as
 	 * where to index into the role array in the next step.
+	 * Remember for each non-sink to have transitions to all
+	 * available sinks.
+	 * Sinks never have outbound transitions.
 	 */
 
 	for (i = 0; i < p->sz; i++) {
+		for (j = 0; j < p->sinksz; j++) 
+			if (p->sinks[j] == i)
+				break;
+		if (j < p->sinksz) {
+			assert(p->roles[i].parent == i);
+			assert(r->roles[i].rolesz == 0);
+			continue;
+		}
+		r->roles[i].rolesz += p->sinksz;
 		if (r->roles[i].rolesz == 0)
 			continue;
 		r->roles[i].roles = calloc
@@ -252,6 +306,19 @@ sqlbox_role_hier_gen(const struct sqlbox_role_hier *p,
 			r->roles[pidx].roles[r->roles[pidx].rolesz++] = i;
 			idx = pidx;
 		}
+	}
+
+	/* Assign sinks except to sinks themselves. */
+
+	for (i = 0; i < p->sz; i++) {
+		for (j = 0; j < p->sinksz; j++) 
+			if (p->sinks[j] == i)
+				break;
+		if (j < p->sinksz)
+			continue;
+		for (j = 0; j < p->sinksz; j++) 
+			r->roles[i].roles[r->roles[i].rolesz++] = 
+				p->sinks[j];
 	}
 
 	/* Now we accumulate statements. */
