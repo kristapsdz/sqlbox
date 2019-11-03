@@ -71,6 +71,13 @@ TESTS		 = test-alloc-bad-defrole \
 		   test-hier-sink-empty \
 		   test-hier-sink-readd \
 		   test-hier-sink-simple \
+		   test-hier-start-bad-child \
+		   test-hier-start-bad-index \
+		   test-hier-start-bad-parent \
+		   test-hier-start-empty \
+		   test-hier-start-readd \
+		   test-hier-start-simple \
+		   test-hier-start-sink \
 		   test-hier-stmts \
 		   test-hier-stmts-readd \
 		   test-hier-stmts-readd2 \
