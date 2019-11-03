@@ -354,8 +354,9 @@ sqlbox_role_hier_gen(const struct sqlbox_role_hier *p,
 		if (j < p->startsz) {
 			assert(p->roles[i].parent == i);
 			assert(r->roles[i].rolesz == 0);
-			r->roles[i].rolesz = p->sz - p->startsz;
-		}
+			r->roles[i].rolesz = 
+				p->sz - p->startsz - p->sinksz;
+		} 
 
 		/* All nodes also have sinks. */
 
@@ -394,7 +395,10 @@ sqlbox_role_hier_gen(const struct sqlbox_role_hier *p,
 			rr->roles[rr->rolesz++] = p->sinks[j];
 	}
 
-	/* Assign all nodes to starts except other starts. */
+	/* 
+	 * Assign all nodes to starts except other starts (and sinks, as
+	 * we've already done that).
+	 */
 
 	for (i = 0; i < p->startsz; i++) {
 		rr = &r->roles[p->starts[i]];
@@ -404,7 +408,11 @@ sqlbox_role_hier_gen(const struct sqlbox_role_hier *p,
 					break;
 			if (k < p->startsz)
 				continue;
-			assert(j != p->starts[i]);
+			for (k = 0; k < p->sinksz; k++)
+				if (p->sinks[k] == j)
+					break;
+			if (k < p->sinksz)
+				continue;
 			rr->roles[rr->rolesz++] = j;
 		}
 	}
