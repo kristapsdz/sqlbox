@@ -86,6 +86,32 @@ respectively.
 A numeric concatenation of the version is defined as
 .Dv SQLBOX_VSTAMP ,
 which may be used to test for version number applicability.
+.Ss Compiling
+Applications must additionally link to
+.Fl l Ns Ar sqlite3
+and
+.Fl l Ns Ar m .
+In some platforms such as
+.Ox ,
+they must also link to
+.Fl l Ns Ar pthread .
+Compiling
+.Nm
+applications typically looks as follows on
+.Ox ,
+assuming
+.Pa main.c
+is the source file and ports are installed into
+.Pa /usr/local :
+.Bd -literal -offset indent
+% cc -I/usr/local/include -o main main.c \e
+> -L/usr/local/lib -lsqlbox -lsqlite3 -lm -lpthread
+.Ed
+.Pp
+On Linux systems with libraries installed into the system path, this
+usually amounts to:
+.Pp
+.Dl % cc -o main main.c -lsqlbox -lsqlite3 -lm
 .Ss Pledge Promises
 The
 .Nm
