@@ -4,7 +4,7 @@
 		<header>
 			<h1>0.1.6</h1>
 			<address>Kristaps Dzonsons</address>
-			<time datetime="2019-11-03">2019-11-03</time>
+			<time datetime="2019-11-07">2019-11-07</time>
 		</header>
 		<aside>
 			<p>
@@ -15,7 +15,7 @@
 			<p>
 				Also fix where passing zero (implicit addressing) as a statement or
 				database identifier would use the <i>first</i> queue entry, not the
-				last, breaking nested statements.
+				last, breaking nested statements that use implicit addressing.
 			</p>
 			<p>
 				Add compilation instructions for OpenBSD 6.6, which requires
