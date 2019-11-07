@@ -89,7 +89,7 @@ sqlbox_stmt_find(struct sqlbox *box, size_t id)
 			"last statement with no statements");
 		return 0;
 	} else if (id == 0)
-		return TAILQ_FIRST(&box->stmtq);
+		return TAILQ_LAST(&box->stmtq, sqlbox_stmtq);
 
 	TAILQ_FOREACH(stmt, &box->stmtq, gentries)
 		if (stmt->id == id)
@@ -110,7 +110,7 @@ sqlbox_db_find(struct sqlbox *box, size_t id)
 			"last database with no databases");
 		return 0;
 	} else if (id == 0)
-		return TAILQ_FIRST(&box->dbq);
+		return TAILQ_LAST(&box->dbq, sqlbox_dbq);
 
 	TAILQ_FOREACH(db, &box->dbq, entries)
 		if (db->id == id)
