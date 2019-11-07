@@ -279,6 +279,7 @@ installwww:
 	install -m 0444 $(MANHTMLS) $(WWWDIR)/man
 
 distcheck: sqlbox.tar.gz.sha512
+	mandoc -Tlint -Wwarning $(MANS)
 	newest=`grep "<h1>" versions.xml | head -n1 | sed 's![ 	]*!!g'` ; \
 	       [ "$$newest" == "<h1>$(VERSION)</h1>" ] || \
 		{ echo "Version $(VERSION) not newest in versions.xml" 1>&2 ; exit 1 ; }
