@@ -231,8 +231,11 @@ PERFS		 = perf-full-cycle-ksql \
 		   perf-select-multi-ksql \
 		   perf-select-multi-sqlbox \
 		   perf-select-multi-sqlite3
+# On OpenBSD, you usually need these.
 #LDFLAGS	+= -L/usr/local/lib
 #CPPFLAGS	+= -I/usr/local/include
+# On OpenBSD 6.6 and above, you need this.
+#LDADD		+= -lpthread
 VGR		 = valgrind
 VGROPTS		 = -q --track-origins=yes --leak-check=full \
 		   --show-reachable=yes --trace-children=yes \
@@ -304,7 +307,7 @@ compats.o $(OBJS) $(TESTS): config.h
 $(OBJS): sqlbox.h extern.h
 
 $(TESTS): libsqlbox.a regress/regress.h
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ regress/$*.c compats.o $(LDFLAGS) libsqlbox.a -lsqlite3 -lm -lpthread
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ regress/$*.c compats.o $(LDFLAGS) libsqlbox.a -lsqlite3 -lm $(LDADD)
 
 $(PERFPNGS): perf.gnuplot
 
@@ -321,13 +324,13 @@ ${test}: regress/${test}.c
 #	sh ./perf.sh ${perf} >$@
 
 ${perf}-ksql: perf/${perf}-ksql.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-ksql.c $(LDFLAGS) -lksql -lsqlite3 -lm -lpthread
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-ksql.c $(LDFLAGS) -lksql -lsqlite3 -lm $(LDADD)
 
 ${perf}-sqlbox: perf/${perf}-sqlbox.c libsqlbox.a
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-sqlbox.c $(LDFLAGS) libsqlbox.a -lsqlite3 -lm -lpthread
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-sqlbox.c $(LDFLAGS) libsqlbox.a -lsqlite3 -lm $(LDADD)
 
 ${perf}-sqlite3: perf/${perf}-sqlite3.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-sqlite3.c $(LDFLAGS) -lsqlite3 -lm -lpthread
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-sqlite3.c $(LDFLAGS) -lsqlite3 -lm $(LDADD)
 .endfor
 
 clean:
