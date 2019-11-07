@@ -215,6 +215,9 @@ sqlbox_op_exec(struct sqlbox *box, const char *buf, size_t sz)
 	if (!sqlbox_rolecheck_stmt(box, idx)) {
 		sqlbox_warnx(&box->cfg, "%s: exec: "
 			"sqlbox_rolecheck_stmt", db->src->fname);
+		sqlbox_warnx(&box->cfg, "%s: exec: "
+			"statement: %s", db->src->fname, 
+			box->cfg.stmts.stmts[idx].stmt);
 		return SQLBOX_CODE_ERROR;
 	}
 	pst = &box->cfg.stmts.stmts[idx];
@@ -245,15 +248,22 @@ sqlbox_op_exec(struct sqlbox *box, const char *buf, size_t sz)
 	if (parmsz == 0) {
 		code = sqlbox_wrap_exec(box, db, 
 			pst, (flags & SQLBOX_STMT_CONSTRAINT));
-		if (code == SQLBOX_CODE_ERROR)
+		if (code == SQLBOX_CODE_ERROR) {
 			sqlbox_warnx(&box->cfg, 
 				"%s: exec: sqlbox_wrap_exec", 
 				db->src->fname);
+			sqlbox_warnx(&box->cfg, "%s: exec: "
+				"statement: %s", 
+				db->src->fname, pst->stmt);
+		}
 	} else {
 		if ((stmt = sqlbox_wrap_prep(box, db, pst)) == NULL) {
 			sqlbox_warnx(&box->cfg, 
 				"%s: exec: sqlbox_wrap_prep", 
 				db->src->fname);
+			sqlbox_warnx(&box->cfg, "%s: exec: "
+				"statement: %s", 
+				db->src->fname, pst->stmt);
 			free(parms);
 			return SQLBOX_CODE_ERROR;
 		}
@@ -263,6 +273,9 @@ sqlbox_op_exec(struct sqlbox *box, const char *buf, size_t sz)
 			sqlbox_warnx(&box->cfg, 
 				"%s: sqlbox_parm_bind",
 				db->src->fname);
+			sqlbox_warnx(&box->cfg, "%s: exec: "
+				"statement: %s", 
+				db->src->fname, pst->stmt);
 			sqlbox_wrap_finalise(box, db, pst, stmt);
 			free(parms);
 			return SQLBOX_CODE_ERROR;
@@ -271,15 +284,22 @@ sqlbox_op_exec(struct sqlbox *box, const char *buf, size_t sz)
 
 		code = sqlbox_wrap_step(box, db, pst, stmt, 
 			&cols, (flags & SQLBOX_STMT_CONSTRAINT));
-		if (code == SQLBOX_CODE_ERROR)
+		if (code == SQLBOX_CODE_ERROR) {
 			sqlbox_warnx(&box->cfg, 
 				"%s: exec: sqlbox_wrap_step", 
 				db->src->fname);
-		else if (cols > 0)
+			sqlbox_warnx(&box->cfg, "%s: exec: "
+				"statement: %s", 
+				db->src->fname, pst->stmt);
+		} else if (cols > 0) {
 			sqlbox_warnx(&box->cfg, 
 				"%s: exec: sqlbox_wrap_step: "
 				"ignoring %zu columns", 
 				db->src->fname, cols);
+			sqlbox_warnx(&box->cfg, "%s: exec: "
+				"statement: %s", 
+				db->src->fname, pst->stmt);
+		}
 		sqlbox_wrap_finalise(box, db, pst, stmt);
 	}
 

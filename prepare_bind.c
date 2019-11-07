@@ -246,6 +246,9 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 	} else if (!sqlbox_rolecheck_stmt(box, idx)) {
 		sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
 			"sqlbox_rolecheck_stmt", db->src->fname);
+		sqlbox_warnx(&box->cfg, "%s: prepare-bind "
+			"statement: %s", db->src->fname, 
+			box->cfg.stmts.stmts[idx].stmt);
 		return NULL;
 	}
 	pst = &box->cfg.stmts.stmts[idx];
@@ -274,6 +277,8 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 	if ((stmt = sqlbox_wrap_prep(box, db, pst)) == NULL) {
 		sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
 			"sqlbox_wrap_prep", db->src->fname);
+		sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
+			"statement: %s", db->src->fname, pst->stmt);
 		free(parms);
 		return NULL;
 	}
@@ -283,6 +288,8 @@ sqlbox_op_prepare_bind(struct sqlbox *box, const char *buf, size_t sz)
 	if (!sqlbox_parm_bind(box, db, pst, stmt, parms, parmsz)) {
 		sqlbox_warnx(&box->cfg, "%s: sqlbox_parm_bind",
 			db->src->fname);
+		sqlbox_warnx(&box->cfg, "%s: prepare-bind: "
+			"statement: %s", db->src->fname, pst->stmt);
 		sqlbox_wrap_finalise(box, db, pst, stmt);
 		free(parms);
 		return NULL;
