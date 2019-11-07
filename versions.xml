@@ -4,13 +4,23 @@
 		<header>
 			<h1>0.1.6</h1>
 			<address>Kristaps Dzonsons</address>
-			<time datetime="2019-10-28">2019-10-28</time>
+			<time datetime="2019-11-03">2019-11-03</time>
 		</header>
 		<aside>
 			<p>
-				Add a general sink to the hierarchical role generator.
-				This is useful for creating a <q>null</q> role that all other roles
-				may transition into that can't do anything.
+				Add a general sinks and sources (<q>starts</q>) to the hierarchical
+				role generator.
+				These are commonly-used idioms.
+			</p>
+			<p>
+				Also fix where passing zero (implicit addressing) as a statement or
+				database identifier would use the <i>first</i> queue entry, not the
+				last, breaking nested statements.
+			</p>
+			<p>
+				Add compilation instructions for OpenBSD 6.6, which requires
+				<code>-lpthread</code> to be used for all applications or they will
+				silently hang when the database is opened.
 			</p>
 		</aside>
 	</article>
