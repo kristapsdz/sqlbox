@@ -98,6 +98,7 @@ TESTS		 = test-alloc-bad-defrole \
 		   test-open-foreignkey \
 		   test-open-memory \
 		   test-open-memory-role \
+		   test-open-nested \
 		   test-open-not-found \
 		   test-open-twice \
 		   test-parm-blob-bad \
@@ -116,6 +117,7 @@ TESTS		 = test-alloc-bad-defrole \
 		   test-prepare_bind-bad-src \
 		   test-prepare_bind-bad-stmt \
 		   test-prepare_bind-bad-zero-id \
+		   test-prepare_bind-nested \
 		   test-prepare_bind-noparms \
 		   test-prepare_bind-zero-id \
 		   test-rebind \
