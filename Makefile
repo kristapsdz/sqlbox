@@ -289,7 +289,8 @@ distcheck: sqlbox.tar.gz.sha512
 	sha512 -C sqlbox.tar.gz.sha512 sqlbox.tar.gz
 	mkdir -p .distcheck
 	tar -zvxpf sqlbox.tar.gz -C .distcheck
-	( cd .distcheck/sqlbox-$(VERSION) && ./configure PREFIX=prefix )
+	( cd .distcheck/sqlbox-$(VERSION) && ./configure PREFIX=prefix \
+		CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" LDADD="$(LDADD)" )
 	( cd .distcheck/sqlbox-$(VERSION) && make )
 	( cd .distcheck/sqlbox-$(VERSION) && make install )
 	rm -rf .distcheck
