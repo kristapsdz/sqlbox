@@ -122,6 +122,7 @@ if ((p = sqlbox_alloc(&cfg)) == NULL)
 user = get_user();
 if (!sqlbox_msg_set_dat(p, user, strlen(user) + 1))
   errx(EXIT_FAILURE, "sqlbox_msg_set_dat");
+.Ed
 .\" .Sh DIAGNOSTICS
 .\" For sections 1, 4, 6, 7, 8, and 9 printf/stderr messages only.
 .\" .Sh ERRORS
