@@ -252,7 +252,7 @@ all: libsqlbox.a
 
 allperf: $(PERFS)
 
-www: index.html perf index.svg sqlbox.tar.gz.sha512 $(MANXMLS) $(MANHTMLS)
+www: index.html atom.xml perf index.svg sqlbox.tar.gz.sha512 $(MANXMLS) $(MANHTMLS)
 
 perf: $(PERFPNGS)
 
@@ -277,7 +277,7 @@ installwww:
 	install -m 0444 sqlbox.tar.gz $(WWWDIR)/snapshots/sqlbox-$(VERSION).tar.gz
 	install -m 0444 sqlbox.tar.gz.sha512 $(WWWDIR)/snapshots/sqlbox-$(VERSION).tar.gz.sha512
 	install -m 0444 sqlbox.tar.gz sqlbox.tar.gz.sha512 $(WWWDIR)/snapshots
-	install -m 0444 *.html *.png *.svg *.css $(WWWDIR)
+	install -m 0444 atom.xml *.html *.png *.svg *.css $(WWWDIR)
 	install -m 0444 $(MANHTMLS) $(WWWDIR)/man
 
 distcheck: sqlbox.tar.gz.sha512
@@ -338,7 +338,7 @@ ${perf}-sqlite3: perf/${perf}-sqlite3.c
 
 clean:
 	rm -f libsqlbox.a compats.o $(OBJS) $(TESTS) $(PERFS)
-	rm -f $(PERFS) $(PERFPNGS) index.html index.svg sqlbox.tar.gz sqlbox.tar.gz.sha512
+	rm -f $(PERFS) $(PERFPNGS) index.html index.svg sqlbox.tar.gz sqlbox.tar.gz.sha512 atom.xml
 	rm -f $(MANXMLS) $(MANHTMLS)
 
 distclean: clean
@@ -415,3 +415,6 @@ index.html: index.xml versions.xml $(MANXMLS)
 	  echo '</aside>' ; \
 	  echo '</article>' ; \
 	) >$@
+
+atom.xml: versions.xml atom-template.xml
+	sblg -s date -o $@ -a versions.xml
