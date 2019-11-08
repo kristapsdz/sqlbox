@@ -194,7 +194,7 @@ It assumes that the
 .Li bar
 column has been initialised as an SQL type
 .Li INTEGER .
-.Bd -literal
+.Bd -literal -offset indent
 size_t dbid, stmtid;
 struct sqlbox *p;
 struct sqlbox_cfg cfg;
@@ -239,7 +239,7 @@ The following extracts and prints rows using a
 .Li SELECT
 statement.
 It assumes an existing database.
-.Bd -literal
+.Bd -literal -offset indent
 size_t dbid, stmtid;
 struct sqlbox *p;
 struct sqlbox_cfg cfg;
@@ -296,7 +296,7 @@ sqlbox_free(p);
 The following example shows how filters may be used to change the
 outcome of database queries.
 First, define a filter, in this one that generates an integer:
-.Bd -literal
+.Bd -literal -offset indent
 static int
 filter_int(struct sqlbox_parm *p, void **arg)
 {
@@ -311,7 +311,7 @@ This uses the asynchronous versions of functions when possible.
 It also assumes that the database
 .Pa db.db
 is already populated with at least a single integer column.
-.Bd -literal
+.Bd -literal -offset indent
 struct sqlbox *p;
 struct sqlbox_cfg cfg;
 struct sqlbox_src srcs[] = {

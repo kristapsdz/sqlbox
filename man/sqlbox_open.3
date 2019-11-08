@@ -130,7 +130,7 @@ and
 .\" For sections 1, 6, and 8 only.
 .Sh EXAMPLES
 This opens an in-memory database then immediately exits.
-.Bd -literal
+.Bd -literal -offset indent
 struct sqlbox *p;
 struct sqlbox_src srcs[] = {
   { .fname = (char *)":memory:",
@@ -154,7 +154,7 @@ sqlbox_free(p);
 The following opens (and creates, if not found) the database
 .Pa db.db .
 The database is explicitly closed.
-.Bd -literal
+.Bd -literal -offset indent
 struct sqlbox *p;
 struct sqlbox_src srcs[] = {
   { .fname = (char *)"db.db",
@@ -178,7 +178,7 @@ sqlbox_free(p);
 .Ed
 .Pp
 Performing the same with implicit identifiers:
-.Bd -literal
+.Bd -literal -offset indent
 struct sqlbox *p;
 struct sqlbox_src srcs[] = {
   { .fname = (char *)"db.db",

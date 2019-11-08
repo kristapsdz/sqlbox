@@ -85,7 +85,7 @@ and
 .\" For sections 1, 6, and 8 only.
 .Sh EXAMPLES
 To simply open and close an in-memory database:
-.Bd -literal
+.Bd -literal -offset indent
 struct sqlbox *p;
 struct sqlbox_src srcs[] = {
   { .fname = (char *)":memory:",
@@ -112,7 +112,7 @@ sqlbox_free(p);
 To let
 .Xr sqlbox_free 3
 handle closing the database for role-shedding:
-.Bd -literal
+.Bd -literal -offset indent
 struct sqlbox *p;
 struct sqlbox_src srcs[] = {
   { .fname = (char *)":memory:",

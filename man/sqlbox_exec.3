@@ -135,7 +135,7 @@ and inserts an integer value into it.
 It depends upon
 .Xr sqlbox_free 3
 to close out the database.
-.Bd -literal
+.Bd -literal -offset indent
 size_t dbid, stmtid;
 struct sqlbox *p;
 struct sqlbox_cfg cfg;
@@ -175,7 +175,7 @@ sqlbox_free(p);
 .Pp
 Creating and populating a database in the fastest way possible may be
 accomplished with asynchronous operations:
-.Bd -literal
+.Bd -literal -offset indent
 struct sqlbox *p;
 struct sqlbox_cfg cfg;
 struct sqlbox_src srcs[] = {

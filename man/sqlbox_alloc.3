@@ -123,7 +123,7 @@ On success, the pointer must be freed with
 This allocates a simple memory-only database source and sets the warning
 channel to
 .Xr warnx 3 .
-.Bd -literal
+.Bd -literal -offset indent
 struct sqlbox *p;
 struct sqlbox_cfg cfg;
 struct sqlbox_src srcs[] = {
@@ -151,7 +151,7 @@ are not set to
 .Dv NULL
 if they have an associated length as in the case of
 .Va rolesz .
-.Bd -literal
+.Bd -literal -offset indent
 struct sqlbox *p;
 struct sqlbox_cfg cfg;
 struct sqlbox_role roles[] = {

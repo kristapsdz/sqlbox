@@ -105,7 +105,7 @@ and
 .\" For sections 1, 6, and 8 only.
 .Sh EXAMPLES
 Let a long-form function be as follows:
-.Bd -literal
+.Bd -literal -offset indent
 static void
 func(const char *buf, void *arg)
 {
@@ -114,7 +114,7 @@ func(const char *buf, void *arg)
 .Ed
 .Pp
 This function may have its pointer manipulated as follows:
-.Bd -literal
+.Bd -literal -offset indent
 struct sqlbox *p;
 struct sqlbox_cfg cfg;
 const char *user;
