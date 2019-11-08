@@ -209,6 +209,8 @@ MANS		 = man/sqlbox.3 \
 		   man/sqlbox_role_hier_free.3 \
 		   man/sqlbox_role_hier_gen.3 \
 		   man/sqlbox_role_hier_gen_free.3 \
+		   man/sqlbox_role_hier_sink.3 \
+		   man/sqlbox_role_hier_start.3 \
 		   man/sqlbox_role_hier_stmt.3 \
 		   man/sqlbox_step.3 \
 		   man/sqlbox_trans_commit.3 \
