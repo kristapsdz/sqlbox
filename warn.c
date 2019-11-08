@@ -102,14 +102,48 @@ sqlbox_warn(const struct sqlbox_cfg *cfg, const char *fmt, ...)
 		cfg->msg.func_short(buf);
 }
 
+/*
+ * Set the data pointer for our messages for both the parent and the
+ * child process.
+ * If the buffer size is zero, the callback will be passed a NULL.
+ * This (conditionally) makes an allocation so it returns zero on
+ * allocation failure and non-zero otherwise.
+ */
+static int
+sqlbox_shared_msg_set_dat(struct sqlbox *box, const char *buf, size_t sz)
+{
+
+	if (box->free_msg_dat) {
+		free(box->cfg.msg.dat);
+		box->cfg.msg.dat = NULL;
+	}
+
+	if (sz > 0) {
+		if ((box->cfg.msg.dat = malloc(sz)) == NULL) {
+			sqlbox_warn(&box->cfg, "malloc");
+			return 0;
+		}
+		memcpy(box->cfg.msg.dat, buf, sz);
+	} else
+		box->cfg.msg.dat = NULL;
+
+	box->free_msg_dat = 1;
+	return 1;
+}
+
 int
-sqlbox_msg_set_dat(struct sqlbox *box, const void *dat, size_t sz)
+sqlbox_msg_set_dat(struct sqlbox *box, const void *buf, size_t sz)
 {
 
 	if (!sqlbox_write_frame(box, 
-	    SQLBOX_OP_MSG_SET_DAT, dat, sz)) {
+	    SQLBOX_OP_MSG_SET_DAT, buf, sz)) {
 		sqlbox_warnx(&box->cfg, 
 			"msg-set-dat: sqlbox_write_frame");
+		return 0;
+	} else if (!sqlbox_shared_msg_set_dat(box, buf, sz)) {
+		sqlbox_warnx(&box->cfg,
+			"msg-set-dat: sqlbox_shared_msg_set_dat");
+		/* FIXME: kill child process. */
 		return 0;
 	}
 	return 1;
@@ -119,18 +153,10 @@ int
 sqlbox_op_msg_set_dat(struct sqlbox *box, const char *buf, size_t sz)
 {
 
-	if (box->free_msg_dat) {
-		free(box->cfg.msg.dat);
-		box->cfg.msg.dat = NULL;
+	if (!sqlbox_shared_msg_set_dat(box, buf, sz)) {
+		sqlbox_warnx(&box->cfg,
+			"msg-set-dat: sqlbox_shared_msg_set_dat");
+		return 0;
 	}
-
-	if (sz > 0) {
-		box->cfg.msg.dat = malloc(sz);
-		memcpy(box->cfg.msg.dat, buf, sz);
-	} else
-		box->cfg.msg.dat = NULL;
-
-	box->free_msg_dat = 1;
 	return 1;
 }
-
