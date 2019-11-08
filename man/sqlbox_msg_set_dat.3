@@ -40,6 +40,13 @@ used by the logging functions assigned in
 .Vt struct sqlbox_msg ,
 replacing whatever was passed to
 .Xr sqlbox_alloc 3 .
+The data is copied out of
+.Fa dat ,
+with the resulting allocation either freed during subsequent calls to
+.Fn sqlbox_msg_set_dat
+or in
+.Xr sqlbox_free 3 .
+.Pp
 The fields of
 .Vt struct sqlbox_msg
 are as follows:
@@ -48,10 +55,11 @@ are as follows:
 Passed the message and
 .Va dat .
 Messages are NUL-terminated but not newline terminated.
-The callbacks are run within the protected child process, so they should
+The callback is run within the both the parent and protected child
+process when logging messages are emitted, so it should
 .Em not
 include any side effects that might affect the database.
-Functions may not assume to have any network or file-system resources
+Callbacks may not assume to have any network or file-system resources
 available.
 .It Va func_short
 A short version of
@@ -79,7 +87,7 @@ to
 .Sh RETURN VALUES
 Returns non-zero on success or zero if communication with
 .Fa box
-fails.
+fails or memory allocation fails.
 .Pp
 If
 .Fn sqlbox_msg_set_dat
