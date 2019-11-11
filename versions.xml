@@ -2,6 +2,28 @@
 <articles>
 	<article data-sblg-article="1" data-sblg-tags="version">
 		<header>
+			<h1>0.1.7</h1>
+			<address>Kristaps Dzonsons</address>
+			<time datetime="2019-11-11">2019-11-11</time>
+		</header>
+		<aside>
+			<p>
+				Have the internal logging functions behave the same whether called
+				in the parent or child process.
+				This means that 
+				<a href="man/sqlbox_msg_set_dat.3.html">sqlbox_msg_set_dat(3)</a>
+				has its buffer copied in both processes.
+			</p>
+			<p>
+				Don't emit a warning message when calling
+				<a href="man/sqlbox_free.3.html">sqlbox_free(3)</a>
+				with open databases.
+				Only do this if the child exits without an explicit instruction.
+			</p>
+		</aside>
+	</article>
+	<article data-sblg-article="1" data-sblg-tags="version">
+		<header>
 			<h1>0.1.6</h1>
 			<address>Kristaps Dzonsons</address>
 			<time datetime="2019-11-07">2019-11-07</time>
