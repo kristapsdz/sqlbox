@@ -66,13 +66,15 @@ sqlbox_stmt_free(struct sqlbox_stmt *p)
 
 /*
  * Clear all allocated resources in an sqlbox.
+ * If "intent" is non-zero, then don't emit warning messages when
+ * closing still-open databases as noted in the manpage.
  * Of focus are the communication channels between client and server
  * (both ways), the list of open databases and their statements (server
  * only), and the transmission buffer (both).
  * Does nothing if "p" is NULL.
  */
 static void
-sqlbox_clear(struct sqlbox *box)
+sqlbox_clear(struct sqlbox *box, int intent)
 {
 	struct sqlbox_db 	*db;
 	struct sqlbox_stmt	*stmt;
@@ -83,9 +85,10 @@ sqlbox_clear(struct sqlbox *box)
 		close(box->fd);
 
 	while ((db = TAILQ_FIRST(&box->dbq)) != NULL) {
-		sqlbox_warnx(&box->cfg, "%s: source %zu "
-			"still open on exit", 
-			db->src->fname, db->idx);
+		if (!intent)
+			sqlbox_warnx(&box->cfg, "%s: source %zu "
+				"still open on exit", 
+				db->src->fname, db->idx);
 		while ((stmt = TAILQ_FIRST(&db->stmtq)) != NULL) {
 			sqlbox_warnx(&box->cfg, "%s: stmt %zu "
 				"source %zu not finalised on exit", 
@@ -136,7 +139,7 @@ void
 sqlbox_free(struct sqlbox *box)
 {
 
-	sqlbox_clear(box);
+	sqlbox_clear(box, 1);
 	free(box);
 }
 
@@ -321,7 +324,7 @@ sqlbox_alloc_fd(struct sqlbox_cfg *cfg, int fds[2])
 	close(fds[1]);
 	fds[1] = -1;
 	if (!sqlbox_init(&box, cfg, fds[0], (pid_t)-1)) {
-		sqlbox_clear(&box);
+		sqlbox_clear(&box, 0);
 		_exit(EXIT_FAILURE);
 	}
 
@@ -337,9 +340,9 @@ sqlbox_alloc_fd(struct sqlbox_cfg *cfg, int fds[2])
 #endif
 
 	if (!(rc = sqlbox_main_loop(&box)))
-		sqlbox_warnx(cfg, "sqlbox_main_loop");
+		sqlbox_warnx(&box.cfg, "sqlbox_main_loop");
 
-	sqlbox_clear(&box);
+	sqlbox_clear(&box, rc);
 	_exit(rc ? EXIT_SUCCESS : EXIT_FAILURE);
 }
 
