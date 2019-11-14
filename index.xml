@@ -102,7 +102,8 @@
 				<p>
 					You'll need any modern UNIX system with the 
 					<a href="https://www.sqlite.org/index.html">sqlite3</a> library already installed.
-					I strongly suggest using <a href="https://www.openbsd.org">OpenBSD</a>, as it provides the
+					(Tested on FreeBSD, Linux, OpenBSD; built on OpenBSD.)
+					I strongly suggest using <a href="https://www.openbsd.org">OpenBSD</a> as it provides the
 					<a href="https://man.openbsd.org/pledge.2">pledge</a> facility.
 					Other systems, such as Linux or FreeBSD, are more difficult (hugely so, in the former case) to configure
 					securely.
