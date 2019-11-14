@@ -19,6 +19,11 @@
 #if HAVE_SYS_QUEUE
 # include <sys/queue.h>
 #endif 
+#if HAVE_ENDIAN_H
+# include <endian.h>
+#else
+# include <sys/endian.h>
+#endif
 
 #include <assert.h>
 #include <errno.h>
