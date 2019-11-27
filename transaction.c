@@ -155,7 +155,7 @@ sqlbox_trans_commit(struct sqlbox *box, size_t srcid, size_t tid)
 {
 
 	return sqlbox_trans_close(box,
-		srcid, tid, SQLBOX_TRANS_ROLLBACK);
+		srcid, tid, SQLBOX_TRANS_COMMIT);
 }
 
 int
