@@ -2,6 +2,20 @@
 <articles>
 	<article data-sblg-article="1" data-sblg-tags="version">
 		<header>
+			<h1>0.1.9</h1>
+			<address>Kristaps Dzonsons</address>
+			<time datetime="2019-11-27">2019-11-27</time>
+		</header>
+		<aside>
+			<p>
+				Fix a <q>copypasta</q> where transactions are always rolled-back
+				instead of being committed.
+				Regression tests added for this behaviour.
+			</p>
+		</aside>
+	</article>
+	<article data-sblg-article="1" data-sblg-tags="version">
+		<header>
 			<h1>0.1.8</h1>
 			<address>Kristaps Dzonsons</address>
 			<time datetime="2019-11-14">2019-11-14</time>

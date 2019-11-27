@@ -165,6 +165,7 @@ TESTS		 = test-alloc-bad-defrole \
 		   test-trans-close-bad-src \
 		   test-trans-close-reopen \
 		   test-trans-close-twice \
+		   test-trans-commit \
 		   test-trans-open \
 		   test-trans-open-zero-id \
 		   test-trans-open-bad-close \
@@ -172,7 +173,8 @@ TESTS		 = test-alloc-bad-defrole \
 		   test-trans-open-bad-src \
 		   test-trans-open-bad-zero-id \
 		   test-trans-open-nested \
-		   test-trans-open-same-id-diff-src
+		   test-trans-open-same-id-diff-src \
+		   test-trans-rollback
 OBJS		 = alloc.o \
 		   close.o \
 		   exec.o \
