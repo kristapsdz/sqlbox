@@ -161,8 +161,6 @@ sqlbox_main_loop(struct sqlbox *box)
 			break;
 		}
 
-		sqlbox_debug(&box->cfg, "%s: size: %zu, op: %d", 
-			__func__, framesz, op);
 		if (!(ops[op])(box, frame, framesz)) {
 			sqlbox_warnx(&box->cfg, "sqlbox_op(%d)", op);
 			break;
