@@ -9,5 +9,5 @@ URL: https://kristaps.bsd.lv/kcgi
 Version: @VERSION@
 Requires: sqlite3
 Libs.private: 
-Libs: -L${libdir} -lsqlbox
+Libs: -L${libdir} -lsqlbox @LDADD_PTHREAD@
 Cflags: -I${includedir}

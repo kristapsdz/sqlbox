@@ -426,5 +426,6 @@ atom.xml: versions.xml atom-template.xml
 .in.pc.pc:
 	sed -e "s!@PREFIX@!$(PREFIX)!g" \
 	    -e "s!@LIBDIR@!$(LIBDIR)!g" \
+	    -e "s!@LDADD_PTHREAD@!$(LDADD_PTHREAD)!g" \
 	    -e "s!@INCLUDEDIR@!$(INCLUDEDIR)!g" \
 	    -e "s!@VERSION@!$(VERSION)!g" $< >$@
