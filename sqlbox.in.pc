@@ -1,0 +1,13 @@
+prefix=@PREFIX@
+exec_prefix=${prefix}
+libdir=@LIBDIR@
+includedir=@INCLUDEDIR@
+
+Name: sqlbox
+Description: database access library
+URL: https://kristaps.bsd.lv/kcgi
+Version: @VERSION@
+Requires: sqlite3
+Libs.private: 
+Libs: -L${libdir} -lsqlbox
+Cflags: -I${includedir}

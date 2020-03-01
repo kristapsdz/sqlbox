@@ -343,7 +343,7 @@ ${perf}-sqlite3: perf/${perf}-sqlite3.c
 .endfor
 
 clean:
-	rm -f libsqlbox.a compats.o $(OBJS) $(TESTS) $(PERFS)
+	rm -f libsqlbox.a compats.o $(OBJS) $(TESTS) $(PERFS) $(PCS)
 	rm -f $(PERFS) $(PERFPNGS) index.html index.svg sqlbox.tar.gz sqlbox.tar.gz.sha512 atom.xml
 	rm -f $(MANXMLS) $(MANHTMLS)
 
