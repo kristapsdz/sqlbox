@@ -303,7 +303,7 @@ install: all
 	mkdir -p $(DESTDIR)$(INCLUDEDIR)
 	mkdir -p $(DESTDIR)$(MANDIR)/man3
 	$(INSTALL_LIB) libsqlbox.a $(DESTDIR)$(LIBDIR)
-	$(INSTALL_DATA) $(PCS) $(DESTDIR)$(INCLUDEDIR)/pkgconfig
+	$(INSTALL_DATA) $(PCS) $(DESTDIR)$(LIBDIR)/pkgconfig
 	$(INSTALL_DATA) sqlbox.h $(DESTDIR)$(INCLUDEDIR)
 	$(INSTALL_DATA) man/*.3 $(DESTDIR)$(MANDIR)/man3
 

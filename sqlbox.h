@@ -45,7 +45,7 @@
 /*
  * Build version.
  */
-#define	SQLBOX_VBUILD	10
+#define	SQLBOX_VBUILD	11
 
 /*
  * Stringification of version major, minor, and build.
