@@ -15,8 +15,10 @@
 				the library easier.
 			</p>
 			<p>
-				This does account for OpenBSD needing <code>-lpthread</code> for
-				<code>-lsqlite3</code>.
+				This also removes OpenBSD needing <code>-lpthread</code> for
+				<code>-lsqlite3</code>, which ended up being a problem on my
+				development machine with an old version of the library hanging out
+				in the default path.
 			</p>
 		</aside>
 	</article>
