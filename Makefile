@@ -245,6 +245,9 @@ VGROPTS		 = -q --track-origins=yes --leak-check=full \
 		   --show-reachable=yes --trace-children=yes \
 		   --leak-resolution=high
 WWWDIR		 = /var/www/vhosts/kristaps.bsd.lv/htdocs/sqlbox
+CFLAGS_SQLITE3	!= pkg-config --cflags sqlite3
+LDFLAGS_SQLITE3	!= pkg-config --libs sqlite3
+CFLAGS		+= $(CFLAGS_SQLITE3)
 .for mans in $(MANS)
 MANXMLS		+= ${mans}.xml
 MANHTMLS	+= ${mans}.html
@@ -314,7 +317,7 @@ compats.o $(OBJS) $(TESTS): config.h
 $(OBJS): sqlbox.h extern.h
 
 $(TESTS): libsqlbox.a regress/regress.h
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ regress/$*.c compats.o $(LDFLAGS) libsqlbox.a `pkg-config --libs sqlite3` -lm $(LDADD_PTHREAD)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ regress/$*.c compats.o $(LDFLAGS) libsqlbox.a $(LDFLAGS_SQLITE3) -lm $(LDADD_PTHREAD)
 
 $(PERFPNGS): perf.gnuplot
 
@@ -331,13 +334,13 @@ ${test}: regress/${test}.c
 #	sh ./perf.sh ${perf} >$@
 
 ${perf}-ksql: perf/${perf}-ksql.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-ksql.c $(LDFLAGS) -lksql `pkg-config --libs sqlite3` $(LDADD_PTHREAD)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-ksql.c $(LDFLAGS) -lksql $(LDFLAGS_SQLITE3) $(LDADD_PTHREAD)
 
 ${perf}-sqlbox: perf/${perf}-sqlbox.c libsqlbox.a
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-sqlbox.c $(LDFLAGS) libsqlbox.a `pkg-config --libs sqlite3` $(LDADD_PTHREAD)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-sqlbox.c $(LDFLAGS) libsqlbox.a $(LDFLAGS_SQLITE3) $(LDADD_PTHREAD)
 
 ${perf}-sqlite3: perf/${perf}-sqlite3.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-sqlite3.c $(LDFLAGS) `pkg-config --libs sqlite3` $(LDADD_PTHREAD)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-sqlite3.c $(LDFLAGS) $(LDFLAGS_SQLITE3) $(LDADD_PTHREAD)
 .endfor
 
 clean:
