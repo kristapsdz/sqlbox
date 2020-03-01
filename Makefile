@@ -239,9 +239,7 @@ PERFS		 = perf-full-cycle-ksql \
 		   perf-select-multi-sqlbox \
 		   perf-select-multi-sqlite3
 # On OpenBSD 6.6 and above, you need this.
-LDADD_PTHREAD	!= test "`uname -s`" == "OpenBSD" -a \
-   		        "`uname -r | sed 's![^0-9]!!g'`" -ge "66" && \
-			echo "-lpthread"
+LDADD_PTHREAD	!= test "`uname -s`" = "OpenBSD" -a `uname -r | sed 's![^0-9]!!g'` -ge 66 && echo "-lpthread"
 VGR		 = valgrind
 VGROPTS		 = -q --track-origins=yes --leak-check=full \
 		   --show-reachable=yes --trace-children=yes \
