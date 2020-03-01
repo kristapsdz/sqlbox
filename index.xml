@@ -129,6 +129,7 @@ tar zvxpf sqlbox.tar.gz</pre>
 make
 make install</pre>
 						You may need to run this with BSD make (<code>bmake</code>) on non-BSD systems.
+						You shouldn't need to pass any arguments to <code>configure</code>.
 					</li>
 				</ol>
 				<p>
@@ -254,13 +255,17 @@ make install</pre>
 					documentation
 				</h2>
 				<p>
-					The canonical documentation for <span class="nm">sqlbox</span> is its manpages.
+					The canonical documentation for using <span class="nm">sqlbox</span> is its manpages.
 					Below is a list of all bundled manuals.
 					These apply to the current version of this software, which is
 					<nav data-sblg-nav="1" data-sblg-navtag="version" 
 					 data-sblg-navsz="1" data-sblg-navsort="date" data-sblg-navxml="1">
 					 <strong>${sblg-title}</strong>.
 					</nav>
+				</p>
+				<p>
+					This library makes use of <a href="https://man.openbsd.org/pkg-config">pkg-config</a>, so testing for
+					installation, compile and link flags, etc., are all accomplished using that way.
 				</p>
 				<nav data-sblg-nav="1" data-sblg-navtag="manpages" data-sblg-navcontent="1" data-sblg-navsort="title">
 					<a href="${sblg-base}.html">${sblg-title}(3)</a>: ${sblg-aside}
