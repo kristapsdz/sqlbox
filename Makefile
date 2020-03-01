@@ -1,4 +1,4 @@
-.SUFFIXES: .png .dat .dot .svg .3.xml .3 .3.html
+.SUFFIXES: .png .dat .dot .svg .3.xml .3 .3.html .in.pc .pc
 
 include Makefile.configure
 
@@ -193,6 +193,7 @@ OBJS		 = alloc.o \
 		   step.o \
 		   transaction.o \
 		   warn.o
+PCS		 = sqlbox.pc
 MANS		 = man/sqlbox.3 \
 		   man/sqlbox_alloc.3 \
 		   man/sqlbox_close.3 \
@@ -237,11 +238,10 @@ PERFS		 = perf-full-cycle-ksql \
 		   perf-select-multi-ksql \
 		   perf-select-multi-sqlbox \
 		   perf-select-multi-sqlite3
-# On OpenBSD, you usually need these.
-#LDFLAGS	+= -L/usr/local/lib
-#CPPFLAGS	+= -I/usr/local/include
 # On OpenBSD 6.6 and above, you need this.
-#LDADD		+= -lpthread
+LDADD_PTHREAD	!= test "`uname -s`" == "OpenBSD" -a \
+   		        "`uname -r | sed 's![^0-9]!!g'`" -ge "66" && \
+			echo "-lpthread"
 VGR		 = valgrind
 VGROPTS		 = -q --track-origins=yes --leak-check=full \
 		   --show-reachable=yes --trace-children=yes \
@@ -252,7 +252,7 @@ MANXMLS		+= ${mans}.xml
 MANHTMLS	+= ${mans}.html
 .endfor
 
-all: libsqlbox.a
+all: libsqlbox.a $(PCS)
 
 allperf: $(PERFS)
 
@@ -267,7 +267,7 @@ sqlbox.tar.gz: Makefile
 	rm -rf .dist
 	mkdir -p .dist/sqlbox-$(VERSION)
 	mkdir -p .dist/sqlbox-$(VERSION)/{regress,man,perf}
-	install -m 0644 Makefile *.c extern.h sqlbox.h .dist/sqlbox-$(VERSION)
+	install -m 0644 Makefile *.c *.in.pc extern.h sqlbox.h .dist/sqlbox-$(VERSION)
 	install -m 0644 regress/*.[ch] .dist/sqlbox-$(VERSION)/regress
 	install -m 0644 perf/*.[ch] .dist/sqlbox-$(VERSION)/perf
 	install -m 0644 $(MANS) .dist/sqlbox-$(VERSION)/man
@@ -293,17 +293,18 @@ distcheck: sqlbox.tar.gz.sha512
 	sha512 -C sqlbox.tar.gz.sha512 sqlbox.tar.gz
 	mkdir -p .distcheck
 	tar -zvxpf sqlbox.tar.gz -C .distcheck
-	( cd .distcheck/sqlbox-$(VERSION) && ./configure PREFIX=prefix \
-		CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" LDADD="$(LDADD)" )
+	( cd .distcheck/sqlbox-$(VERSION) && ./configure PREFIX=prefix )
 	( cd .distcheck/sqlbox-$(VERSION) && make )
+	( cd .distcheck/sqlbox-$(VERSION) && make regress )
 	( cd .distcheck/sqlbox-$(VERSION) && make install )
 	rm -rf .distcheck
 
 install: all
-	mkdir -p $(DESTDIR)$(LIBDIR)
+	mkdir -p $(DESTDIR)$(LIBDIR)/pkgconfig
 	mkdir -p $(DESTDIR)$(INCLUDEDIR)
 	mkdir -p $(DESTDIR)$(MANDIR)/man3
 	$(INSTALL_LIB) libsqlbox.a $(DESTDIR)$(LIBDIR)
+	$(INSTALL_DATA) $(PCS) $(DESTDIR)$(INCLUDEDIR)/pkgconfig
 	$(INSTALL_DATA) sqlbox.h $(DESTDIR)$(INCLUDEDIR)
 	$(INSTALL_DATA) man/*.3 $(DESTDIR)$(MANDIR)/man3
 
@@ -315,7 +316,7 @@ compats.o $(OBJS) $(TESTS): config.h
 $(OBJS): sqlbox.h extern.h
 
 $(TESTS): libsqlbox.a regress/regress.h
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ regress/$*.c compats.o $(LDFLAGS) libsqlbox.a -lsqlite3 -lm $(LDADD)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ regress/$*.c compats.o $(LDFLAGS) libsqlbox.a `pkg-config --libs sqlite3` -lm $(LDADD_PTHREAD)
 
 $(PERFPNGS): perf.gnuplot
 
@@ -332,13 +333,13 @@ ${test}: regress/${test}.c
 #	sh ./perf.sh ${perf} >$@
 
 ${perf}-ksql: perf/${perf}-ksql.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-ksql.c $(LDFLAGS) -lksql -lsqlite3 -lm $(LDADD)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-ksql.c $(LDFLAGS) -lksql `pkg-config --libs sqlite3` $(LDADD_PTHREAD)
 
 ${perf}-sqlbox: perf/${perf}-sqlbox.c libsqlbox.a
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-sqlbox.c $(LDFLAGS) libsqlbox.a -lsqlite3 -lm $(LDADD)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-sqlbox.c $(LDFLAGS) libsqlbox.a `pkg-config --libs sqlite3` $(LDADD_PTHREAD)
 
 ${perf}-sqlite3: perf/${perf}-sqlite3.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-sqlite3.c $(LDFLAGS) -lsqlite3 -lm $(LDADD)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-sqlite3.c $(LDFLAGS) `pkg-config --libs sqlite3` $(LDADD_PTHREAD)
 .endfor
 
 clean:
@@ -423,3 +424,9 @@ index.html: index.xml versions.xml $(MANXMLS)
 
 atom.xml: versions.xml atom-template.xml
 	sblg -s date -o $@ -a versions.xml
+
+.in.pc.pc:
+	sed -e "s!@PREFIX@!$(PREFIX)!g" \
+	    -e "s!@LIBDIR@!$(LIBDIR)!g" \
+	    -e "s!@INCLUDEDIR@!$(INCLUDEDIR)!g" \
+	    -e "s!@VERSION@!$(VERSION)!g" $< >$@
