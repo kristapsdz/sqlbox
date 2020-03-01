@@ -5,9 +5,9 @@ includedir=@INCLUDEDIR@
 
 Name: sqlbox
 Description: database access library
-URL: https://kristaps.bsd.lv/kcgi
+URL: https://kristaps.bsd.lv/sqlbox
 Version: @VERSION@
 Requires: sqlite3
 Libs.private: 
-Libs: -L${libdir} -lsqlbox @LDADD_PTHREAD@
+Libs: -L${libdir} -lsqlbox
 Cflags: -I${includedir}

@@ -238,8 +238,6 @@ PERFS		 = perf-full-cycle-ksql \
 		   perf-select-multi-ksql \
 		   perf-select-multi-sqlbox \
 		   perf-select-multi-sqlite3
-# On OpenBSD 6.6 and above, you need this.
-LDADD_PTHREAD	!= if [ "`uname -s`" = "OpenBSD" -a `uname -r | sed "s![^0-9]!!g"` -ge 66 ] ; then echo "-lpthread" ; else echo "" ; fi
 VGR		 = valgrind
 VGROPTS		 = -q --track-origins=yes --leak-check=full \
 		   --show-reachable=yes --trace-children=yes \
@@ -317,7 +315,7 @@ compats.o $(OBJS) $(TESTS): config.h
 $(OBJS): sqlbox.h extern.h
 
 $(TESTS): libsqlbox.a regress/regress.h
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ regress/$*.c compats.o $(LDFLAGS) libsqlbox.a $(LDFLAGS_SQLITE3) -lm $(LDADD_PTHREAD)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ regress/$*.c compats.o $(LDFLAGS) libsqlbox.a $(LDFLAGS_SQLITE3) -lm
 
 $(PERFPNGS): perf.gnuplot
 
@@ -334,13 +332,13 @@ ${test}: regress/${test}.c
 #	sh ./perf.sh ${perf} >$@
 
 ${perf}-ksql: perf/${perf}-ksql.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-ksql.c $(LDFLAGS) -lksql $(LDFLAGS_SQLITE3) $(LDADD_PTHREAD)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-ksql.c $(LDFLAGS) -lksql $(LDFLAGS_SQLITE3)
 
 ${perf}-sqlbox: perf/${perf}-sqlbox.c libsqlbox.a
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-sqlbox.c $(LDFLAGS) libsqlbox.a $(LDFLAGS_SQLITE3) $(LDADD_PTHREAD)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-sqlbox.c $(LDFLAGS) libsqlbox.a $(LDFLAGS_SQLITE3)
 
 ${perf}-sqlite3: perf/${perf}-sqlite3.c
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-sqlite3.c $(LDFLAGS) $(LDFLAGS_SQLITE3) $(LDADD_PTHREAD)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ perf/${perf}-sqlite3.c $(LDFLAGS) $(LDFLAGS_SQLITE3)
 .endfor
 
 clean:
@@ -429,6 +427,5 @@ atom.xml: versions.xml atom-template.xml
 .in.pc.pc:
 	sed -e "s!@PREFIX@!$(PREFIX)!g" \
 	    -e "s!@LIBDIR@!$(LIBDIR)!g" \
-	    -e "s!@LDADD_PTHREAD@!$(LDADD_PTHREAD)!g" \
 	    -e "s!@INCLUDEDIR@!$(INCLUDEDIR)!g" \
 	    -e "s!@VERSION@!$(VERSION)!g" $< >$@
