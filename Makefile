@@ -250,6 +250,7 @@ CFLAGS		+= $(CFLAGS_SQLITE3)
 MANXMLS		+= ${mans}.xml
 MANHTMLS	+= ${mans}.html
 .endfor
+CFLAGS		+= $(CPPFLAGS)
 
 all: libsqlbox.a $(PCS)
 
@@ -291,7 +292,8 @@ distcheck: sqlbox.tar.gz.sha512
 	       [ "$$newest" == "<h1>$(VERSION)</h1>" ] || \
 		{ echo "Version $(VERSION) not newest in versions.xml" 1>&2 ; exit 1 ; }
 	rm -rf .distcheck
-	sha512 -C sqlbox.tar.gz.sha512 sqlbox.tar.gz
+	[ "`sha512 sqlbox.tar.gz`" = "`cat sqlbox.tar.gz.sha512`" ] || \
+		{ echo "Checksum does not match." 1>&2 ; exit 1 ; }
 	mkdir -p .distcheck
 	tar -zvxpf sqlbox.tar.gz -C .distcheck
 	( cd .distcheck/sqlbox-$(VERSION) && ./configure PREFIX=prefix )
