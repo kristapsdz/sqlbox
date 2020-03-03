@@ -265,7 +265,9 @@ sqlbox.tar.gz.sha512: sqlbox.tar.gz
 sqlbox.tar.gz: Makefile
 	rm -rf .dist
 	mkdir -p .dist/sqlbox-$(VERSION)
-	mkdir -p .dist/sqlbox-$(VERSION)/{regress,man,perf}
+	mkdir -p .dist/sqlbox-$(VERSION)/regress
+	mkdir -p .dist/sqlbox-$(VERSION)/man
+	mkdir -p .dist/sqlbox-$(VERSION)/perf
 	install -m 0644 Makefile *.c *.in.pc extern.h sqlbox.h .dist/sqlbox-$(VERSION)
 	install -m 0644 regress/*.[ch] .dist/sqlbox-$(VERSION)/regress
 	install -m 0644 perf/*.[ch] .dist/sqlbox-$(VERSION)/perf
@@ -284,7 +286,7 @@ installwww:
 	install -m 0444 $(MANHTMLS) $(WWWDIR)/man
 
 distcheck: sqlbox.tar.gz.sha512
-	mandoc -Tlint -Wwarning $(MANS)
+	mandoc -Tlint -Werror $(MANS)
 	newest=`grep "<h1>" versions.xml | head -n1 | sed 's![ 	]*!!g'` ; \
 	       [ "$$newest" == "<h1>$(VERSION)</h1>" ] || \
 		{ echo "Version $(VERSION) not newest in versions.xml" 1>&2 ; exit 1 ; }
