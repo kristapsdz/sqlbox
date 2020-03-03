@@ -261,7 +261,7 @@ www: index.html atom.xml perf index.svg sqlbox.tar.gz.sha512 $(MANXMLS) $(MANHTM
 perf: $(PERFPNGS)
 
 sqlbox.tar.gz.sha512: sqlbox.tar.gz
-	sha512 sqlbox.tar.gz >$@
+	openssl dgst -sha512 -hex sqlbox.tar.gz >$@
 
 sqlbox.tar.gz: Makefile
 	rm -rf .dist
@@ -289,17 +289,17 @@ installwww:
 distcheck: sqlbox.tar.gz.sha512
 	mandoc -Tlint -Werror $(MANS)
 	newest=`grep "<h1>" versions.xml | head -n1 | sed 's![ 	]*!!g'` ; \
-	       [ "$$newest" == "<h1>$(VERSION)</h1>" ] || \
+	       [ "$$newest" = "<h1>$(VERSION)</h1>" ] || \
 		{ echo "Version $(VERSION) not newest in versions.xml" 1>&2 ; exit 1 ; }
 	rm -rf .distcheck
-	[ "`sha512 sqlbox.tar.gz`" = "`cat sqlbox.tar.gz.sha512`" ] || \
+	[ "`openssl dgst -sha512 -hex sqlbox.tar.gz`" = "`cat sqlbox.tar.gz.sha512`" ] || \
 		{ echo "Checksum does not match." 1>&2 ; exit 1 ; }
 	mkdir -p .distcheck
 	tar -zvxpf sqlbox.tar.gz -C .distcheck
 	( cd .distcheck/sqlbox-$(VERSION) && ./configure PREFIX=prefix )
-	( cd .distcheck/sqlbox-$(VERSION) && make )
-	( cd .distcheck/sqlbox-$(VERSION) && make regress )
-	( cd .distcheck/sqlbox-$(VERSION) && make install )
+	( cd .distcheck/sqlbox-$(VERSION) && $(MAKE) )
+	( cd .distcheck/sqlbox-$(VERSION) && $(MAKE) regress )
+	( cd .distcheck/sqlbox-$(VERSION) && $(MAKE) install )
 	rm -rf .distcheck
 
 install: all
