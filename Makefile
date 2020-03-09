@@ -243,9 +243,10 @@ VGROPTS		 = -q --track-origins=yes --leak-check=full \
 		   --show-reachable=yes --trace-children=yes \
 		   --leak-resolution=high
 WWWDIR		 = /var/www/vhosts/kristaps.bsd.lv/htdocs/sqlbox
-CFLAGS_SQLITE3	!= pkg-config --cflags sqlite3
-LDFLAGS_SQLITE3	!= pkg-config --libs sqlite3
+CFLAGS_SQLITE3	!= pkg-config --cflags sqlite3 || echo ""
+LDFLAGS_SQLITE3	!= pkg-config --libs sqlite3 || echo "-lsqlite3"
 CFLAGS		+= $(CFLAGS_SQLITE3)
+LDADD		+= $(LDFLAGS_SQLITE3)
 .for mans in $(MANS)
 MANXMLS		+= ${mans}.xml
 MANHTMLS	+= ${mans}.html
@@ -319,7 +320,7 @@ compats.o $(OBJS) $(TESTS): config.h
 $(OBJS): sqlbox.h extern.h
 
 $(TESTS): libsqlbox.a regress/regress.h
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ regress/$*.c compats.o $(LDFLAGS) libsqlbox.a $(LDFLAGS_SQLITE3) -lm
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ regress/$*.c compats.o $(LDFLAGS) libsqlbox.a $(LDADD) -lm
 
 $(PERFPNGS): perf.gnuplot
 
