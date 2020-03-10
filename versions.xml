@@ -2,6 +2,18 @@
 <articles>
 	<article data-sblg-article="1" data-sblg-tags="version">
 		<header>
+			<h1>0.1.12</h1>
+			<address>Kristaps Dzonsons</address>
+			<time datetime="2020-03-11">2020-03-11</time>
+		</header>
+		<aside>
+			<p>
+				Continue refining portability in the build system.
+			</p>
+		</aside>
+	</article>
+	<article data-sblg-article="1" data-sblg-tags="version">
+		<header>
 			<h1>0.1.11</h1>
 			<address>Kristaps Dzonsons</address>
 			<time datetime="2020-03-01">2020-03-01</time>
