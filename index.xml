@@ -21,11 +21,18 @@
 		<nav id="within">
 			<a href="#install">install</a>
 			<a href="#security">security</a>
-			<a href="#performance">performance</a>
+			<a href="#performance">perf</a>
 			<a href="#docs">docs</a>
+			<a href="https://github.com/kristapsdz/sqlbox">
+				<i class="fa fa-fw fa-github"></i>
+				repo 
+			</a>
+			<a href="https://kristaps.bsd.lv/cgi-bin/minci.cgi/index.html?project-name=sqlbox">
+				<i class="fa fa-fw fa-tachometer"></i>
+				builds
+			</a>
 			<span>
 				<a href="atom.xml"><i class="fa fa-fw fa-rss"></i></a>
-				<a href="https://github.com/kristapsdz/sqlbox"><i class="fa fa-fw fa-github"></i></a>
 				<nav data-sblg-nav="1" data-sblg-navtag="version" 
 				 data-sblg-navsz="1" data-sblg-navsort="date" data-sblg-navxml="1">
 					v${sblg-title}
