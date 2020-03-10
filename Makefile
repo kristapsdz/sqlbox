@@ -251,7 +251,6 @@ LDADD		+= $(LDFLAGS_SQLITE3)
 MANXMLS		+= ${mans}.xml
 MANHTMLS	+= ${mans}.html
 .endfor
-CFLAGS		+= $(CPPFLAGS)
 
 all: libsqlbox.a $(PCS)
 
@@ -360,10 +359,10 @@ regress: $(TESTS)
 		echo -n "$$f... "; \
 		./$$f 2>/dev/null; \
 		if [ $$? -ne 0 ]; then \
-			echo "\033[31mfail\033[0m"; \
+			echo "FAIL"; \
 			break ; \
 		else \
-			echo "\033[32mok\033[0m"; \
+			echo "ok"; \
 		fi; \
 		set -e ; \
 	done
@@ -374,9 +373,9 @@ regress_all: $(TESTS)
 		echo -n "$$f... "; \
 		./$$f 2>/dev/null; \
 		if [ $$? -ne 0 ]; then \
-			echo "\033[31mfail\033[0m"; \
+			echo "FAIL"; \
 		else \
-			echo "\033[32mok\033[0m"; \
+			echo "ok"; \
 		fi; \
 		set -e ; \
 	done
