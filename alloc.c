@@ -365,7 +365,7 @@ sqlbox_alloc(struct sqlbox_cfg *cfg)
 	if ((fl = fcntl(fd[0], F_GETFL, 0)) == -1 ||
 	    fcntl(fd[0], F_SETFL, fl | O_NONBLOCK) == -1 ||
 	    (fl = fcntl(fd[1], F_GETFL, 0)) == -1 ||
-	    fctl(fd[1], F_SETFL, fl | O_NONBLOCK) == -1) {
+	    fcntl(fd[1], F_SETFL, fl | O_NONBLOCK) == -1) {
 		sqlbox_warn(cfg, "fcntl");
 		close(fd[0]);
 		close(fd[1]);
