@@ -360,7 +360,7 @@ regress: $(TESTS)
 		./$$f 2>/dev/null; \
 		if [ $$? -ne 0 ]; then \
 			echo "FAIL"; \
-			break ; \
+			exit 1 ; \
 		else \
 			echo "ok"; \
 		fi; \
