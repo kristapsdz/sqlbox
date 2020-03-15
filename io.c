@@ -19,6 +19,7 @@
 #if HAVE_SYS_QUEUE
 # include <sys/queue.h>
 #endif 
+#include <sys/socket.h>
 #include COMPAT_ENDIAN_H
 
 #include <assert.h>
@@ -44,37 +45,46 @@
 int
 sqlbox_write(struct sqlbox *box, const char *buf, size_t sz)
 {
-	struct pollfd	 pfd = { .fd = box->fd, .events = POLLOUT };
-	ssize_t		 wsz;
-	size_t		 tsz = 0;
-
-	assert(sz > 0);
+	struct pollfd	  pfd = { .fd = box->fd, .events = POLLOUT };
+	ssize_t		  wsz;
+	size_t		  tsz = 0;
+	int		  rc = 0;
 
 	for (;;) {
 		if (poll(&pfd, 1, INFTIM) == -1) {
 			sqlbox_warn(&box->cfg, "ppoll (write)");
-			return 0;
+			break;
 		} else if ((pfd.revents & (POLLNVAL|POLLERR)))  {
 			sqlbox_warnx(&box->cfg, 
 				"ppoll (write): nval");
-			return 0;
+			break;
 		} else if ((pfd.revents & POLLHUP)) {
 			sqlbox_warnx(&box->cfg, 
 				"ppoll (write): hangup");
-			return 0;
+			break;
 		} else if (!(POLLOUT & pfd.revents)) {
 			sqlbox_warnx(&box->cfg, 
 				"ppoll (write): bad revent");
-			return 0;
-		}
-		if ((wsz = write(pfd.fd, buf + tsz, sz - tsz)) == -1) {
-			sqlbox_warn(&box->cfg, "write");
-			return 0;
-		} else if ((tsz += wsz) == sz)
 			break;
+		}
+
+		/*
+		 * Use send(2) with MSG_NOSIGNAL instead of write(2) because we
+		 * can avoid masking SIGPIPE in the event that the child closes
+		 * its part of the socket *after* the poll(2), above.
+		 */
+
+		wsz = send(pfd.fd, buf + tsz, sz - tsz, MSG_NOSIGNAL);
+		if (wsz == -1) {
+			sqlbox_warn(&box->cfg, "send");
+			return 0;
+		} else if ((tsz += wsz) == sz) {
+			rc = 1;
+			break;
+		}
 	}
 
-	return 1;
+	return rc;
 }
 
 /*
@@ -93,26 +103,36 @@ sqlbox_read(struct sqlbox *box, char *buf, size_t sz)
 
 	assert(sz > 0);
 
+	/*
+	 * On most systems (OpenBSD, FreeBSD, Linux, etc.), poll(2) sets
+	 * POLLHUP when the descriptor closes.
+	 * On SunOS, however, POLLIN is returned with an EOF returned by the
+	 * read(2).
+	 */
+
 	for (;;) {
 		if (poll(&pfd, 1, INFTIM) == -1) {
 			sqlbox_warn(&box->cfg, "ppoll (read)");
 			return 0;
 		} else if ((pfd.revents & (POLLNVAL|POLLERR)))  {
 			sqlbox_warnx(&box->cfg, 
-				"ppoll (read): nval");
+				"poll (read): nval");
 			return 0;
 		} else if ((pfd.revents & POLLHUP)) {
 			sqlbox_warnx(&box->cfg, 
-				"ppoll (read): hangup");
+				"poll (read): hangup");
 			return 0;
 		} else if (!(POLLIN & pfd.revents)) {
 			sqlbox_warnx(&box->cfg, 
-				"ppoll (read): bad revent");
+				"poll (read): bad revent");
 			return 0;
 		}
 
 		if ((rsz = read(pfd.fd, buf + tsz, sz - tsz)) == -1) {
 			sqlbox_warn(&box->cfg, "read");
+			return 0;
+		} else if (rsz == 0) {
+			sqlbox_warnx(&box->cfg, "read: eof");
 			return 0;
 		} else if ((tsz += rsz) == sz)
 			break;
