@@ -288,14 +288,14 @@ installwww:
 
 distcheck: sqlbox.tar.gz.sha512
 	mandoc -Tlint -Werror $(MANS)
-	newest=`grep "<h1>" versions.xml | head -n1 | sed 's![ 	]*!!g'` ; \
+	newest=`grep "<h1>" versions.xml | head -1 | sed 's![ 	]*!!g'` ; \
 	       [ "$$newest" = "<h1>$(VERSION)</h1>" ] || \
 		{ echo "Version $(VERSION) not newest in versions.xml" 1>&2 ; exit 1 ; }
 	rm -rf .distcheck
 	[ "`openssl dgst -sha512 -hex sqlbox.tar.gz`" = "`cat sqlbox.tar.gz.sha512`" ] || \
 		{ echo "Checksum does not match." 1>&2 ; exit 1 ; }
 	mkdir -p .distcheck
-	tar -zvxpf sqlbox.tar.gz -C .distcheck
+	( cd .distcheck && tar -zvxpf ../sqlbox.tar.gz )
 	( cd .distcheck/sqlbox-$(VERSION) && ./configure PREFIX=prefix )
 	( cd .distcheck/sqlbox-$(VERSION) && $(MAKE) )
 	( cd .distcheck/sqlbox-$(VERSION) && $(MAKE) regress )
@@ -356,7 +356,7 @@ distclean: clean
 regress: $(TESTS)
 	@for f in $(TESTS) ; do \
 		set +e ; \
-		echo -n "$$f... "; \
+		printf "%s..." "$$f" ; \
 		./$$f 2>/dev/null; \
 		if [ $$? -ne 0 ]; then \
 			echo "FAIL"; \
