@@ -356,7 +356,7 @@ distclean: clean
 regress: $(TESTS)
 	@for f in $(TESTS) ; do \
 		set +e ; \
-		printf "%s..." "$$f" ; \
+		printf "%s... " "$$f" ; \
 		./$$f 2>/dev/null; \
 		if [ $$? -ne 0 ]; then \
 			echo "FAIL"; \
