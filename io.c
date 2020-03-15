@@ -48,7 +48,11 @@ sqlbox_write(struct sqlbox *box, const char *buf, size_t sz)
 	struct pollfd	  pfd = { .fd = box->fd, .events = POLLOUT };
 	ssize_t		  wsz;
 	size_t		  tsz = 0;
-	int		  rc = 0;
+	int		  rc = 0, fl = 0;
+
+#ifdef	MSG_NOSIGNAL
+	fl = MSG_NOSIGNAL;
+#endif /* MSG_NOSIGNAL */
 
 	for (;;) {
 		if (poll(&pfd, 1, INFTIM) == -1) {
@@ -74,7 +78,7 @@ sqlbox_write(struct sqlbox *box, const char *buf, size_t sz)
 		 * its part of the socket *after* the poll(2), above.
 		 */
 
-		wsz = send(pfd.fd, buf + tsz, sz - tsz, MSG_NOSIGNAL);
+		wsz = send(pfd.fd, buf + tsz, sz - tsz, fl);
 		if (wsz == -1) {
 			sqlbox_warn(&box->cfg, "send");
 			return 0;

@@ -361,6 +361,23 @@ sqlbox_alloc(struct sqlbox_cfg *cfg)
 		return NULL;
 	}
 
+#if !defined(MSG_NOSIGNAL)
+#if defined(SO_NOSIGPIPE)
+	fl = 1;
+	if (setsockopt(fd[0], SOL_SOCKET,
+ 	     SO_NOSIGPIPE, &fl, sizeof(int)) == -1 ||
+	    setsockopt(fd[1], SOL_SOCKET, 
+	     SO_NOSIGPIPE, &fl, sizeof(int)) == -1) {
+		sqlbox_warn(cfg, "setsockopt");
+		close(fd[0]);
+		close(fd[1]);
+		return NULL;
+	}
+#else
+# error Neither MSG_NOSIGNAL nor SO_NOSIGPIPE defined.
+#endif /* SO_NOSIGPIPE */
+#endif /* !MSG_NOSIGNAL */
+
 #if !HAVE_SOCK_NONBLOCK
 	if ((fl = fcntl(fd[0], F_GETFL, 0)) == -1 ||
 	    fcntl(fd[0], F_SETFL, fl | O_NONBLOCK) == -1 ||
