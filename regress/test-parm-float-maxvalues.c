@@ -48,7 +48,7 @@ main(int argc, char *argv[])
 	char			*res_string;
 	char			 res_string_array[512];
 	int64_t			 res_int;
-	double			 res_double;
+	double			 res_double, v;
 	size_t			 sz;
 	int			 c;
 
@@ -79,7 +79,9 @@ main(int argc, char *argv[])
 	c = sqlbox_parm_int(&parm, &res_int);
 	if (c != 1)
 		errx(EXIT_FAILURE, "sqlbox_parm_int convert");
-	if (res_int != (int64_t)DBL_MAX && res_int != (int64_t)-DBL_MAX)
+
+	v = DBL_MAX;
+	if (res_int != (int64_t)v && res_int != (int64_t)-v)
 		errx(EXIT_FAILURE, "sqlbox_parm_int value");
 
 	c = sqlbox_parm_string(&parm,
