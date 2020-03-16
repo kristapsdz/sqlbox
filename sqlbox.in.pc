@@ -9,5 +9,5 @@ URL: https://kristaps.bsd.lv/sqlbox
 Version: @VERSION@
 Requires: sqlite3
 Libs.private: 
-Libs: -L${libdir} -lsqlbox
+Libs: -L${libdir} -lsqlbox @LDADD_LIB_SOCKET@
 Cflags: -I${includedir}

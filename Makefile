@@ -319,7 +319,7 @@ compats.o $(OBJS) $(TESTS): config.h
 $(OBJS): sqlbox.h extern.h
 
 $(TESTS): libsqlbox.a regress/regress.h
-	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ regress/$*.c compats.o $(LDFLAGS) libsqlbox.a $(LDADD) -lm
+	$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ regress/$*.c compats.o $(LDFLAGS) libsqlbox.a $(LDADD) -lm $(LDADD_LIB_SOCKET)
 
 $(PERFPNGS): perf.gnuplot
 
@@ -431,5 +431,6 @@ atom.xml: versions.xml atom-template.xml
 .in.pc.pc:
 	sed -e "s!@PREFIX@!$(PREFIX)!g" \
 	    -e "s!@LIBDIR@!$(LIBDIR)!g" \
+	    -e "s!@LDADD_LIB_SOCKET@!$(LDADD_LIB_SOCKET)!g" \
 	    -e "s!@INCLUDEDIR@!$(INCLUDEDIR)!g" \
 	    -e "s!@VERSION@!$(VERSION)!g" $< >$@
