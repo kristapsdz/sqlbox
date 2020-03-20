@@ -37,28 +37,45 @@
 #include "sqlbox.h"
 #include "extern.h"
 
+static void
+sqlbox_parm_pack_align(struct sqlbox *box, size_t *framesz, size_t algn)
+{
+	if ((*framesz % algn) != 0)
+		*framesz += algn - (*framesz % algn);
+}
+
 int
 sqlbox_parm_pack(struct sqlbox *box, size_t parmsz,
 	const struct sqlbox_parm *parms, 
 	char **buf, size_t *offs, size_t *bufsz)
 {
-	size_t	 framesz, i, sz;
+	size_t	 framesz, i, sz, start = *offs;
 	void	*pp;
 	uint32_t tmp;
-	int64_t	 val;
+	uint64_t val;
 
-	/* Start with types and payload size. */
+	/* Start with number of frames. */
 
-	framesz = sizeof(uint32_t) + parmsz * sizeof(uint32_t);
+	framesz = sizeof(uint32_t);
+
+	/* 
+	 * Each parameter must be 4-byte aligned.
+	 */
 
 	for (i = 0; i < parmsz; i++) {
+		sqlbox_parm_pack_align(box, &framesz, 4);
+		assert((framesz % 4) == 0);
+		framesz += sizeof(uint32_t);
 		switch (parms[i].type) {
 		case SQLBOX_PARM_NULL: /* nothing */
 			break;
 		case SQLBOX_PARM_FLOAT:
+			sqlbox_parm_pack_align(box, &framesz, 8);
 			framesz += sizeof(double);
 			break;
 		case SQLBOX_PARM_INT:
+			sqlbox_parm_pack_align(box, &framesz, 8);
+			assert((framesz % 8) == 0);
 			framesz += sizeof(int64_t);
 			break;
 		case SQLBOX_PARM_BLOB: /* length+data */
@@ -75,7 +92,15 @@ sqlbox_parm_pack(struct sqlbox *box, size_t parmsz,
 		}
 	}
 
-	/* Allocate our write buffer. */
+	sqlbox_parm_pack_align(box, &framesz, 4);
+
+	/* 
+	 * Allocate our write buffer.
+	 * Make sure the size and destination align on a 4-byte boundary.
+	 */
+
+	assert((framesz % 4) == 0);
+	assert(((uintptr_t)*offs % 4) == 0);
 
 	if (*offs + framesz > *bufsz) {
 		if ((pp = realloc(*buf, *offs + framesz)) == NULL) {
@@ -92,30 +117,47 @@ sqlbox_parm_pack(struct sqlbox *box, size_t parmsz,
 	memcpy(*buf + *offs, (char *)&tmp, sizeof(uint32_t));
 	*offs += sizeof(uint32_t);
 
-	/* Now all parameter data. */
+	/* 
+	 * Now all parameter data.
+	 * Each parameter aligns on a 4-byte boundary.
+	 */
 
 	for (i = 0; i < parmsz; i++) {
+		sqlbox_parm_pack_align(box, offs, 4);
 		tmp = htole32(parms[i].type);
 		memcpy(*buf + *offs, (char *)&tmp, sizeof(uint32_t));
 		*offs += sizeof(uint32_t);
 		switch (parms[i].type) {
 		case SQLBOX_PARM_FLOAT:
+			sqlbox_parm_pack_align(box, offs, 8);
 			memcpy(*buf + *offs, 
 				(char *)&parms[i].fparm, sizeof(double));
 			*offs += sizeof(double);
 			break;
 		case SQLBOX_PARM_INT:
+			sqlbox_parm_pack_align(box, offs, 8);
 			val = htole64(parms[i].iparm);
-			memcpy(*buf + *offs, 
-				(char *)&val, sizeof(int64_t));
+			memcpy(*buf + *offs, (char *)&val, sizeof(int64_t));
+#if 0
+			sqlbox_warnx(&box->cfg, "pack val = %" PRId64 
+				" (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x:%.2x:%.2x)", 
+				parms[i].iparm, (unsigned char)(*buf + *offs)[0], 
+				(unsigned char)(*buf + *offs)[1], 
+				(unsigned char)(*buf + *offs)[2], 
+				(unsigned char)(*buf + *offs)[3], 
+				(unsigned char)(*buf + *offs)[4], 
+				(unsigned char)(*buf + *offs)[5], 
+				(unsigned char)(*buf + *offs)[6], 
+				(unsigned char)(*buf + *offs)[7]);
+#endif
 			*offs += sizeof(int64_t);
 			break;
 		case SQLBOX_PARM_NULL:
 			break;
 		case SQLBOX_PARM_BLOB:
-			val = htole32(parms[i].sz);
+			tmp = htole32(parms[i].sz);
 			memcpy(*buf + *offs, 
-				(char *)&val, sizeof(uint32_t));
+				(char *)&tmp, sizeof(uint32_t));
 			*offs += sizeof(uint32_t);
 			memcpy(*buf + *offs, parms[i].bparm, parms[i].sz);
 			*offs += parms[i].sz;
@@ -124,9 +166,9 @@ sqlbox_parm_pack(struct sqlbox *box, size_t parmsz,
 			sz = parms[i].sz == 0 ? 
 				strlen(parms[i].sparm) + 1 : parms[i].sz;
 			assert(sz > 0);
-			val = htole32(sz);
+			tmp = htole32(sz);
 			memcpy(*buf + *offs, 
-				(char *)&val, sizeof(uint32_t));
+				(char *)&tmp, sizeof(uint32_t));
 			*offs += sizeof(uint32_t);
 			memcpy(*buf + *offs, parms[i].sparm, sz);
 			*offs += sz;
@@ -136,6 +178,7 @@ sqlbox_parm_pack(struct sqlbox *box, size_t parmsz,
 		}
 	}
 
+	sqlbox_parm_pack_align(box, offs, 4);
 	return 1;
 }
 
@@ -220,6 +263,22 @@ sqlbox_parm_bind(struct sqlbox *box, struct sqlbox_db *db,
 	return 1;
 }
 
+static int
+sqlbox_parm_unpack_align(struct sqlbox *box, const char **buf, size_t *bufsz, size_t algn)
+{
+	size_t	 offs;
+	if (((uintptr_t)*buf % algn) == 0)
+		return 1;
+
+	offs = algn - ((uintptr_t)*buf % algn);
+	if (*bufsz < offs)
+		return 0;
+
+	*buf += offs;
+	*bufsz += offs;
+	return 1;
+}
+
 /*
  * Unpack a set of sqlbox_parm from the buffer.
  * Returns zero on failure or the number of bytes processed on success.
@@ -262,6 +321,8 @@ sqlbox_parm_unpack(struct sqlbox *box, struct sqlbox_parm **parms,
 	 */
 
 	for (i = 0; i < *parmsz; i++) {
+		if (!sqlbox_parm_unpack_align(box, &buf, &bufsz, 4))
+			goto badframe;
 		if (bufsz < sizeof(uint32_t))
 			goto badframe;
 		(*parms)[i].type = le32toh(*(uint32_t *)buf);
@@ -269,6 +330,8 @@ sqlbox_parm_unpack(struct sqlbox *box, struct sqlbox_parm **parms,
 		bufsz -= sizeof(uint32_t);
 		switch ((*parms)[i].type) {
 		case SQLBOX_PARM_FLOAT:
+			if (!sqlbox_parm_unpack_align(box, &buf, &bufsz, 8))
+				goto badframe;
 			if (bufsz < sizeof(double))
 				goto badframe;
 			(*parms)[i].sz = sizeof(double);
@@ -277,8 +340,23 @@ sqlbox_parm_unpack(struct sqlbox *box, struct sqlbox_parm **parms,
 			bufsz -= sizeof(double);
 			break;
 		case SQLBOX_PARM_INT:
+			if (!sqlbox_parm_unpack_align(box, &buf, &bufsz, 8))
+				goto badframe;
 			if (bufsz < sizeof(int64_t))
 				goto badframe;
+#if 0
+			sqlbox_warnx(&box->cfg, "unpack val = %" PRId64 
+				" (%.2x:%.2x:%.2x:%.2x:%.2x:%.2x:%.2x:%.2x) (at %zu)", 
+				le64toh(*(int64_t *)buf), 
+				(unsigned char)buf[0], 
+				(unsigned char)buf[1], 
+				(unsigned char)buf[2], 
+				(unsigned char)buf[3], 
+				(unsigned char)buf[4], 
+				(unsigned char)buf[5], 
+				(unsigned char)buf[6], 
+				(unsigned char)buf[7], (size_t)(buf - start));
+#endif
 			(*parms)[i].sz = sizeof(int64_t);
 			(*parms)[i].iparm = le64toh(*(int64_t *)buf);
 			buf += sizeof(int64_t);
@@ -301,6 +379,7 @@ sqlbox_parm_unpack(struct sqlbox *box, struct sqlbox_parm **parms,
 			bufsz -= len;
 			break;
 		case SQLBOX_PARM_STRING:
+			assert(((uintptr_t)buf % 4) == 0);
 			if (bufsz < sizeof(uint32_t))
 				goto badframe;
 			len = le32toh(*(uint32_t *)buf);
@@ -332,6 +411,9 @@ sqlbox_parm_unpack(struct sqlbox *box, struct sqlbox_parm **parms,
 			goto err;
 		}
 	}
+
+	if (!sqlbox_parm_unpack_align(box, &buf, &bufsz, 4))
+		goto badframe;
 
 	assert(buf > start);
 	return (size_t)(buf - start);
