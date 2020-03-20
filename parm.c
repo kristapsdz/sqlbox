@@ -59,7 +59,7 @@ sqlbox_parm_pack(struct sqlbox *box, size_t parmsz,
 	const struct sqlbox_parm *parms, 
 	char **buf, size_t *offs, size_t *bufsz)
 {
-	size_t	 framesz, i, sz, start = *offs;
+	size_t	 framesz, i, sz;
 	void	*pp;
 	uint32_t tmp;
 	uint64_t val;
