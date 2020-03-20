@@ -161,7 +161,7 @@ sqlbox_exec(struct sqlbox *box, size_t srcid, size_t pstmt,
 		return SQLBOX_CODE_ERROR;
 	}
 
-	return (enum sqlbox_code)val;
+	return (enum sqlbox_code)le32toh(val);
 }
 
 /*
@@ -310,8 +310,8 @@ sqlbox_op_exec(struct sqlbox *box, const char *buf, size_t sz)
 int
 sqlbox_op_exec_sync(struct sqlbox *box, const char *buf, size_t sz)
 {
-	enum sqlbox_code	 code;
-	uint32_t		 ack;
+	enum sqlbox_code code;
+	uint32_t	 ack;
 
 	code = sqlbox_op_exec(box, buf, sz);
 	if (code == SQLBOX_CODE_ERROR) {
@@ -322,6 +322,7 @@ sqlbox_op_exec_sync(struct sqlbox *box, const char *buf, size_t sz)
 	/* Synchronous version writes back the code. */
 
 	ack = htole32(code);
+
 	if (sqlbox_write(box, (char *)&ack, sizeof(uint32_t)))
 		return 1;
 	sqlbox_warnx(&box->cfg, "exec-sync: sqlbox_write");
