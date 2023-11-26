@@ -1,0 +1,7 @@
+test-*
+*.o
+Makefile.configure
+config.h
+config.log
+libsqlbox.a
+sqlbox.pc
