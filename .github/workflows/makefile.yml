@@ -1,0 +1,58 @@
+name: Regression Tests
+on: [push]
+jobs:
+  ubuntu_x86_64:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Install dependencies
+      run: sudo apt-get install -y libsqlite3-dev bmake
+    - name: configure
+      run: ./configure
+    - name: Compile
+      run: bmake
+    - name: Run regress
+      run: bmake regress
+  macos_x86_64:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Install dependencies
+      run: brew install sqlite3 bmake
+    - name: configure
+      run: ./configure
+    - name: Compile
+      run: bmake
+    - name: Run regress
+      run:  bmake regress
+  alpine_aarch64:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Setup latest Alpine Linux for aarch64
+      uses: jirutka/setup-alpine@v1.1.4
+      with:
+        arch: aarch64
+        packages: >
+          build-base
+          sqlite-dev
+          bmake
+          linux-headers
+        shell-name: alpine-aarch64.sh
+    - name: Configure, build, and test on aarch64
+      run: |
+        ./configure
+        bmake regress
+      shell: alpine-aarch64.sh {0}
+  freebsd_x86_64:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Test in FreeBSD
+      uses: vmactions/freebsd-vm@v1
+      with:
+        usesh: true
+        prepare: pkg install -y sqlite3
+        run: |
+          ./configure
+          make regress
