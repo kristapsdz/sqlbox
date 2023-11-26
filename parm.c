@@ -114,6 +114,7 @@ sqlbox_parm_pack(struct sqlbox *box, size_t parmsz,
 			sqlbox_warn(&box->cfg, "realloc");
 			return 0;
 		}
+		memset(pp + *bufsz, 0, (*offs + framesz) - *bufsz);
 		*buf = pp;
 		*bufsz = *offs + framesz;
 	}
