@@ -85,17 +85,6 @@ main(int argc, char *argv[])
 	}
 	strlcat(buf2, ")", buf2sz);
 
-	/* ...and the parameters... */
-
-	parms = calloc(parmsz, sizeof(struct sqlbox_parm));
-	if (parms == NULL)
-		err(EXIT_FAILURE, NULL);
-
-	for (i = 0; i < parmsz; i++) {
-		parms[i].type = SQLBOX_PARM_INT;
-		parms[i].iparm = i;
-	}
-
 	pstmts[0].stmt = buf1;
 	pstmts[1].stmt = buf2;
 
@@ -124,6 +113,16 @@ main(int argc, char *argv[])
 		errx(EXIT_FAILURE, "res->psz != 0");
 	if (!sqlbox_finalise(p, stmtid))
 		errx(EXIT_FAILURE, "sqlbox_finalise");
+
+	/* ...and the parameters... */
+
+	parms = calloc(parmsz, sizeof(struct sqlbox_parm));
+	if (parms == NULL)
+		err(EXIT_FAILURE, NULL);
+	for (i = 0; i < parmsz; i++) {
+		parms[i].type = SQLBOX_PARM_INT;
+		parms[i].iparm = i;
+	}
 
 	if (!(stmtid = sqlbox_prepare_bind
 	    (p, dbid, 1, parmsz, parms, 0)))
