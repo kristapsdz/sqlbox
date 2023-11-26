@@ -103,6 +103,7 @@ struct	sqlbox {
 	size_t			 lastid; /* last db id */
 	pid_t		  	 pid; /* child or (pid_t)-1 */
 	int			 free_msg_dat; /* free sqlbox_msg dat? */
+	sqlbox_cfg_free		 cfg_free_fp;
 };
 
 void	 sqlbox_sleep(size_t);

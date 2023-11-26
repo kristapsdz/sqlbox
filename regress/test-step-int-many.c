@@ -27,6 +27,13 @@
 #include "../sqlbox.h"
 #include "regress.h"
 
+static void
+cfg_free(struct sqlbox_cfg *cfg)
+{
+	free(cfg->stmts.stmts[0].stmt);
+	free(cfg->stmts.stmts[1].stmt);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -98,7 +105,7 @@ main(int argc, char *argv[])
 	cfg.stmts.stmtsz = nitems(pstmts);
 	cfg.stmts.stmts = pstmts;
 
-	if ((p = sqlbox_alloc(&cfg)) == NULL)
+	if ((p = sqlbox_alloc_destructor(&cfg, cfg_free)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_alloc");
 	if (!(dbid = sqlbox_open(p, 0)))
 		errx(EXIT_FAILURE, "sqlbox_open");
@@ -162,7 +169,5 @@ main(int argc, char *argv[])
 
 	sqlbox_free(p);
 	free(parms);
-	free(buf1);
-	free(buf2);
 	return EXIT_SUCCESS;
 }

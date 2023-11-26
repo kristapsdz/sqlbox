@@ -133,6 +133,8 @@ sqlbox_clear(struct sqlbox *box, int intent)
 
 	if (box->free_msg_dat)
 		free(box->cfg.msg.dat);
+	if (box->cfg_free_fp != NULL)
+		(*box->cfg_free_fp)(&box->cfg);
 }
 
 void
@@ -248,8 +250,8 @@ sqlbox_cfg_vrfy(const struct sqlbox_cfg *cfg)
  * Returns FALSE on memory allocation failure and TRUE otherwise.
  */
 static int
-sqlbox_init(struct sqlbox *box,
-	const struct sqlbox_cfg *cfg, int fd, pid_t pid)
+sqlbox_init(struct sqlbox *box, const struct sqlbox_cfg *cfg, int fd,
+	pid_t pid, sqlbox_cfg_free fp)
 {
 
 	memset(box, 0, sizeof(struct sqlbox));
@@ -262,6 +264,7 @@ sqlbox_init(struct sqlbox *box,
 	box->role = box->cfg.roles.defrole;
 	box->fd = fd;
 	box->pid = pid;
+	box->cfg_free_fp = fp;
 
 	TAILQ_INIT(&box->dbq);
 	TAILQ_INIT(&box->stmtq);
@@ -276,7 +279,7 @@ sqlbox_init(struct sqlbox *box,
  * The caller should close any remaining descriptors on failure.
  */
 static struct sqlbox *
-sqlbox_alloc_fd(struct sqlbox_cfg *cfg, int fds[2])
+sqlbox_alloc_fd(struct sqlbox_cfg *cfg, int fds[2], sqlbox_cfg_free fp)
 {
 	struct sqlbox	 box;
 	struct sqlbox	*p;
@@ -307,7 +310,7 @@ sqlbox_alloc_fd(struct sqlbox_cfg *cfg, int fds[2])
 		}
 		close(fds[0]);
 		fds[0] = -1;
-		if (!sqlbox_init(p, cfg, fds[1], pid)) {
+		if (!sqlbox_init(p, cfg, fds[1], pid, fp)) {
 			free(p);
 			p = NULL;
 		}
@@ -323,7 +326,7 @@ sqlbox_alloc_fd(struct sqlbox_cfg *cfg, int fds[2])
 
 	close(fds[1]);
 	fds[1] = -1;
-	if (!sqlbox_init(&box, cfg, fds[0], (pid_t)-1)) {
+	if (!sqlbox_init(&box, cfg, fds[0], (pid_t)-1, fp)) {
 		sqlbox_clear(&box, 0);
 		_exit(EXIT_FAILURE);
 	}
@@ -348,6 +351,12 @@ sqlbox_alloc_fd(struct sqlbox_cfg *cfg, int fds[2])
 
 struct sqlbox *
 sqlbox_alloc(struct sqlbox_cfg *cfg)
+{
+	return sqlbox_alloc_destructor(cfg, NULL);
+}
+
+struct sqlbox *
+sqlbox_alloc_destructor(struct sqlbox_cfg *cfg, sqlbox_cfg_free fp)
 {
 	int	 	 fl = SOCK_STREAM;
 	int		 fd[2];
@@ -389,7 +398,7 @@ sqlbox_alloc(struct sqlbox_cfg *cfg)
 		return NULL;
 	}
 #endif
-	if ((p = sqlbox_alloc_fd(cfg, fd)) == NULL) {
+	if ((p = sqlbox_alloc_fd(cfg, fd, fp)) == NULL) {
 		sqlbox_warnx(cfg, "sqlbox_alloc_fd");
 		if (fd[0] != -1)
 			close(fd[0]);

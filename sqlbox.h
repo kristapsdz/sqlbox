@@ -227,6 +227,8 @@ struct	sqlbox_parmset {
 #define	SQLBOX_STMT_CONSTRAINT	0x01
 #define	SQLBOX_STMT_MULTI	0x02
 
+typedef void (*sqlbox_cfg_free)(struct sqlbox_cfg *);
+
 struct	sqlbox;
 
 __BEGIN_DECLS
@@ -244,6 +246,7 @@ int		 sqlbox_role_hier_sink(struct sqlbox_role_hier *, size_t);
 int		 sqlbox_role_hier_start(struct sqlbox_role_hier *, size_t);
 
 struct sqlbox	*sqlbox_alloc(struct sqlbox_cfg *);
+struct sqlbox	*sqlbox_alloc_destructor(struct sqlbox_cfg *, sqlbox_cfg_free);
 int		 sqlbox_close(struct sqlbox *, size_t);
 int		 sqlbox_exec_async(struct sqlbox *, size_t, size_t, 
 			size_t, const struct sqlbox_parm *,
