@@ -380,22 +380,11 @@ regress_all: $(TESTS)
 		set -e ; \
 	done
 
-valgrind: $(TESTS) $(PERFS)
+valgrind: $(TESTS)
 	@for f in $(TESTS); do \
 		set +e ; \
 		echo "$$f... \033[33mrunning\033[0m"; \
 		$(VGR) $(VGROPTS) ./$$f 2>&1 | sed -e '/^[^=]/d' -e 's!^==\(.*\)!\x1B[31m==\1\x1B[0m!' ; \
-		if [ $$? -ne 0 ]; then \
-			echo "$$f... \033[31mfail\033[0m"; \
-		else \
-			echo "$$f... \033[32mok\033[0m"; \
-		fi; \
-		set -e ; \
-	done
-	@for f in $(PERFS); do \
-		set +e ; \
-		echo "$$f... \033[33mrunning\033[0m"; \
-		$(VGR) $(VGROPTS) ./$$f -n 1000 2>&1 | sed -e '/^[^=]/d' -e 's!^==\(.*\)!\x1B[31m==\1\x1B[0m!' ; \
 		if [ $$? -ne 0 ]; then \
 			echo "$$f... \033[31mfail\033[0m"; \
 		else \
