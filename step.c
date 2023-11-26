@@ -280,6 +280,11 @@ sqlbox_pack_step(struct sqlbox *box, size_t *bufpos, struct sqlbox_stmt *st)
 			sqlbox_warn(&box->cfg, "step: realloc");
 			goto out;
 		}
+
+		/* Initialise the memory. */
+
+		memset(pp + st->res.bufsz, 0,
+			(*bufpos + SQLBOX_FRAME) - st->res.bufsz);
 		st->res.buf = pp;
 		st->res.bufsz = *bufpos + SQLBOX_FRAME;
 	}
