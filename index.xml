@@ -27,10 +27,6 @@
 				<i class="fa fa-fw fa-github"></i>
 				repo 
 			</a>
-			<a href="https://kristaps.bsd.lv/cgi-bin/minci.cgi/index.html?project-name=sqlbox">
-				<i class="fa fa-fw fa-tachometer"></i>
-				builds
-			</a>
 			<span>
 				<a href="atom.xml"><i class="fa fa-fw fa-rss"></i></a>
 				<nav data-sblg-nav="1" data-sblg-navtag="version" 
