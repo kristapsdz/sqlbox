@@ -53,14 +53,6 @@ main(int argc, char *argv[])
 	cfg.stmts.stmtsz = nitems(pstmts);
 	cfg.stmts.stmts = pstmts;
 
-	parms[0].sz = 0;
-	if ((buf = calloc(1, 1024 * 1024)) == NULL)
-		err(EXIT_FAILURE, "malloc");
-	parms[0].sparm = buf;
-
-	for (i = 0; i < 1024 * 1024 - 1; i++)
-		buf[i] = 'a';
-
 	if ((p = sqlbox_alloc(&cfg)) == NULL)
 		errx(EXIT_FAILURE, "sqlbox_alloc");
 	if (!(dbid = sqlbox_open(p, 0)))
@@ -75,6 +67,14 @@ main(int argc, char *argv[])
 		errx(EXIT_FAILURE, "res->psz != 0");
 	if (!sqlbox_finalise(p, stmtid))
 		errx(EXIT_FAILURE, "sqlbox_finalise");
+
+	parms[0].sz = 0;
+	if ((buf = calloc(1, 1024 * 1024)) == NULL)
+		err(EXIT_FAILURE, "malloc");
+	parms[0].sparm = buf;
+	for (i = 0; i < 1024 * 1024 - 1; i++)
+		buf[i] = 'a';
+
 	if (!(stmtid = sqlbox_prepare_bind
 	      (p, dbid, 1, nitems(parms), parms, 0)))
 		errx(EXIT_FAILURE, "sqlbox_prepare_bind");

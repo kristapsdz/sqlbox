@@ -56,6 +56,22 @@ main(int argc, char *argv[])
 	cfg.stmts.stmtsz = nitems(pstmts);
 	cfg.stmts.stmts = pstmts;
 
+	if ((p = sqlbox_alloc(&cfg)) == NULL)
+		errx(EXIT_FAILURE, "sqlbox_alloc");
+	if (!(dbid = sqlbox_open(p, 0)))
+		errx(EXIT_FAILURE, "sqlbox_open");
+	if (!sqlbox_ping(p))
+		errx(EXIT_FAILURE, "sqlbox_ping");
+
+	if (!(stmtid = sqlbox_prepare_bind(p, dbid, 0, 0, NULL, 0)))
+		errx(EXIT_FAILURE, "sqlbox_prepare_bind");
+	if ((res = sqlbox_step(p, stmtid)) == NULL)
+		errx(EXIT_FAILURE, "sqlbox_step");
+	if (res->psz != 0)
+		errx(EXIT_FAILURE, "res->psz != 0");
+	if (!sqlbox_finalise(p, stmtid))
+		errx(EXIT_FAILURE, "sqlbox_finalise");
+
 	parms[0].sz = 1024 * 1024;
 	parms[1].sz = 1000 * 1024;
 
@@ -78,22 +94,6 @@ main(int argc, char *argv[])
 	for (i = 0; i < parms[1].sz - 1; i++)
 		buf2[i] = (random() % 26) + 65;
 #endif
-
-	if ((p = sqlbox_alloc(&cfg)) == NULL)
-		errx(EXIT_FAILURE, "sqlbox_alloc");
-	if (!(dbid = sqlbox_open(p, 0)))
-		errx(EXIT_FAILURE, "sqlbox_open");
-	if (!sqlbox_ping(p))
-		errx(EXIT_FAILURE, "sqlbox_ping");
-
-	if (!(stmtid = sqlbox_prepare_bind(p, dbid, 0, 0, NULL, 0)))
-		errx(EXIT_FAILURE, "sqlbox_prepare_bind");
-	if ((res = sqlbox_step(p, stmtid)) == NULL)
-		errx(EXIT_FAILURE, "sqlbox_step");
-	if (res->psz != 0)
-		errx(EXIT_FAILURE, "res->psz != 0");
-	if (!sqlbox_finalise(p, stmtid))
-		errx(EXIT_FAILURE, "sqlbox_finalise");
 
 	if (!(stmtid = sqlbox_prepare_bind
 	      (p, dbid, 1, nitems(parms), parms, 0)))
