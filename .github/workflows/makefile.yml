@@ -6,13 +6,15 @@ jobs:
     steps:
     - uses: actions/checkout@master
     - name: Install dependencies
-      run: sudo apt-get install -y libsqlite3-dev bmake
+      run: sudo apt-get install -y libsqlite3-dev bmake valgrind
     - name: configure
       run: ./configure
     - name: Compile
       run: bmake
     - name: Run regress
       run: bmake regress
+    - name: Run valgrind
+      run: bmake valgrind
   macos_x86_64:
     runs-on: macos-latest
     steps:
