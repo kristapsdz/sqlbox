@@ -381,17 +381,27 @@ regress_all: $(TESTS)
 	done
 
 valgrind: $(TESTS)
-	@for f in $(TESTS); do \
+	@exit=0 ; \
+	tmp=`mktemp` ; \
+	for f in $(TESTS); do \
 		set +e ; \
-		echo "$$f... \033[33mrunning\033[0m"; \
-		$(VGR) $(VGROPTS) ./$$f 2>&1 | sed -e '/^[^=]/d' -e 's!^==\(.*\)!\x1B[31m==\1\x1B[0m!' ; \
+		printf "$$f... "; \
+		$(VGR) $(VGROPTS) --log-file=$$tmp ./$$f 2>/dev/null ; \
 		if [ $$? -ne 0 ]; then \
-			echo "$$f... \033[31mfail\033[0m"; \
+			echo "\033[31mfail\033[0m"; \
+		elif [ -s $$tmp ]; then \
+			echo "\033[31mleaks\033[0m"; \
 		else \
-			echo "$$f... \033[32mok\033[0m"; \
+			echo "\033[32mok\033[0m"; \
 		fi; \
+		cat $$tmp ; \
+		if [ -s $$tmp ] ; then \
+			exit=1 ; \
+		fi ; \
 		set -e ; \
-	done
+	done ; \
+	rm -f $$tmp ; \
+	exit $$exit
 
 .dat.png:
 	gnuplot -c perf.gnuplot $< $@
