@@ -320,7 +320,7 @@ libsqlbox.a: $(OBJS) compats.o
 	$(AR) rs $@ $(OBJS) compats.o
 
 libsqlbox.so.$(LIBVER): $(OBJS) compats.o
-	$(CC) -shared -o $@ $(OBJS) compats.o $(LDFLAGS) -lm $(LDADD_LIB_SOCKET) \
+	$(CC) -shared -o $@ $(OBJS) compats.o $(LDFLAGS) -lm $(LDADD_LIB_SOCKET) $(LDFLAGS_SQLITE3) \
 		-Wl,${LINKER_SONAME},$@ $(LDLIBS)
 	ln -sf $@ `basename $@ .$(LIBVER)`
 
