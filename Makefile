@@ -6,6 +6,7 @@ VMAJOR		!= grep 'define	SQLBOX_VMAJOR' sqlbox.h | cut -f3
 VMINOR		!= grep 'define	SQLBOX_VMINOR' sqlbox.h | cut -f3
 VBUILD		!= grep 'define	SQLBOX_VBUILD' sqlbox.h | cut -f3
 VERSION		:= $(VMAJOR).$(VMINOR).$(VBUILD)
+LIBVER		 = 1
 TESTS		 = test-alloc-bad-defrole \
 		   test-alloc-bad-filt-stmt \
 		   test-alloc-bad-role \
@@ -247,12 +248,16 @@ CFLAGS_SQLITE3	!= pkg-config --cflags sqlite3 2>/dev/null || echo ""
 LDFLAGS_SQLITE3	!= pkg-config --libs sqlite3 2>/dev/null || echo "-lsqlite3"
 CFLAGS		+= $(CFLAGS_SQLITE3)
 LDADD		+= $(LDFLAGS_SQLITE3)
+# Because the objects will be compiled into a shared library:
+CFLAGS		+= -fPIC
+# To avoid exporting internal functions (kcgi.h etc. have default visibility).
+CFLAGS		+= -fvisibility=hidden
 .for mans in $(MANS)
 MANXMLS		+= ${mans}.xml
 MANHTMLS	+= ${mans}.html
 .endfor
 
-all: libsqlbox.a $(PCS)
+all: libsqlbox.a libsqlbox.so.$(LIBVER) $(PCS)
 
 allperf: $(PERFS)
 
@@ -314,6 +319,11 @@ install: all
 libsqlbox.a: $(OBJS) compats.o
 	$(AR) rs $@ $(OBJS) compats.o
 
+libsqlbox.so.$(LIBVER): $(OBJS) compats.o
+	$(CC) -shared -o $@ $(OBJS) compats.o $(LDFLAGS) -lm $(LDADD_LIB_SOCKET) \
+		-Wl,${LINKER_SONAME},$@ $(LDLIBS)
+	ln -sf $@ `basename $@ .$(LIBVER)`
+
 compats.o $(OBJS) $(TESTS): config.h
 
 $(OBJS): sqlbox.h extern.h
@@ -346,7 +356,7 @@ ${perf}-sqlite3: perf/${perf}-sqlite3.c
 .endfor
 
 clean:
-	rm -f libsqlbox.a compats.o $(OBJS) $(TESTS) $(PERFS) $(PCS)
+	rm -f libsqlbox.a libsqlbox.so.$(LIBVER) compats.o $(OBJS) $(TESTS) $(PERFS) $(PCS)
 	rm -f $(PERFS) $(PERFPNGS) index.html index.svg sqlbox.tar.gz sqlbox.tar.gz.sha512 atom.xml
 	rm -f $(MANXMLS) $(MANHTMLS)
 

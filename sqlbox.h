@@ -16,6 +16,10 @@
  */
 #ifndef SQLBOX_H
 #define SQLBOX_H
+/*
+ * The only visible symbols should be those in this header file.
+ */
+#pragma GCC visibility push(default)
 
 #if !defined(__BEGIN_DECLS)
 #  ifdef __cplusplus
@@ -287,4 +291,5 @@ int		 sqlbox_trans_rollback(struct sqlbox *, size_t, size_t);
 
 __END_DECLS
 
+#pragma GCC visibility pop /* visibility(default) */
 #endif

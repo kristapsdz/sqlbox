@@ -5,3 +5,5 @@ config.h
 config.log
 libsqlbox.a
 sqlbox.pc
+libsqlbox.so
+libsqlbox.so.1
