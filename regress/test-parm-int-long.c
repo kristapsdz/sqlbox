@@ -46,7 +46,7 @@ main(int argc, char *argv[])
 		res_blob_array, sizeof(res_blob_array), &sz);
 	if (c != 1)
 		errx(EXIT_FAILURE, "sqlbox_parm_blob convert");
-	if (sz != sizeof(int64_t))
+	if (sz != 2)
 		errx(EXIT_FAILURE, "sqlbox_parm_blob size");
 
 	c = sqlbox_parm_blob_alloc(&parm, &res_blob, &sz);

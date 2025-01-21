@@ -558,18 +558,21 @@ sqlbox_parm_string_alloc(const struct sqlbox_parm *p, char **v, size_t *outsz)
 int
 sqlbox_parm_blob(const struct sqlbox_parm *p, void *v, size_t vsz, size_t *outsz)
 {
+	size_t	 nsz;
 
 	if (vsz == 0)
 		return -1;
 
+	nsz = p->sz > vsz ? vsz : p->sz;
+
 	switch (p->type) {
 	case SQLBOX_PARM_INT:
-		memcpy(v, &p->iparm, vsz);
-		*outsz = sizeof(int64_t);
+		memcpy(v, &p->iparm, nsz);
+		*outsz = nsz;
 		break;
 	case SQLBOX_PARM_FLOAT:
-		memcpy(v, &p->fparm, vsz);
-		*outsz = sizeof(double);
+		memcpy(v, &p->fparm, nsz);
+		*outsz = nsz;
 		break;
 	case SQLBOX_PARM_STRING:
 		*outsz = strlcpy(v, p->sparm, vsz) + 1;
@@ -577,8 +580,8 @@ sqlbox_parm_blob(const struct sqlbox_parm *p, void *v, size_t vsz, size_t *outsz
 	case SQLBOX_PARM_NULL:
 		return -1;
 	case SQLBOX_PARM_BLOB:
-		memcpy(v, p->bparm, vsz);
-		*outsz = p->sz;
+		memcpy(v, p->bparm, nsz);
+		*outsz = nsz;
 		break;
 	}
 
