@@ -152,9 +152,10 @@ make install</pre>
 					security
 				</h2>
 				<p>
-					The purpose of <span class="nm">sqlbox</span> is to provide security to your data <emph>from your
-						application</emph>: both from programming errors and compromise.
-					Its security principles are as follows:
+					The purpose of <span class="nm">sqlbox</span> is to provide
+					security to your data <emph>from your application</emph>:
+					both from programming errors and compromise.  Its security
+					principles are as follows:
 				</p>
 				<ul>
 					<li>
@@ -164,41 +165,57 @@ make install</pre>
 						only pre-set databases shall be opened
 					</li>
 					<li>
-						database components shall not be reachable by process file-system or memory
+						database components shall not be reachable by
+						process file-system or memory
 					</li>
 					<li>
 						provide this with an acceptable impact on performance
 					</li>
 				</ul>
 				<p>
-					It effects this by forked a database management process with pre-set database names and statements.
-					Once forked, the names and statements are inherited and can no longer be changed.
-					Communication with the database is via tightly-controlled socket IPC with the control process.
+					It effects this by forked a database management process with
+					pre-set database names and statements.  Once forked, the
+					names and statements are inherited and can no longer be
+					changed.  Communication with the database is via
+					tightly-controlled socket IPC with the control process.
 					Requests for statements are by identifier, not strings.
 				</p>
 				<figure class="intro">
 					<img src="index.svg" alt="operation of sqlbox" />
 					<figcaption>
-						Not only does this protect the database itself, it also allows fine-grained access controls and
-						other operations opaque to the caller.
+						Not only does this protect the database itself, it
+						also allows fine-grained access controls and other
+						operations opaque to the caller.
 					</figcaption>
 				</figure>
 				<p>
-					When the caller uses a constraint mechanism such as <a
-						href="https://man.openbsd.org/pledge.2">pledge</a>, it makes the database completely
-					inaccessable except via controlled IPC.
+					When the caller uses a constraint mechanism such as
+					<a href="https://man.openbsd.org/pledge.2">pledge</a>, it
+					makes the database completely inaccessable except via
+					controlled IPC.
 				</p>
 				<p>
-					This security is built to enforce a <a
-						href="https://en.wikipedia.org/wiki/Role-based_access_control">role-based access control</a>
-					system, which is useful when a single application has several different roles of operation (e.g., users,
-					administration, analysis).
-					This is enforced within the management process, so a compromised application cannot change its own role
-					except within the transition matrix set during creation.
-					The management process also provides opaque anonymisation of data, which is especially useful for
-					analysis when database information may contain identity information.
+					This security is built to enforce a
+					<a href="https://en.wikipedia.org/wiki/Role-based_access_control">
+						role-based access control</a> system, which
+					is useful when a single application has several different
+					roles of operation (e.g., users, administration, analysis).
+					This is enforced within the management process, so a
+					compromised application cannot change its own role except
+					within the transition matrix set during creation.  The
+					management process also provides opaque anonymisation of
+					data, which is especially useful for analysis when database
+					information may contain identity information.
+				</p>
+				<p>
+					A full automated test suite makes sure that these
+					constraints are followed.  Its coverage is as follows:
 				</p>
 				<div data-sblg-article="1" data-sblg-articletag="coverage"></div>
+				<p>
+					Testing is further enabled by running with valgrind and
+					compiler sanitisers as a commit hook.
+				</p>
 			</section>
 			<section id="performance">
 				<h2>
