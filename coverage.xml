@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<article data-sblg-article="1" data-sblg-tags="coverage">
+<aside>
+<div class="coverage-table">
+<a href="https://github.com/kristapsdz/sqlbox/blob/master/alloc.c">alloc.c</a><span>72.78%</span>
+<a href="https://github.com/kristapsdz/sqlbox/blob/master/close.c">close.c</a><span>9.30%</span>
+<a href="https://github.com/kristapsdz/sqlbox/blob/master/exec.c">exec.c</a><span>21.43%</span>
+<a href="https://github.com/kristapsdz/sqlbox/blob/master/finalise.c">finalise.c</a><span>37.50%</span>
+<a href="https://github.com/kristapsdz/sqlbox/blob/master/hier.c">hier.c</a><span>78.48%</span>
+<a href="https://github.com/kristapsdz/sqlbox/blob/master/io.c">io.c</a><span>64.66%</span>
+<a href="https://github.com/kristapsdz/sqlbox/blob/master/lastid.c">lastid.c</a><span>32.00%</span>
+<a href="https://github.com/kristapsdz/sqlbox/blob/master/main.c">main.c</a><span>21.57%</span>
+<a href="https://github.com/kristapsdz/sqlbox/blob/master/open.c">open.c</a><span>18.46%</span>
+<a href="https://github.com/kristapsdz/sqlbox/blob/master/parm.c">parm.c</a><span>72.12%</span>
+<a href="https://github.com/kristapsdz/sqlbox/blob/master/ping.c">ping.c</a><span>50.00%</span>
+<a href="https://github.com/kristapsdz/sqlbox/blob/master/prepare_bind.c">prepare_bind.c</a><span>26.47%</span>
+<a href="https://github.com/kristapsdz/sqlbox/blob/master/rebind.c">rebind.c</a><span>17.89%</span>
+<a href="https://github.com/kristapsdz/sqlbox/blob/master/role.c">role.c</a><span>12.12%</span>
+<a href="https://github.com/kristapsdz/sqlbox/blob/master/sqlite3.c">sqlite3.c</a><span>0.00%</span>
+<a href="https://github.com/kristapsdz/sqlbox/blob/master/step.c">step.c</a><span>13.64%</span>
+<a href="https://github.com/kristapsdz/sqlbox/blob/master/transaction.c">transaction.c</a><span>25.66%</span>
+<a href="https://github.com/kristapsdz/sqlbox/blob/master/warn.c">warn.c</a><span>40.35%</span>
+</div>
+</aside>
+</article>

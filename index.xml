@@ -60,28 +60,34 @@
 				</h3>
 				<ul>
 					<li>
-						role-based access control on a per-statement and per-source (opening and closing) basis,
-						limiting application database access and manipulation to role purview
+						role-based access control on a per-statement and
+						per-source (opening and closing) basis, limiting
+						application database access and manipulation to role
+						purview
 					</li>
 					<li>
-						in-child filter capabilities allowing for selective scrambling or anonymisation of query results
+						in-child filter capabilities allowing for selective
+						scrambling or anonymisation of query results
 					</li>
 					<li>
-						<q>asynchronous</q> mode for some operations allows all the security benefits with only the
-						slightest performance penalty in one-way interprocess communication
+						<q>asynchronous</q> mode for some operations allows
+						all the security benefits with only the slightest
+						performance penalty in one-way interprocess
+						communication
 					</li>
 					<li>
-						<q>multi-select</q> mode allows forward-caching of step responses, considerably reducing the
-						frequency of synchronous communication
+						<q>multi-select</q> mode allows forward-caching of
+						step responses, considerably reducing the frequency
+						of synchronous communication
 					</li>
 				</ul>
 				<p>
-					<span class="nm">sqlbox</span> is designed to update <a href="https://kristaps.bsd.lv/ksql">ksql</a>
-					with higher performance and a simpler implementation.
-					The library is well-documented and has all of its behaviour checked with a large set of regression
-					tests.
-					It may be run on any modern <span itemprop="operatingSystem">UNIX</span>.
-					It is a <a href="https://www.bsd.lv">BSD.lv</a> project.
+					The library is well-documented and has all of its behaviour
+					checked with a large set of regression tests.  It follows
+					<a href="https://semver.org">semver</a> versioning.  It may
+					be run on any modern
+					<span itemprop="operatingSystem">UNIX</span>.  It is a
+					<a href="https://www.bsd.lv">BSD.lv</a> project.
 				</p>
 				<h3>
 					latest release&#8230;
@@ -192,6 +198,7 @@ make install</pre>
 					The management process also provides opaque anonymisation of data, which is especially useful for
 					analysis when database information may contain identity information.
 				</p>
+				<div data-sblg-article="1" data-sblg-articletag="coverage"></div>
 			</section>
 			<section id="performance">
 				<h2>

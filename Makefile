@@ -358,7 +358,9 @@ ${perf}-sqlite3: perf/${perf}-sqlite3.c
 .endfor
 
 clean:
-	rm -f libsqlbox.a libsqlbox.so.$(LIBVER) compats.o $(OBJS) $(TESTS) $(PERFS) $(PCS)
+	rm -f libsqlbox.a libsqlbox.so.$(LIBVER) libsqlbox.so
+	rm -f compats.o $(OBJS) $(TESTS) $(PERFS) $(PCS)
+	rm -f *.gcda *.gcno
 	rm -f $(PERFS) $(PERFPNGS) index.html index.svg sqlbox.tar.gz sqlbox.tar.gz.sha512 atom.xml
 	rm -f $(MANXMLS) $(MANHTMLS)
 
@@ -418,8 +420,8 @@ valgrind: $(TESTS)
 .dat.png:
 	gnuplot -c perf.gnuplot $< $@
 
-index.html: index.xml versions.xml $(MANXMLS)
-	sblg -t index.xml -o $@ versions.xml $(MANXMLS)
+index.html: index.xml coverage.xml versions.xml $(MANXMLS)
+	sblg -t index.xml -o $@ versions.xml coverage.xml $(MANXMLS)
 	
 .dot.svg:
 	dot -Tsvg $< | xsltproc --novalid notugly.xsl - >$@
