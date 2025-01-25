@@ -325,7 +325,7 @@ int
 sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 {
 	struct sqlbox_stmt	*st;
-	size_t			 i, pos;
+	size_t			 pos;
 	int			 rc, done, wrote = 0;
 	uint32_t		 val;
 	
@@ -432,7 +432,6 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 		}
 		pos = sizeof(uint32_t);
 		assert(!st->res.done);
-		i = 0;
 		while (pos < SQLBOX_CACHE_MAX) {
 			rc = sqlbox_pack_step(box, &pos, st);
 			if (rc < 0) {
@@ -448,7 +447,6 @@ sqlbox_op_step(struct sqlbox *box, const char *buf, size_t sz)
 				st->res.done = 1;
 				break;
 			}
-			i++;
 		}
 		val = htole32(pos - sizeof(uint32_t));
 		memcpy(st->res.buf, (char *)&val, sizeof(uint32_t));

@@ -48,7 +48,7 @@ main(int argc, char *argv[])
 	char			*res_string;
 	char			 res_string_array[512];
 	int64_t			 res_int;
-	double			 res_double, v;
+	double			 res_double;
 	size_t			 sz;
 	int			 c;
 
