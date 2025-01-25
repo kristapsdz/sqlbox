@@ -74,8 +74,12 @@ nav[data-sblg-nav] .version	{ font-weight: 500;
 				  display: inline-block;
 				  border-left: thin solid #aaa; }
 nav[data-sblg-nav] i.fa		{ font-size: x-small; }
+.coverage-table			{ display: grid;
+				  gap: 0 1rem;
+				  grid-template-columns: 1fr auto; }
 
-@media only screen and (min-width: 60rem) {
+@media (width > 60rem) {
   #within > * + *		{ padding-left: 1rem;
 				  margin-left: 1rem; }
+  .coverage-table		{ grid-template-columns: auto auto; }
 }

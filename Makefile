@@ -1,6 +1,7 @@
 .SUFFIXES: .png .dat .dot .svg .3.xml .3 .3.html .in.pc .pc
 
 include Makefile.configure
+WWWDIR		 = /var/www/vhosts/kristaps.bsd.lv/htdocs/sqlbox
 sinclude Makefile.local
 
 VMAJOR		!= grep 'define	SQLBOX_VMAJOR' sqlbox.h | cut -f3
@@ -241,11 +242,11 @@ PERFS		 = perf-full-cycle-ksql \
 		   perf-select-multi-ksql \
 		   perf-select-multi-sqlbox \
 		   perf-select-multi-sqlite3
+SBLG		 = ../sblg/sblg
 VGR		 = valgrind
 VGROPTS		 = -q --track-origins=yes --leak-check=full \
 		   --show-reachable=yes --trace-children=yes \
 		   --leak-resolution=high
-WWWDIR		 = /var/www/vhosts/kristaps.bsd.lv/htdocs/sqlbox
 CFLAGS_SQLITE3	!= pkg-config --cflags sqlite3 2>/dev/null || echo ""
 LDFLAGS_SQLITE3	!= pkg-config --libs sqlite3 2>/dev/null || echo "-lsqlite3"
 CFLAGS		+= $(CFLAGS_SQLITE3)
@@ -421,7 +422,7 @@ valgrind: $(TESTS)
 	gnuplot -c perf.gnuplot $< $@
 
 index.html: index.xml coverage.xml versions.xml $(MANXMLS)
-	sblg -t index.xml -o $@ versions.xml coverage.xml $(MANXMLS)
+	$(SBLG) -t index.xml -o $@ versions.xml coverage.xml $(MANXMLS)
 	
 .dot.svg:
 	dot -Tsvg $< | xsltproc --novalid notugly.xsl - >$@
