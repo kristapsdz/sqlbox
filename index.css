@@ -6,14 +6,14 @@ figcaption			{ font-size: smaller;
 				  line-height: 1.3em;
 				  margin: 1.1rem 0;
 				  padding: 0.7rem 1.1rem;
-				  box-shadow: 0 0 4px #aaa;
-				  border-radius: 1rem;
-				  background-color: #fdfdfd;
-				  color: #666; }
+				  border-radius: 4pt;
+				  background-color: #888;
+				  color: #eee; }
+figcaption .nm			{ color: #fff; }
 figcaption::before		{ content: 'Figure:';
 				  font-weight: 500;
 				  padding-right: 0.25em;
-				  color: #444; }
+				  color: #fff; }
 h2				{ text-align: center;
 			  	  font-weight: 500;
 				  margin: 1.5em 0;
@@ -23,7 +23,7 @@ h3				{ font-weight: inherit;
 				  font-variant: small-caps;
 				  text-align: center;
 				  margin: 1.5em 0;
-				  font-size: inherit; }
+				  font-size: 110%; }
 ol, ul				{ padding-left: 1.5rem; }
 img				{ margin: 0 auto;
 				  display: block; }
@@ -54,8 +54,8 @@ figure				{ margin-left: 0;
 				  margin-top: 4rem;
 				  margin-bottom: 2rem; }
 pre, code			{ font-family: monospace;
-				  font-size: smaller;
-				  line-height: 115%; }
+				  font-size: 75%;
+				  line-height: 100%; }
 pre				{ overflow: hidden; }
 footer				{ font-size: smaller;
 				  opacity: 0.8;

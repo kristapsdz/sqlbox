@@ -5,7 +5,8 @@
 		<meta charset="utf-8" /> 
 		<title>SQLbox: database access library</title>
 		<link rel="alternate" href="atom.xml" type="application/atom+xml" title="sqlbox version feed" />
-		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css" />
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css"
+		 integrity="sha256-XoaMnoYC5TH6/+ihMEnospgm0J1PM/nioxbOUdnM8HY=" crossorigin="anonymous" />
 		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Alegreya+Sans:400,400italic,500" />
 		<link rel="stylesheet" href="https://bsd.lv/css/style.css" />
 		<link rel="stylesheet" href="index.css" />
@@ -300,10 +301,10 @@ make install</pre>
 			</section>
 		</article>
 		<footer>
-			&#169; 2019, 
+			&#169;
 			<a itemprop="author" itemscope="itemscope" 
 			 itemtype="http://schema.org/Person" rel="author" href="https://github.com/kristapsdz">
-				<span itemprop="name">Kristaps Dz</span>
+				<span itemprop="name">Kristaps Dzonsons</span>
 			</a>
 		</footer>
 	</body>
