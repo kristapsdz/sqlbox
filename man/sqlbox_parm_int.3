@@ -63,6 +63,8 @@
 .Fa "char **v"
 .Fa "size_t *outsz"
 .Fc
+.Fd #define SQLBOX_DOUBLE_MAX_INT
+.Fd #define SQLBOX_DOUBLE_MIN_INT
 .Sh DESCRIPTION
 Convert between result types as returned from
 .Xr sqlbox_step 3 .
@@ -75,7 +77,7 @@ r | c | c | c | c
 r | c c c c.
 type	float	int	string	blob
 _
-float	self	cast	%lf	bcopy
+float	self	cast*	%lf	bcopy
 int	cast	self	%PRId64	bcopy
 string	strtod(3)	strtoll(3)	self	bcopy
 blob	-	-	-	self
@@ -92,6 +94,18 @@ The
 means a native cast and
 .Qq self
 simply means a non-conversion.
+As a special-case,
+.Qq cast*
+from floating point to integer will saturate for overflow values
+(including positive and negative infinity) and desaturate (zero) for
+NAN.
+The specific overflow value (maximum and minimum floating point) are
+given by the
+.Dv SQLBOX_DOUBLE_MAX_INT
+and
+.Dv SQLBOX_DOUBLE_MIN_INT
+floating point literals.
+.Pp
 Values starting with
 .Qq %
 (the percent sign) are as passed to
@@ -99,12 +113,15 @@ Values starting with
 or
 .Xr snprintf 3
 depending upon whether the function allocates memory.
+.Pp
 The
 .Qq bcopy
 are binary copies.
+.Pp
 A dash
 .Pq Dq \&-
 means that conversion is not possible.
+.Pp
 The remainder are functions.
 .Pp
 .Fn sqlbox_parm_string
