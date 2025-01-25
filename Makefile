@@ -1,6 +1,7 @@
 .SUFFIXES: .png .dat .dot .svg .3.xml .3 .3.html .in.pc .pc
 
 include Makefile.configure
+sinclude Makefile.local
 
 VMAJOR		!= grep 'define	SQLBOX_VMAJOR' sqlbox.h | cut -f3
 VMINOR		!= grep 'define	SQLBOX_VMINOR' sqlbox.h | cut -f3
