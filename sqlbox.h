@@ -44,12 +44,12 @@
 /*
  * Minor version.
  */
-#define	SQLBOX_VMINOR	1
+#define	SQLBOX_VMINOR	2
 
 /*
  * Build version.
  */
-#define	SQLBOX_VBUILD	13
+#define	SQLBOX_VBUILD	0
 
 /*
  * Stringification of version major, minor, and build.

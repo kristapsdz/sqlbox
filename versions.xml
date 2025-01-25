@@ -1,5 +1,31 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <articles>
+        <article data-sblg-article="1" data-sblg-tags="version">
+                <header>
+                        <h1>0.2.0</h1>
+                        <address>Kristaps Dzonsons</address>
+                        <time datetime="2025-01-25">2025-01-25</time>
+                </header>
+                <aside>
+                        <p>
+                                Fix how floating points are converted into integers to
+                                avoid undefined behaviour. Prior to this, floating points
+                                were simply cast; however, this would introduce UB if the
+                                floating point over or underflowed the integer. Check for
+                                saturating prior to casting now and also handle NaN checks.
+				This adds <code>SQLBOX_DOUBLE_MAX_INT</code> and
+				<code>SQLBOX_DOUBLE_MIN_INT</code> macros to the API.
+				They may be used for more refined casting by the
+				application, and are used in the regression tests to check
+				for corner cases.
+                        </p>
+                        <p>
+				Introduce <b>-fsanitize</b> testing for address and
+				undefined behaviour sanitisation in the CI.  This bolsters
+				the existing valgrind checks.
+                        </p>
+                </aside>
+        </article>
 	<article data-sblg-article="1" data-sblg-tags="version">
 		<header>
 			<h1>0.1.13</h1>
