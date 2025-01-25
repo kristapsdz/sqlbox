@@ -233,6 +233,12 @@ struct	sqlbox_parmset {
 
 typedef void (*sqlbox_cfg_free)(struct sqlbox_cfg *);
 
+/*
+ * Maxima for converting from doubles into ints.
+ */
+#define SQLBOX_DOUBLE_MAX_INT  9223372036854775807.0
+#define SQLBOX_DOUBLE_MIN_INT  (-9223372036854775808.0)
+
 struct	sqlbox;
 
 __BEGIN_DECLS

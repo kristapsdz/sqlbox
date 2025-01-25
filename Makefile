@@ -106,6 +106,7 @@ TESTS		 = test-alloc-bad-defrole \
 		   test-parm-float \
 		   test-parm-float-bad \
 		   test-parm-float-maxvalues \
+		   test-parm-float-int-corners \
 		   test-parm-int-bad \
 		   test-parm-int \
 		   test-parm-int-long \

@@ -1,5 +1,7 @@
 test-*
+!test-*.c
 *.o
+*.swp
 Makefile.configure
 config.h
 config.log
