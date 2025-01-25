@@ -440,12 +440,12 @@ sqlbox_parm_int(const struct sqlbox_parm *p, int64_t *v)
 		*v = p->iparm;
 		break;
 	case SQLBOX_PARM_FLOAT:
-		if ((isinf(p->fparm && !signbit(p->fparm))) ||
+		if ((isinf(p->fparm) && !signbit(p->fparm)) ||
 		    p->fparm >= SQLBOX_DOUBLE_MAX_INT) {
 			*v = INT64_MAX;
 			break;
 		}
-		if ((isinf(p->fparm && signbit(p->fparm))) ||
+		if ((isinf(p->fparm) && signbit(p->fparm)) ||
 		    p->fparm <= SQLBOX_DOUBLE_MIN_INT) {
 			*v = INT64_MIN;
 			break;
