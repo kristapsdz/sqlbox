@@ -115,8 +115,6 @@ the application may pledge with
 .Va stdio rpath cpath wpath flock proc fattr
 and only
 .Va stdio
-and
-.Va proc
 afterward.
 .Bd -literal -offset indent
 struct sqlbox *p;
@@ -138,7 +136,7 @@ cfg.srcs.srcsz = 1;
 if ((p = sqlbox_alloc(&cfg)) == NULL)
   errx(EXIT_FAILURE, "sqlbox_alloc");
 
-if (pledge("stdio proc", NULL) == -1)
+if (pledge("stdio", NULL) == -1)
   err(EXIT_FAILURE, "pledge");
 
 /* Do work. */
