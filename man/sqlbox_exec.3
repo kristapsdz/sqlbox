@@ -202,9 +202,9 @@ if ((p = sqlbox_alloc(&cfg)) == NULL)
   errx(EXIT_FAILURE, "sqlbox_alloc");
 if (!sqlbox_open_async(p, 0))
   errx(EXIT_FAILURE, "sqlbox_open_async");
-if (!sqlbox_exec_async(p, 0, 0, 0, NULL))
+if (!sqlbox_exec_async(p, 0, 0, 0, NULL, 0))
   errx(EXIT_FAILURE, "sqlbox_exec_async");
-if (!sqlbox_exec_async(p, 0, 1, 1, parms))
+if (!sqlbox_exec_async(p, 0, 1, 1, parms, 0))
   errx(EXIT_FAILURE, "sqlbox_exec_async");
 
 sqlbox_free(p);
