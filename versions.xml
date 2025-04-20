@@ -2,6 +2,19 @@
 <articles>
         <article data-sblg-article="1" data-sblg-tags="version">
                 <header>
+                        <h1>0.2.1</h1>
+                        <address>Kristaps Dzonsons</address>
+                        <time datetime="2025-04-20">2025-04-20</time>
+                </header>
+                <aside>
+                        <p>
+				Minor documentation changes.
+				No code updates.
+                        </p>
+                </aside>
+        </article>
+        <article data-sblg-article="1" data-sblg-tags="version">
+                <header>
                         <h1>0.2.0</h1>
                         <address>Kristaps Dzonsons</address>
                         <time datetime="2025-01-25">2025-01-25</time>
