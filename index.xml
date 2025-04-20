@@ -52,7 +52,6 @@
 					<a href="http://opensource.org/licenses/ISC" rel="license">open source</a> 
 					<span itemprop="description">C/C++ secure database access library</span>
 				       	at this time limited to <a href="https://www.sqlite.org">sqlite3</a> databases.
-					(<a href="https://www.postgresql.org">postgresql</a> is in the planning phase.)
 					Instead of operating databases in-process, <span class="nm">sqlbox</span> uses a multi-process,
 					resource-separated approach to safe-guard the database from the calling application.
 				</p>
