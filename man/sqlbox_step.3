@@ -277,7 +277,7 @@ for (i = 0; i < res->psz; i++)
       printf("Float: %f\en", res->ps[i].fparm);
       break;
     case SQLBOX_PARM_INT:
-      printf("Blob: %" PRId64 "\en", res->ps[i].iparm);
+      printf("Integer: %" PRId64 "\en", res->ps[i].iparm);
       break;
     case SQLBOX_PARM_NULL:
       printf("Null\en");
